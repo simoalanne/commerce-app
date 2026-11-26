@@ -26,7 +26,7 @@ function getStatusTone(status: OrderSummary["status"]) {
   switch (status) {
     case "PAID":
       return styles.statusOpen;
-    case "DELIVERED":
+    case "SHIPPED":
       return styles.statusPaid;
     default:
       return styles.statusClosed;
@@ -34,14 +34,14 @@ function getStatusTone(status: OrderSummary["status"]) {
 }
 
 function getStatusLabel(
-  getLabel: (key: "statusAwaitingDelivery" | "statusDelivered" | "statusUnknown") => string,
+  getLabel: (key: "statusAwaitingShipment" | "statusShipped" | "statusUnknown") => string,
   status: OrderSummary["status"],
 ) {
   switch (status) {
     case "PAID":
-      return getLabel("statusAwaitingDelivery");
-    case "DELIVERED":
-      return getLabel("statusDelivered");
+      return getLabel("statusAwaitingShipment");
+    case "SHIPPED":
+      return getLabel("statusShipped");
     default:
       return getLabel("statusUnknown");
   }
@@ -53,7 +53,7 @@ function getPaymentLabel(
 ) {
   switch (status) {
     case "PAID":
-    case "DELIVERED":
+    case "SHIPPED":
       return getLabel("paymentPaid");
     default:
       return getLabel("paymentUnknown");
@@ -162,7 +162,7 @@ export function OrderListItem({ order, locale }: OrderListItemProps) {
       </Link>
 
       <div className={styles.actions}>
-        {order.status === "DELIVERED" && !order.hasSubmittedReview ? (
+        {order.status === "SHIPPED" && !order.hasSubmittedReview ? (
           <button
             type="button"
             className={styles.reorderButton}

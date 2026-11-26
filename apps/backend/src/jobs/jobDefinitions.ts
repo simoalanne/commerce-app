@@ -7,6 +7,7 @@ import { sendOrderRefundedEmail } from "./handlers/emails/sendOrderRefundedEmail
 import { sendOrderReviewInvitationEmail } from "./handlers/emails/sendOrderReviewInvitationEmail.ts";
 import { expirePendingOrder } from "./handlers/orders/expirePendingOrder.ts";
 import { processRefund } from "./handlers/orders/processRefund.ts";
+import { shipOrder } from "./handlers/orders/shipOrder.ts";
 import { invalidateSearchIndex } from "./handlers/search/invalidateSearchIndex.ts";
 import { deliverInternalWebhookEvent } from "./handlers/webhooks/deliverInternalWebhookEvent.ts";
 import { deliverOrderPaidWebhookEvent } from "./handlers/webhooks/deliverOrderPaidWebhookEvent.ts";
@@ -63,6 +64,12 @@ export const jobDefinitions = {
       orderId: z.number().int().positive(),
     }),
     handler: expirePendingOrder,
+  },
+  shipOrder: {
+    schema: z.object({
+      orderId: z.number().int().positive(),
+    }),
+    handler: shipOrder,
   },
   processRefund: {
     schema: z.object({

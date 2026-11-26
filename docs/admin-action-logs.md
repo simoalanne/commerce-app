@@ -120,7 +120,6 @@ Non-CRUD admin actions include:
 
 - review status updates
 - contact submission status updates
-- marking delivery orders as delivered
 - granting admin access
 
 ## What Does Not Get Logged

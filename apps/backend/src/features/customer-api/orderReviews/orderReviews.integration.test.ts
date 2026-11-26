@@ -60,9 +60,9 @@ afterEach(async () => {
 });
 
 const createOrderReviewScenario = async ({
-  status = "DELIVERED",
+  status = "SHIPPED",
 }: {
-  status?: "DELIVERED" | "PAID";
+  status?: "SHIPPED" | "PAID";
 } = {}) => {
   const category = await createCategory();
   createdCategoryIds.add(category.id);
@@ -167,7 +167,7 @@ const createReviewAccessToken = async (claimToken: string) => {
 };
 
 describe("customerApi.orderReviews integration", () => {
-  it("returns flat reviewables and existing saved reviews for a delivered order", async () => {
+  it("returns flat reviewables and existing saved reviews for a shipped order", async () => {
     const scenario = await createOrderReviewScenario();
 
     const [productReview, storeReview] = await db
@@ -374,7 +374,7 @@ describe("customerApi.orderReviews integration", () => {
     expect(error).toHaveProperty("status", 400);
   });
 
-  it("does not expose non-delivered orders as reviewable", async () => {
+  it("does not expose orders that have not shipped as reviewable", async () => {
     const scenario = await createOrderReviewScenario({ status: "PAID" });
 
     const error = await client.orderReviews

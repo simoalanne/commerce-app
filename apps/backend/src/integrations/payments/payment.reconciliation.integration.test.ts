@@ -61,7 +61,7 @@ const createReconciliationScenario = async ({
   quantity = 2,
 }: {
   provider?: "STRIPE" | "PAYTRAIL";
-  orderStatus?: "PENDING" | "PAID" | "EXPIRED" | "DELIVERED";
+  orderStatus?: "PENDING" | "PAID" | "EXPIRED" | "SHIPPED";
   currentStock?: number;
   reservedStock?: number;
   quantity?: number;

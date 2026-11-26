@@ -57,7 +57,7 @@ const uuidv7 = () =>
 
 const tsvector = customType<{ data: string }>({ dataType: () => "tsvector" });
 
-export const orderStatusEnum = pgEnum("order_status", ["PENDING", "PAID", "EXPIRED", "DELIVERED"]);
+export const orderStatusEnum = pgEnum("order_status", ["PENDING", "PAID", "SHIPPED", "EXPIRED"]);
 export const contactSubmissionTopicEnum = pgEnum("contact_submission_topic", [
   "CONTACT",
   "VENDOR_APPLICATION",

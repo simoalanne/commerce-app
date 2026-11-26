@@ -23,7 +23,7 @@ import {
 
 const summaryRoute = dashboardRoute.meta({ access: "ADMIN" });
 
-const PAID_REVENUE_STATUSES: OrderStatus[] = ["PAID", "DELIVERED"];
+const PAID_REVENUE_STATUSES: OrderStatus[] = ["PAID", "SHIPPED"];
 const paidRevenueStatuses = sql.join(
   PAID_REVENUE_STATUSES.map((status) => sql`${status}`),
   sql`, `,

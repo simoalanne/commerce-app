@@ -624,7 +624,7 @@
     "delete": {
       "title": "Delete account",
       "description": "Permanently delete your account and remove access to your saved profile data.",
-      "warning": "This action is irreversible. Delivered and cancelled orders may be retained in anonymized form, but your account and saved personal data will be removed.",
+      "warning": "This action is irreversible. Shipped and cancelled orders may be retained in anonymized form, but your account and saved personal data will be removed.",
       "action": "Delete account",
       "cancelAction": "Keep account",
       "confirmAction": "Delete permanently",
@@ -813,12 +813,12 @@
     "deleting": "Deleting..."
   },
   "orderReviewPage": {
-    "eyebrow": "Delivered order review",
+    "eyebrow": "Order review",
     "title": "Review order #{orderId}",
     "description": "Tell us how the products turned out and how the overall delivery experience felt.",
-    "orderLabel": "Delivered order",
+    "orderLabel": "Order",
     "loadingTitle": "Opening your review page",
-    "loadingBody": "We are loading the review form for your delivered order.",
+    "loadingBody": "We are loading the review form for your order.",
     "invalidTitle": "This review link is not available",
     "invalidBody": "The link may be invalid, expired, or the order is not ready for reviews yet.",
     "saved": "Your feedback has been saved. You can still update it from this page anytime.",
@@ -868,8 +868,8 @@
     "emptyTextClosed": "Finished and canceled orders will collect here once you have some order history."
   },
   "accountOrderDetails": {
-    "statusAwaitingDelivery": "Awaiting delivery",
-    "statusDelivered": "Delivered",
+    "statusAwaitingShipment": "Awaiting shipment",
+    "statusShipped": "Shipped",
     "refundedTotal": "Total refunded",
     "refundedQty": "{quantity} refunded",
     "defaultItemName": "Product",
@@ -895,8 +895,8 @@
     "refundReceiptDownloadError": "We could not download the refund receipt. Please try again."
   },
   "orderListItem": {
-    "statusAwaitingDelivery": "Awaiting delivery",
-    "statusDelivered": "Delivered",
+    "statusAwaitingShipment": "Awaiting shipment",
+    "statusShipped": "Shipped",
     "statusUnknown": "Unknown",
     "paymentPaid": "Paid",
     "paymentUnknown": "Unknown",

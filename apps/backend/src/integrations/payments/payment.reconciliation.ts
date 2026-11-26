@@ -1,5 +1,6 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 
+import envConfig from "#src/config.ts";
 import { db, type Db } from "#src/db/client.ts";
 import {
   type OrderStatus,
@@ -72,6 +73,12 @@ const enqueueOrderPaidJobs = async ({
   await enqueueJob({
     type: "sendNewOrderNotificationEmail",
     payload: { orderId },
+  });
+
+  await enqueueJob({
+    type: "shipOrder",
+    payload: { orderId },
+    options: { startAfter: envConfig.ORDER_SHIP_DELAY_SECONDS },
   });
 
   const subscribers = await transaction.query.webhookSubscription.findMany({

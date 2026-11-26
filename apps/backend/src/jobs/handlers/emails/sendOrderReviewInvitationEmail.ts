@@ -10,16 +10,6 @@ type SendOrderReviewInvitationEmailPayload = {
   orderId: number;
 };
 
-const getReviewOrderEmailScheduledAt = () => {
-  const delay = envConfig.REVIEW_ORDER_EMAIL_DELAY.trim();
-
-  if (!delay || delay === "0") {
-    return undefined;
-  }
-
-  return delay;
-};
-
 const buildReviewOrderUrl = ({
   baseUrl,
   locale,
@@ -55,8 +45,8 @@ export async function sendOrderReviewInvitationEmail({
   });
   if (!order) throw new Error(`Order ${orderId} not found`);
 
-  if (order.status !== "DELIVERED") {
-    logger.warn("Skipping order review invitation for non-delivered order", {
+  if (order.status !== "SHIPPED") {
+    logger.warn("Skipping order review invitation for an order that has not shipped", {
       tag: "order-review-invitation-email-job",
       orderId,
       status: order.status,
@@ -97,10 +87,9 @@ export async function sendOrderReviewInvitationEmail({
     text: email.text,
     locale,
     tags: [
-      { name: "event", value: "order.delivered" },
+      { name: "event", value: "order.shipped" },
       { name: "template", value: "order-review-invitation" },
     ],
-    scheduledAt: getReviewOrderEmailScheduledAt(),
     metadata: {
       orderId: String(orderId),
       locale,

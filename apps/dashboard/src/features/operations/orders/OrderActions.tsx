@@ -32,8 +32,8 @@ export default function OrderRowActions({
     refundReceipt: OrderTableRow["refundReceipts"][number],
   ) => void;
 }) {
-  const isPaidOrDelivered = order.status === "PAID" || order.status === "DELIVERED";
-  const disableActions = !isPaidOrDelivered;
+  const isPaidOrShipped = order.status === "PAID" || order.status === "SHIPPED";
+  const disableActions = !isPaidOrShipped;
 
   return (
     <DropdownMenu>
@@ -97,11 +97,11 @@ export default function OrderRowActions({
         >
           Refund
         </DropdownMenuItem>
-        {!isPaidOrDelivered ? (
+        {!isPaidOrShipped ? (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-              Available only for PAID or DELIVERED orders
+              Available only for PAID or SHIPPED orders
             </DropdownMenuLabel>
           </>
         ) : null}

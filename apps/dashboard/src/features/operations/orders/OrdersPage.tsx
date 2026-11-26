@@ -22,7 +22,7 @@ export type OrderTableRow = InferClientResponse<
 
 const statusVariant: Record<OrderTableRow["status"], "default" | "outline" | "secondary"> = {
   PAID: "default",
-  DELIVERED: "secondary",
+  SHIPPED: "secondary",
 };
 
 export default function OrdersPage() {

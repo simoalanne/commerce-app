@@ -14,7 +14,6 @@ export type SendEmailInput = {
   locale?: string;
   replyTo?: string;
   idempotencyKey?: string;
-  scheduledAt?: string;
   tags?: {
     name: string;
     value: string;
@@ -44,7 +43,6 @@ const consoleEmailService: EmailServiceProvider = {
         "──── email (not sent: RESEND_API_KEY is not set) ────",
         `To:      ${input.to.name ? `${input.to.name} <${input.to.email}>` : input.to.email}`,
         `Subject: ${input.subject}`,
-        ...(input.scheduledAt ? [`Send at: ${input.scheduledAt}`] : []),
         ...(attachments ? [`Attachments: ${attachments}`] : []),
         "",
         input.text,

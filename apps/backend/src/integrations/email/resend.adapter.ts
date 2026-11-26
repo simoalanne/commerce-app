@@ -46,7 +46,6 @@ export class ResendEmailAdapter implements EmailServiceProvider {
         html: input.html,
         text: input.text,
         replyTo: input.replyTo ?? this.defaultReplyTo,
-        scheduledAt: input.scheduledAt,
         tags: normalizeTags(input.tags),
         attachments: input.attachments,
       },

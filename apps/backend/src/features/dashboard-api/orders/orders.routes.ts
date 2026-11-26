@@ -25,7 +25,7 @@ const OrderItemRefundSchema = z.object({
   amountCents: z.number().int().positive(),
 });
 
-const REFUNDABLE_STATUSES = ["PAID", "DELIVERED"] as const;
+const REFUNDABLE_STATUSES = ["PAID", "SHIPPED"] as const;
 
 const sum = (amounts: number[]) => amounts.reduce((total, amount) => total + amount, 0);
 

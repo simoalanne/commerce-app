@@ -168,7 +168,7 @@ export const ordersRoutes = {
         where: {
           id: orderId,
           customerId: authContext.customerId,
-          status: scope === "order:review" ? "DELIVERED" : { in: [...relevantOrderStatuses] },
+          status: scope === "order:review" ? "SHIPPED" : { in: [...relevantOrderStatuses] },
         },
         columns: { id: true },
       });

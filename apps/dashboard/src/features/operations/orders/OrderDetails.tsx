@@ -21,7 +21,7 @@ import RefundStatusBadge from "./RefundStatusBadge";
 
 const statusVariant: Record<OrderTableRow["status"], "default" | "outline" | "secondary"> = {
   PAID: "default",
-  DELIVERED: "secondary",
+  SHIPPED: "secondary",
 };
 
 const dateTimeFormatter = new Intl.DateTimeFormat("en-US", {

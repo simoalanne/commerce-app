@@ -34,14 +34,14 @@ function formatDate(date: Date, locale: string) {
   }).format(new Date(date));
 }
 
-type AccountOrderStatusLabelKey = "statusAwaitingDelivery" | "statusDelivered";
+type AccountOrderStatusLabelKey = "statusAwaitingShipment" | "statusShipped";
 
 function formatStatus(status: string, getLabel: (key: AccountOrderStatusLabelKey) => string) {
   switch (status) {
     case "PAID":
-      return getLabel("statusAwaitingDelivery");
-    case "DELIVERED":
-      return getLabel("statusDelivered");
+      return getLabel("statusAwaitingShipment");
+    case "SHIPPED":
+      return getLabel("statusShipped");
     default:
       return status;
   }
@@ -198,7 +198,7 @@ function AccountOrderDetailsContent({ orderId }: AccountOrderDetailsContentProps
                   })}
             </button>
           ))}
-          {data.status === "DELIVERED" && !data.hasSubmittedReview ? (
+          {data.status === "SHIPPED" && !data.hasSubmittedReview ? (
             <button
               type="button"
               className={actionStyles.reorderButton}

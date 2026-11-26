@@ -59,7 +59,7 @@ export const orderReviewsRoutes = {
       const order = await context.db.query.order.findFirst({
         where: {
           id: capability.orderId,
-          status: "DELIVERED",
+          status: "SHIPPED",
         },
         columns: {
           id: true,
@@ -93,7 +93,7 @@ export const orderReviewsRoutes = {
       const order = await context.db.query.order.findFirst({
         where: {
           id: capability.orderId,
-          status: "DELIVERED",
+          status: "SHIPPED",
         },
         columns: {
           id: true,
@@ -284,7 +284,7 @@ export const orderReviewsRoutes = {
       const order = await context.db.query.order.findFirst({
         where: {
           id: orderId,
-          status: "DELIVERED",
+          status: "SHIPPED",
         },
         columns: {
           id: true,
