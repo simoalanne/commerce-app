@@ -1,7 +1,3 @@
-import assert from "node:assert";
-
-import { afterEach, describe, it } from "vitest";
-
 import prismaClient from "#src/prisma.ts";
 import { assertOrderStatus, assertStock } from "#src/tests/asserts.ts";
 import {
@@ -153,11 +149,11 @@ describe("payment reconciliation integration", () => {
       where: { sku: product.sku },
     });
 
-    assert.ok(first, "Expected first reconciliation to update the order");
-    assert.strictEqual(second, null);
+    expect(first, "Expected first reconciliation to update the order").toBeTruthy();
+    expect(second).toBe(null);
     assertOrderStatus(updatedOrder, "PAID");
     assertStock(updatedProduct, 8);
-    assert.strictEqual(updatedProduct?.reserved_stock, 0);
+    expect(updatedProduct?.reserved_stock).toBe(0);
   });
 
   it("recovers a late-paid order after expiry when stock is still available", async () => {
@@ -182,11 +178,11 @@ describe("payment reconciliation integration", () => {
       where: { sku: product.sku },
     });
 
-    assert.ok(result, "Expected late payment to recover the order");
+    expect(result, "Expected late payment to recover the order").toBeTruthy();
     assertOrderStatus(updatedOrder, "PAID");
-    assert.strictEqual(updatedOrder?.payment_id, "pt_paid_1");
+    expect(updatedOrder?.payment_id).toBe("pt_paid_1");
     assertStock(updatedProduct, 8);
-    assert.strictEqual(updatedProduct?.reserved_stock, 0);
+    expect(updatedProduct?.reserved_stock).toBe(0);
   });
 
   it("marks a pending Paytrail order as expired and releases stock on cancel callback", async () => {
@@ -214,12 +210,12 @@ describe("payment reconciliation integration", () => {
       where: { sku: product.sku },
     });
 
-    assert.ok(first, "Expected cancel reconciliation to expire the order");
-    assert.strictEqual(second, null);
+    expect(first, "Expected cancel reconciliation to expire the order").toBeTruthy();
+    expect(second).toBe(null);
     assertOrderStatus(updatedOrder, "EXPIRED");
-    assert.strictEqual(updatedOrder?.payment_id, "pt_canceled_1");
+    expect(updatedOrder?.payment_id).toBe("pt_canceled_1");
     assertStock(updatedProduct, 10);
-    assert.strictEqual(updatedProduct?.reserved_stock, 0);
+    expect(updatedProduct?.reserved_stock).toBe(0);
   });
 
   it("recovers a late-paid order and records uncommitted quantity when stock is short", async () => {
@@ -248,12 +244,12 @@ describe("payment reconciliation integration", () => {
       where: { order_id: order.id },
     });
 
-    assert.ok(result, "Expected late payment to recover the order");
+    expect(result, "Expected late payment to recover the order").toBeTruthy();
     assertOrderStatus(updatedOrder, "PAID");
-    assert.strictEqual(updatedOrder?.payment_id, "pt_paid_2");
+    expect(updatedOrder?.payment_id).toBe("pt_paid_2");
     assertStock(updatedProduct, 0);
-    assert.strictEqual(updatedProduct?.reserved_stock, 0);
-    assert.strictEqual(updatedOrderItem.uncommitted_quantity, 1);
+    expect(updatedProduct?.reserved_stock).toBe(0);
+    expect(updatedOrderItem.uncommitted_quantity).toBe(1);
   });
 
   it("returns null when the order does not exist", async () => {
@@ -264,6 +260,6 @@ describe("payment reconciliation integration", () => {
       result: "paid",
     });
 
-    assert.strictEqual(result, null);
+    expect(result).toBe(null);
   });
 });

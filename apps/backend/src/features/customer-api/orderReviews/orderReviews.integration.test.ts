@@ -1,8 +1,6 @@
-import assert from "node:assert";
 import { randomUUID } from "node:crypto";
 
 import { RouteError } from "@rest-rpc/server";
-import { afterEach, describe, it } from "vitest";
 
 import envConfig from "#src/config.ts";
 import { createOrderCapabilityJwt } from "#src/features/customer-api/orders/orderCapabilities.ts";
@@ -218,16 +216,16 @@ describe("customerApi.orderReviews integration", () => {
       query: { token },
     });
 
-    assert.strictEqual(result.reviewables.length, 6);
-    assert.strictEqual(result.reviewables[0].kind, "PRODUCT");
+    expect(result.reviewables.length).toBe(6);
+    expect(result.reviewables[0].kind).toBe("PRODUCT");
     if (result.reviewables[0].kind !== "PRODUCT") {
       throw new Error("Expected first reviewable to be a product");
     }
-    assert.strictEqual(result.reviewables[0].productId, scenario.productOne.id);
-    assert.strictEqual(result.reviewables[0].productName, scenario.productOne.name.en);
-    assert.strictEqual(result.reviewables[0].vendorName, scenario.vendorOne.name);
-    assert.ok(result.reviewables[0].productImageUrl);
-    assert.deepStrictEqual(result.reviewables[0].review, {
+    expect(result.reviewables[0].productId).toBe(scenario.productOne.id);
+    expect(result.reviewables[0].productName).toBe(scenario.productOne.name.en);
+    expect(result.reviewables[0].vendorName).toBe(scenario.vendorOne.name);
+    expect(result.reviewables[0].productImageUrl).toBeTruthy();
+    expect(result.reviewables[0].review).toStrictEqual({
       rating: 5,
       comment: "Great apples",
       showReviewerName: false,
@@ -238,7 +236,7 @@ describe("customerApi.orderReviews integration", () => {
     const storeReviewable = result.reviewables.find(
       (reviewable) => reviewable.kind === "STORE_EXPERIENCE",
     );
-    assert.deepStrictEqual(storeReviewable, {
+    expect(storeReviewable).toStrictEqual({
       kind: "STORE_EXPERIENCE",
       review: {
         rating: 4,
@@ -314,8 +312,8 @@ describe("customerApi.orderReviews integration", () => {
       orderBy: [{ product_id: "asc" }, { id: "asc" }],
     });
 
-    assert.strictEqual(storedReviews.length, 4);
-    assert.ok(storedReviews.every((review) => review.reviewer_name === "Review Guest"));
+    expect(storedReviews.length).toBe(4);
+    expect(storedReviews.every((review) => review.reviewer_name === "Review Guest")).toBe(true);
     const storedReviewSummaries = storedReviews
       .map((review) => ({
         kind: review.kind,
@@ -328,7 +326,7 @@ describe("customerApi.orderReviews integration", () => {
         (left, right) =>
           left.kind.localeCompare(right.kind) || (left.productId ?? 0) - (right.productId ?? 0),
       );
-    assert.deepStrictEqual(storedReviewSummaries, [
+    expect(storedReviewSummaries).toStrictEqual([
       {
         kind: "STORE_EXPERIENCE",
         productId: null,
@@ -388,8 +386,8 @@ describe("customerApi.orderReviews integration", () => {
       })
       .catch((error: unknown) => error);
 
-    assert.ok(error instanceof RouteError);
-    assert.strictEqual(error.status, 400);
+    expect(error).toBeInstanceOf(RouteError);
+    expect(error).toHaveProperty("status", 400);
   });
 
   it("does not expose non-delivered orders as reviewable", async () => {
@@ -401,7 +399,7 @@ describe("customerApi.orderReviews integration", () => {
       })
       .catch((error: unknown) => error);
 
-    assert.ok(error instanceof RouteError);
-    assert.strictEqual(error.status, 404);
+    expect(error).toBeInstanceOf(RouteError);
+    expect(error).toHaveProperty("status", 404);
   });
 });

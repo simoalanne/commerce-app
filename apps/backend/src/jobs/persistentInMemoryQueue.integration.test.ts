@@ -1,7 +1,5 @@
-import assert from "node:assert";
 import { AsyncLocalStorage } from "node:async_hooks";
 
-import { afterEach, describe, it, vi } from "vitest";
 import z from "zod";
 
 import prismaClient from "#src/prisma.ts";
@@ -150,9 +148,9 @@ describe("PersistentInMemoryJobQueue", () => {
       where: { id: job.id },
     });
 
-    assert.strictEqual(updatedJob.status, "PENDING");
-    assert.ok(updatedJob.next_run_at.getTime() >= beforeStart);
-    assert.ok(updatedJob.next_run_at.getTime() < originalNextRunAt.getTime());
+    expect(updatedJob.status).toBe("PENDING");
+    expect(updatedJob.next_run_at.getTime()).toBeGreaterThanOrEqual(beforeStart);
+    expect(updatedJob.next_run_at.getTime()).toBeLessThan(originalNextRunAt.getTime());
   });
 
   it("creates another expiry job for pending orders with only failed expiry jobs", async () => {
@@ -182,9 +180,9 @@ describe("PersistentInMemoryJobQueue", () => {
       orderBy: { created_at: "asc" },
     });
 
-    assert.strictEqual(expiryJobs.length, 2);
-    assert.strictEqual(expiryJobs[0].status, "FAILED");
-    assert.strictEqual(expiryJobs[1].status, "PENDING");
+    expect(expiryJobs.length).toBe(2);
+    expect(expiryJobs[0].status).toBe("FAILED");
+    expect(expiryJobs[1].status).toBe("PENDING");
   });
 
   it("does not duplicate pending expiry jobs on startup", async () => {
@@ -212,7 +210,7 @@ describe("PersistentInMemoryJobQueue", () => {
       },
     });
 
-    assert.strictEqual(expiryJobCount, 1);
+    expect(expiryJobCount).toBe(1);
   });
 
   it("retries failed jobs with a delay while attempts remain", async () => {
@@ -243,10 +241,10 @@ describe("PersistentInMemoryJobQueue", () => {
       where: { id: job.id },
     });
 
-    assert.strictEqual(updatedJob.status, "PENDING");
-    assert.strictEqual(updatedJob.attempts, 1);
-    assert.match(updatedJob.last_error ?? "", /handler failed/);
-    assert.ok(updatedJob.next_run_at.getTime() > Date.now());
+    expect(updatedJob.status).toBe("PENDING");
+    expect(updatedJob.attempts).toBe(1);
+    expect(updatedJob.last_error ?? "").toMatch(/handler failed/);
+    expect(updatedJob.next_run_at.getTime()).toBeGreaterThan(Date.now());
   });
 
   it("marks failed jobs terminal when max attempts are exhausted", async () => {
@@ -277,9 +275,9 @@ describe("PersistentInMemoryJobQueue", () => {
       where: { id: job.id },
     });
 
-    assert.strictEqual(updatedJob.status, "FAILED");
-    assert.strictEqual(updatedJob.attempts, 3);
-    assert.match(updatedJob.last_error ?? "", /handler failed/);
+    expect(updatedJob.status).toBe("FAILED");
+    expect(updatedJob.attempts).toBe(3);
+    expect(updatedJob.last_error ?? "").toMatch(/handler failed/);
   });
 
   it("isolates Sentry context between concurrently processed jobs", async () => {
@@ -332,12 +330,11 @@ describe("PersistentInMemoryJobQueue", () => {
     await waitFor(async () => Promise.resolve(capturedEvents.length === 2));
     queue.stop();
 
-    assert.deepStrictEqual(
+    expect(
       capturedEvents
         .map((context) => z.object({ orderId: z.number() }).parse(context.get("order")).orderId)
         .sort((a, b) => a - b),
-      [100, 200],
-    );
+    ).toStrictEqual([100, 200]);
 
     for (const context of capturedEvents) {
       const jobContext = z
@@ -349,8 +346,8 @@ describe("PersistentInMemoryJobQueue", () => {
           willRetry: z.boolean(),
         })
         .parse(context.get("job"));
-      assert.ok(createdJobIds.has(jobContext.jobId));
-      assert.deepStrictEqual(jobContext, {
+      expect(createdJobIds).toContain(jobContext.jobId);
+      expect(jobContext).toStrictEqual({
         jobId: jobContext.jobId,
         type: "contextJob",
         attempt: 1,

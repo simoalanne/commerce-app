@@ -1,7 +1,3 @@
-import assert from "node:assert";
-
-import { afterEach, describe, it } from "vitest";
-
 import prismaClient from "#src/prisma.ts";
 import { customerRouter } from "#src/routes.ts";
 import { createTestClient } from "#src/tests/createTestClient.ts";
@@ -120,17 +116,17 @@ describe("customerApi.reviews", () => {
       params: { productId: requestedProduct.id },
     });
 
-    assert.strictEqual(result.summary.avgRating, 4.5);
-    assert.strictEqual(result.summary.reviewCount, 2);
-    assert.strictEqual(result.items.length, 2);
+    expect(result.summary.avgRating).toBe(4.5);
+    expect(result.summary.reviewCount).toBe(2);
+    expect(result.items.length).toBe(2);
 
-    assert.strictEqual(result.items[0].comment, "Anonymous review");
-    assert.strictEqual(result.items[0].reviewer.isAnonymous, true);
-    assert.strictEqual(result.items[0].reviewer.displayName, null);
+    expect(result.items[0].comment).toBe("Anonymous review");
+    expect(result.items[0].reviewer.isAnonymous).toBe(true);
+    expect(result.items[0].reviewer.displayName).toBe(null);
 
-    assert.strictEqual(result.items[1].comment, "Named review");
-    assert.strictEqual(result.items[1].reviewer.isAnonymous, false);
-    assert.strictEqual(result.items[1].reviewer.displayName, "Test Reviewer");
-    assert.ok(result.items.every((review) => review.productId === requestedProduct.id));
+    expect(result.items[1].comment).toBe("Named review");
+    expect(result.items[1].reviewer.isAnonymous).toBe(false);
+    expect(result.items[1].reviewer.displayName).toBe("Test Reviewer");
+    expect(result.items.every((review) => review.productId === requestedProduct.id)).toBe(true);
   });
 });

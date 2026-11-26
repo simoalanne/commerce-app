@@ -1,7 +1,4 @@
-import assert from "node:assert";
-
 import { Decimal } from "@prisma/client/runtime/client";
-import { describe, it } from "vitest";
 
 import {
   buildSummaryResponse,
@@ -17,13 +14,13 @@ describe("summary.utils", () => {
     it("drops the time portion from a date", () => {
       const result = startOfDay(new Date("2026-04-13T18:42:11.123Z"));
 
-      assert.strictEqual(result.getFullYear(), 2026);
-      assert.strictEqual(result.getMonth(), 3);
-      assert.strictEqual(result.getDate(), 13);
-      assert.strictEqual(result.getHours(), 0);
-      assert.strictEqual(result.getMinutes(), 0);
-      assert.strictEqual(result.getSeconds(), 0);
-      assert.strictEqual(result.getMilliseconds(), 0);
+      expect(result.getFullYear()).toBe(2026);
+      expect(result.getMonth()).toBe(3);
+      expect(result.getDate()).toBe(13);
+      expect(result.getHours()).toBe(0);
+      expect(result.getMinutes()).toBe(0);
+      expect(result.getSeconds()).toBe(0);
+      expect(result.getMilliseconds()).toBe(0);
     });
   });
 
@@ -33,37 +30,37 @@ describe("summary.utils", () => {
 
       const result = getSummaryWindowBounds(now, 7);
 
-      assert.strictEqual(result.currentStart.getFullYear(), 2026);
-      assert.strictEqual(result.currentStart.getMonth(), 3);
-      assert.strictEqual(result.currentStart.getDate(), 7);
-      assert.strictEqual(result.currentStart.getHours(), 0);
-      assert.strictEqual(result.currentStart.getMinutes(), 0);
-      assert.strictEqual(result.previousStart.getFullYear(), 2026);
-      assert.strictEqual(result.previousStart.getMonth(), 2);
-      assert.strictEqual(result.previousStart.getDate(), 31);
-      assert.strictEqual(result.previousStart.getHours(), 0);
-      assert.strictEqual(result.previousStart.getMinutes(), 0);
+      expect(result.currentStart.getFullYear()).toBe(2026);
+      expect(result.currentStart.getMonth()).toBe(3);
+      expect(result.currentStart.getDate()).toBe(7);
+      expect(result.currentStart.getHours()).toBe(0);
+      expect(result.currentStart.getMinutes()).toBe(0);
+      expect(result.previousStart.getFullYear()).toBe(2026);
+      expect(result.previousStart.getMonth()).toBe(2);
+      expect(result.previousStart.getDate()).toBe(31);
+      expect(result.previousStart.getHours()).toBe(0);
+      expect(result.previousStart.getMinutes()).toBe(0);
     });
   });
 
   describe("getDeltaPercent", () => {
     it("returns zero when both current and previous are zero", () => {
-      assert.strictEqual(getDeltaPercent(0, 0), 0);
+      expect(getDeltaPercent(0, 0)).toBe(0);
     });
 
     it("returns 100 when previous is zero and current is non-zero", () => {
-      assert.strictEqual(getDeltaPercent(12, 0), 100);
+      expect(getDeltaPercent(12, 0)).toBe(100);
     });
 
     it("calculates percentage deltas for normal comparisons", () => {
-      assert.strictEqual(getDeltaPercent(150, 100), 50);
-      assert.strictEqual(getDeltaPercent(75, 100), -25);
+      expect(getDeltaPercent(150, 100)).toBe(50);
+      expect(getDeltaPercent(75, 100)).toBe(-25);
     });
   });
 
   describe("toCoverage", () => {
     it("returns zero percent when outOf is zero", () => {
-      assert.deepStrictEqual(toCoverage(0, 0), {
+      expect(toCoverage(0, 0)).toStrictEqual({
         percentage: 0,
         completed: 0,
         outOf: 0,
@@ -71,7 +68,7 @@ describe("summary.utils", () => {
     });
 
     it("calculates percentage from completed and outOf", () => {
-      assert.deepStrictEqual(toCoverage(3, 4), {
+      expect(toCoverage(3, 4)).toStrictEqual({
         percentage: 75,
         completed: 3,
         outOf: 4,
@@ -86,14 +83,14 @@ describe("summary.utils", () => {
         { date: "2026-04-13", revenue: 0, orders: 0 },
       ]);
 
-      assert.deepStrictEqual(result, [
+      expect(result).toStrictEqual([
         { date: "2026-04-12", revenue: 12.5, orders: 3 },
         { date: "2026-04-13", revenue: 0, orders: 0 },
       ]);
     });
 
     it("returns an empty array for an empty chart", () => {
-      assert.deepStrictEqual(normalizeRevenueByDay([]), []);
+      expect(normalizeRevenueByDay([])).toStrictEqual([]);
     });
   });
 
@@ -120,7 +117,7 @@ describe("summary.utils", () => {
         },
       });
 
-      assert.deepStrictEqual(result, {
+      expect(result).toStrictEqual({
         generatedAt: now,
         windowDays: 30,
         kpis: {
@@ -163,7 +160,7 @@ describe("summary.utils", () => {
         },
       });
 
-      assert.deepStrictEqual(result.kpis, {
+      expect(result.kpis).toStrictEqual({
         totalRevenue: new Decimal("0"),
         revenueDeltaPct: 0,
         paidOrders: 0,
@@ -171,10 +168,10 @@ describe("summary.utils", () => {
         activeProducts: 0,
         customers: 0,
       });
-      assert.deepStrictEqual(result.chart, {
+      expect(result.chart).toStrictEqual({
         revenueByDay: [],
       });
-      assert.deepStrictEqual(result.localizationCoverage, {
+      expect(result.localizationCoverage).toStrictEqual({
         overall: { percentage: 0, completed: 0, outOf: 0 },
         byLocale: {
           en: { percentage: 0, completed: 0, outOf: 0 },

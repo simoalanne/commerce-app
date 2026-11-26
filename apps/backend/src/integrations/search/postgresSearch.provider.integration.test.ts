@@ -1,7 +1,3 @@
-import assert from "node:assert";
-
-import { afterEach, beforeAll, describe, it } from "vitest";
-
 import prismaClient from "#src/prisma.ts";
 import { createCategory, createVendor, createProduct } from "#src/tests/factories.ts";
 
@@ -173,12 +169,9 @@ describe("PostgresSearchProvider", () => {
     const documents = await listIndexedProductIds(product.id);
     const result = await search("index carrot");
 
-    assert.deepStrictEqual(documents, [product.id, product.id]);
-    assert.deepStrictEqual(
-      result.results.products.map((product) => product.id),
-      [product.id],
-    );
-    assert.strictEqual(result.total, 1);
+    expect(documents).toStrictEqual([product.id, product.id]);
+    expect(result.results.products.map((product) => product.id)).toStrictEqual([product.id]);
+    expect(result.total).toBe(1);
   });
 
   it("removes stale documents when an affected product becomes hidden", async () => {
@@ -219,9 +212,9 @@ describe("PostgresSearchProvider", () => {
     const documents = await listIndexedProductIds(product.id);
     const result = await search("cleanup carrot");
 
-    assert.deepStrictEqual(documents, []);
-    assert.deepStrictEqual(result.results.products, []);
-    assert.strictEqual(result.total, 0);
+    expect(documents).toStrictEqual([]);
+    expect(result.results.products).toStrictEqual([]);
+    expect(result.total).toBe(0);
   });
 
   it("returns products when the product text matches", async () => {
@@ -229,13 +222,10 @@ describe("PostgresSearchProvider", () => {
 
     const result = await search("minced");
 
-    assert.deepStrictEqual(
-      result.results.products.map((product) => product.id),
-      [mincedMeat.id],
-    );
-    assert.deepStrictEqual(result.results.vendors, []);
-    assert.deepStrictEqual(result.results.categories, []);
-    assert.strictEqual(result.total, 1);
+    expect(result.results.products.map((product) => product.id)).toStrictEqual([mincedMeat.id]);
+    expect(result.results.vendors).toStrictEqual([]);
+    expect(result.results.categories).toStrictEqual([]);
+    expect(result.total).toBe(1);
   });
 
   it("returns vendor and category cards for partial collection matches without returning their products", async () => {
@@ -244,21 +234,17 @@ describe("PostgresSearchProvider", () => {
     const vendorResult = await search("hillside");
     const categoryResult = await search("herb");
 
-    assert.deepStrictEqual(vendorResult.results.products, []);
-    assert.deepStrictEqual(
-      vendorResult.results.vendors.map((vendor) => vendor.id),
-      [meatVendor.id],
-    );
-    assert.deepStrictEqual(vendorResult.results.categories, []);
-    assert.strictEqual(vendorResult.total, 0);
+    expect(vendorResult.results.products).toStrictEqual([]);
+    expect(vendorResult.results.vendors.map((vendor) => vendor.id)).toStrictEqual([meatVendor.id]);
+    expect(vendorResult.results.categories).toStrictEqual([]);
+    expect(vendorResult.total).toBe(0);
 
-    assert.deepStrictEqual(categoryResult.results.products, []);
-    assert.deepStrictEqual(categoryResult.results.vendors, []);
-    assert.deepStrictEqual(
-      categoryResult.results.categories.map((category) => category.id),
-      [herbsCategory.id],
-    );
-    assert.strictEqual(categoryResult.total, 0);
+    expect(categoryResult.results.products).toStrictEqual([]);
+    expect(categoryResult.results.vendors).toStrictEqual([]);
+    expect(categoryResult.results.categories.map((category) => category.id)).toStrictEqual([
+      herbsCategory.id,
+    ]);
+    expect(categoryResult.total).toBe(0);
   });
 
   it("returns collection products when the vendor or category name matches exactly", async () => {
@@ -268,28 +254,22 @@ describe("PostgresSearchProvider", () => {
     const vendorResult = await search(meatVendor.name);
     const categoryResult = await search("Herbs & Spices");
 
-    assert.deepStrictEqual(
-      vendorResult.results.products.map((product) => product.id),
-      [mincedMeat.id],
-    );
-    assert.deepStrictEqual(
-      vendorResult.results.vendors.map((vendor) => vendor.id),
-      [meatVendor.id],
-    );
-    assert.deepStrictEqual(vendorResult.results.categories, []);
-    assert.strictEqual(vendorResult.total, 1);
+    expect(vendorResult.results.products.map((product) => product.id)).toStrictEqual([
+      mincedMeat.id,
+    ]);
+    expect(vendorResult.results.vendors.map((vendor) => vendor.id)).toStrictEqual([meatVendor.id]);
+    expect(vendorResult.results.categories).toStrictEqual([]);
+    expect(vendorResult.total).toBe(1);
 
-    assert.deepStrictEqual(
+    expect(
       categoryResult.results.products
         .map((product) => product.id)
         .sort((left, right) => left - right),
-      [basil.id, coriander.id].sort((left, right) => left - right),
-    );
-    assert.deepStrictEqual(categoryResult.results.vendors, []);
-    assert.deepStrictEqual(
-      categoryResult.results.categories.map((category) => category.id),
-      [herbsCategory.id],
-    );
-    assert.strictEqual(categoryResult.total, 2);
+    ).toStrictEqual([basil.id, coriander.id].sort((left, right) => left - right));
+    expect(categoryResult.results.vendors).toStrictEqual([]);
+    expect(categoryResult.results.categories.map((category) => category.id)).toStrictEqual([
+      herbsCategory.id,
+    ]);
+    expect(categoryResult.total).toBe(2);
   });
 });

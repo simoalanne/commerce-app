@@ -1,7 +1,4 @@
-import assert from "node:assert";
-
-import { call, RouteError } from "@rest-rpc/server";
-import { describe, it } from "vitest";
+import { call } from "@rest-rpc/server";
 
 import { customerRouter } from "#src/routes.ts";
 import { createTestContext } from "#src/tests/createTestContext.ts";
@@ -22,24 +19,22 @@ describe("orderReviews.saveByOrder request validation", () => {
     );
 
   it("rejects duplicate product reviews", async () => {
-    await assert.rejects(
+    await expect(
       save([
         { kind: "PRODUCT", productId: 1, review },
         { kind: "PRODUCT", productId: 1, review },
       ]),
-      (error) => error instanceof RouteError && error.code === "REQUEST_VALIDATION_FAILED",
-    );
+    ).rejects.toMatchObject({ code: "REQUEST_VALIDATION_FAILED" });
   });
 
   it("rejects an image without a comment", async () => {
-    await assert.rejects(
+    await expect(
       save([
         {
           kind: "STORE_EXPERIENCE",
           review: { ...review, objectKey: "image.jpg" },
         },
       ]),
-      (error) => error instanceof RouteError && error.code === "REQUEST_VALIDATION_FAILED",
-    );
+    ).rejects.toMatchObject({ code: "REQUEST_VALIDATION_FAILED" });
   });
 });

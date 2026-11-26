@@ -1,7 +1,3 @@
-import assert from "node:assert";
-
-import { describe, it, vi } from "vitest";
-
 import { createPaytrailCallbackRoutes } from "./payment.provider.paytrail.callbacks.ts";
 import { calculateHmac } from "./payment.provider.paytrail.signature.ts";
 
@@ -40,7 +36,7 @@ describe("payment.provider.paytrail callback routes", () => {
 
     const response = await get(routes, {});
 
-    assert.strictEqual(response.status, 401);
+    expect(response.status).toBe(401);
   });
 
   it("rejects callback requests with an invalid signature", async () => {
@@ -53,7 +49,7 @@ describe("payment.provider.paytrail callback routes", () => {
       signature: "invalid",
     });
 
-    assert.strictEqual(response.status, 401);
+    expect(response.status).toBe(401);
   });
 
   it("dispatches signed callbacks into the reconciliation handler", async () => {
@@ -71,8 +67,8 @@ describe("payment.provider.paytrail callback routes", () => {
       signature: createSignature(query, "secret"),
     });
 
-    assert.strictEqual(response.status, 200);
-    assert.deepStrictEqual(reconciliationCalls, [
+    expect(response.status).toBe(200);
+    expect(reconciliationCalls).toStrictEqual([
       {
         provider: "PAYTRAIL",
         orderId: 123,
@@ -97,8 +93,8 @@ describe("payment.provider.paytrail callback routes", () => {
       signature: createSignature(query, "secret"),
     });
 
-    assert.strictEqual(response.status, 200);
-    assert.deepStrictEqual(reconciliationCalls, [
+    expect(response.status).toBe(200);
+    expect(reconciliationCalls).toStrictEqual([
       {
         provider: "PAYTRAIL",
         orderId: 123,

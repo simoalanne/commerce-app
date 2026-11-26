@@ -4,7 +4,7 @@
     "module": "nodenext",
     "jsx": "react-jsx",
     "lib": ["esnext", "dom"],
-    "types": ["bun", "node"]
+    "types": ["bun", "node", "vitest/globals"]
   },
   "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules", "generated"]

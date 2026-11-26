@@ -1,45 +1,41 @@
-import assert from "node:assert/strict";
-
 import { Prisma } from "@prisma/client";
-import { describe, it } from "vitest";
 
 import { getChangedFields, toSafeJsonValue } from "./adminActionLog.ts";
 
 describe("adminActionLog utils", () => {
   describe("toSafeJsonValue", () => {
     it("keeps serialized primitives as-is", () => {
-      assert.equal(toSafeJsonValue("value"), "value");
-      assert.equal(toSafeJsonValue(true), true);
-      assert.equal(toSafeJsonValue(12), 12);
-      assert.equal(toSafeJsonValue(null), null);
+      expect(toSafeJsonValue("value")).toBe("value");
+      expect(toSafeJsonValue(true)).toBe(true);
+      expect(toSafeJsonValue(12)).toBe(12);
+      expect(toSafeJsonValue(null)).toBe(null);
     });
 
     it("serializes dates and Prisma decimals", () => {
       const date = new Date("2026-07-12T15:53:38.105Z");
 
-      assert.equal(toSafeJsonValue(date), "2026-07-12T15:53:38.105Z");
-      assert.equal(toSafeJsonValue(new Prisma.Decimal("12.5")), 12.5);
+      expect(toSafeJsonValue(date)).toBe("2026-07-12T15:53:38.105Z");
+      expect(toSafeJsonValue(new Prisma.Decimal("12.5"))).toBe(12.5);
     });
 
     it("discards unsupported non-object values", () => {
-      assert.equal(toSafeJsonValue(1n), undefined);
-      assert.equal(toSafeJsonValue(Symbol("value")), undefined);
-      assert.deepEqual(
+      expect(toSafeJsonValue(1n)).toBe(undefined);
+      expect(toSafeJsonValue(Symbol("value"))).toBe(undefined);
+      expect(
         toSafeJsonValue({
           name: "value",
           metadata: 1n,
         }),
-        {
-          name: "value",
-          metadata: undefined,
-        },
-      );
+      ).toEqual({
+        name: "value",
+        metadata: undefined,
+      });
     });
 
     it("recursively serializes objects and arrays", () => {
       const date = new Date("2026-07-12T15:53:38.105Z");
 
-      assert.deepEqual(
+      expect(
         toSafeJsonValue({
           name: {
             de: "Gemuese",
@@ -47,14 +43,13 @@ describe("adminActionLog utils", () => {
           prices: [new Prisma.Decimal("4.5")],
           created_at: date,
         }),
-        {
-          name: {
-            de: "Gemuese",
-          },
-          prices: [4.5],
-          created_at: "2026-07-12T15:53:38.105Z",
+      ).toEqual({
+        name: {
+          de: "Gemuese",
         },
-      );
+        prices: [4.5],
+        created_at: "2026-07-12T15:53:38.105Z",
+      });
     });
   });
 
@@ -84,7 +79,7 @@ describe("adminActionLog utils", () => {
         },
       );
 
-      assert.deepEqual(diff, {
+      expect(diff).toEqual({
         before: {
           content: {
             de: "Old German content",
@@ -130,7 +125,7 @@ describe("adminActionLog utils", () => {
         },
       );
 
-      assert.deepEqual(diff, {
+      expect(diff).toEqual({
         before: {
           content: {
             de: {
@@ -176,7 +171,7 @@ describe("adminActionLog utils", () => {
         { content: { de: { items: afterItems } } },
       );
 
-      assert.deepEqual(diff, {
+      expect(diff).toEqual({
         before: {
           content: {
             de: {
@@ -209,7 +204,7 @@ describe("adminActionLog utils", () => {
         { content: { de: { items: [second, first] } } },
       );
 
-      assert.deepEqual(diff, {
+      expect(diff).toEqual({
         before: {
           content: {
             de: {

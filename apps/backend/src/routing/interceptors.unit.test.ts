@@ -1,7 +1,4 @@
-import assert from "node:assert/strict";
-
 import { createApp, route } from "@rest-rpc/server";
-import { describe, it } from "vitest";
 
 import { cors, requestContext, sendErrors } from "./interceptors.ts";
 
@@ -22,9 +19,9 @@ describe("api interceptors", () => {
   it("adds a request id and open CORS headers", async () => {
     const response = await get("/ok");
 
-    assert.equal(response.status, 200);
-    assert.equal(response.headers.get("access-control-allow-origin"), "*");
-    assert.ok(response.headers.get("x-request-id"));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("access-control-allow-origin")).toBe("*");
+    expect(response.headers.get("x-request-id")).toBeTruthy();
   });
 
   it("answers preflights with the headers the browser asks for", async () => {
@@ -33,9 +30,8 @@ describe("api interceptors", () => {
       headers: { "access-control-request-headers": "authorization,accept-language" },
     });
 
-    assert.equal(response.status, 204);
-    assert.equal(
-      response.headers.get("access-control-allow-headers"),
+    expect(response.status).toBe(204);
+    expect(response.headers.get("access-control-allow-headers")).toBe(
       "authorization,accept-language",
     );
   });
@@ -43,7 +39,7 @@ describe("api interceptors", () => {
   it("maps a Prisma not-found to 404, with CORS headers", async () => {
     const response = await get("/missing");
 
-    assert.equal(response.status, 404);
-    assert.equal(response.headers.get("access-control-allow-origin"), "*");
+    expect(response.status).toBe(404);
+    expect(response.headers.get("access-control-allow-origin")).toBe("*");
   });
 });

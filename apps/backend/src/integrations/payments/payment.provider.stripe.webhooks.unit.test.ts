@@ -1,7 +1,4 @@
-import assert from "node:assert";
-
 import type Stripe from "stripe";
-import { describe, it } from "vitest";
 
 import { createStripeWebhookRoutes } from "./payment.provider.stripe.webhooks.ts";
 
@@ -39,9 +36,9 @@ describe("payment.provider.stripe webhook routes", () => {
     const routes = createStripeWebhookRoutes({ stripeClient });
     const response = await routes["/webhooks/stripe"].POST(stripeRequest("sig_test"));
 
-    assert.strictEqual(response.status, 200);
-    assert.strictEqual(receivedBody, payload);
-    assert.strictEqual(receivedSignature, "sig_test");
+    expect(response.status).toBe(200);
+    expect(receivedBody).toBe(payload);
+    expect(receivedSignature).toBe("sig_test");
   });
 
   it("rejects when Stripe signature validation fails", async () => {
@@ -55,8 +52,7 @@ describe("payment.provider.stripe webhook routes", () => {
 
     const routes = createStripeWebhookRoutes({ stripeClient });
 
-    await assert.rejects(
-      routes["/webhooks/stripe"].POST(stripeRequest("sig_bad")),
+    await expect(routes["/webhooks/stripe"].POST(stripeRequest("sig_bad"))).rejects.toThrow(
       /invalid signature/,
     );
   });

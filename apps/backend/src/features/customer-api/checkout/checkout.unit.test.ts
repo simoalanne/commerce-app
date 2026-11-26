@@ -1,7 +1,4 @@
-import assert from "node:assert";
-
 import { calculateOrderPricing } from "@acme/shared";
-import { describe, it } from "vitest";
 
 import {
   buildValues,
@@ -22,8 +19,8 @@ const assertRouteError = (
   Definition: new (...args: never[]) => { data?: unknown },
   data: unknown,
 ) => {
-  assert.ok(error instanceof Definition);
-  assert.deepStrictEqual(error.data, data);
+  expect(error).toBeInstanceOf(Definition);
+  expect(error).toHaveProperty("data", data);
 };
 const decimal = (value: number) => ({ toNumber: () => value });
 
@@ -35,17 +32,17 @@ describe("checkout.adjustStock", () => {
         { sku: "SKU456", quantity: 10 },
       ];
 
-      assert.strictEqual(buildValues(items), "('SKU123'::text, 5::int), ('SKU456'::text, 10::int)");
+      expect(buildValues(items)).toBe("('SKU123'::text, 5::int), ('SKU456'::text, 10::int)");
     });
 
     it("escapes single quotes in sku values", () => {
       const items = [{ sku: "SKU WITH 'QUOTE", quantity: 3 }];
 
-      assert.strictEqual(buildValues(items), "('SKU WITH ''QUOTE'::text, 3::int)");
+      expect(buildValues(items)).toBe("('SKU WITH ''QUOTE'::text, 3::int)");
     });
 
     it("returns an empty string for empty items", () => {
-      assert.strictEqual(buildValues([]), "");
+      expect(buildValues([])).toBe("");
     });
   });
 
@@ -64,12 +61,12 @@ describe("checkout.adjustStock", () => {
         transaction: transaction as any,
       });
 
-      assert.strictEqual(sqlCalls.length, 1);
+      expect(sqlCalls.length).toBe(1);
       const sql = normalizeSql(sqlCalls[0]);
-      assert.match(sql, /WITH requested\(sku, quantity\) AS/);
-      assert.match(sql, /SET reserved_stock = p\.reserved_stock \+ r\.quantity/);
-      assert.match(sql, /AND \(p\.current_stock - p\.reserved_stock\) >= r\.quantity/);
-      assert.match(sql, /u\.sku IS NOT NULL AS adjusted/);
+      expect(sql).toMatch(/WITH requested\(sku, quantity\) AS/);
+      expect(sql).toMatch(/SET reserved_stock = p\.reserved_stock \+ r\.quantity/);
+      expect(sql).toMatch(/AND \(p\.current_stock - p\.reserved_stock\) >= r\.quantity/);
+      expect(sql).toMatch(/u\.sku IS NOT NULL AS adjusted/);
     });
 
     it("builds commit SQL that decrements both current and reserved stock", async () => {
@@ -86,11 +83,11 @@ describe("checkout.adjustStock", () => {
         transaction: transaction as any,
       });
 
-      assert.strictEqual(sqlCalls.length, 1);
+      expect(sqlCalls.length).toBe(1);
       const sql = normalizeSql(sqlCalls[0]);
-      assert.match(sql, /SET current_stock = p\.current_stock - s\.quantity,/);
-      assert.match(sql, /reserved_stock = p\.reserved_stock - s\.quantity/);
-      assert.match(sql, /FROM \(VALUES \('SKU1'::text, 2::int\)\) AS s\(sku, quantity\)/);
+      expect(sql).toMatch(/SET current_stock = p\.current_stock - s\.quantity,/);
+      expect(sql).toMatch(/reserved_stock = p\.reserved_stock - s\.quantity/);
+      expect(sql).toMatch(/FROM \(VALUES \('SKU1'::text, 2::int\)\) AS s\(sku, quantity\)/);
     });
 
     it("builds release SQL that decrements only reserved stock", async () => {
@@ -107,10 +104,10 @@ describe("checkout.adjustStock", () => {
         transaction: transaction as any,
       });
 
-      assert.strictEqual(sqlCalls.length, 1);
+      expect(sqlCalls.length).toBe(1);
       const sql = normalizeSql(sqlCalls[0]);
-      assert.match(sql, /SET reserved_stock = p\.reserved_stock - s\.quantity/);
-      assert.doesNotMatch(sql, /current_stock =/);
+      expect(sql).toMatch(/SET reserved_stock = p\.reserved_stock - s\.quantity/);
+      expect(sql).not.toMatch(/current_stock =/);
     });
 
     it("throws a domain error when reserve query reports failed rows", async () => {
@@ -123,7 +120,7 @@ describe("checkout.adjustStock", () => {
           items: [{ sku: "SKU1", quantity: 2 }],
           transaction: transaction as any,
         });
-        assert.fail("Expected reserveStockOrThrow to throw");
+        expect.unreachable("Expected reserveStockOrThrow to throw");
       } catch (error) {
         assertRouteError(error, InsufficientStock, [{ sku: "SKU1", availableStock: 0 }]);
       }
@@ -162,7 +159,7 @@ describe("checkout.utils", () => {
         SKU2: { quantity: 1, unitPrice: 200 },
       });
 
-      assert.deepStrictEqual(result, [
+      expect(result).toStrictEqual([
         {
           sku: "SKU1",
           productId: 1,
@@ -203,7 +200,7 @@ describe("checkout.utils", () => {
           SKU1: { quantity: 1, unitPrice: 100 },
           INVALID: { quantity: 2, unitPrice: 50 },
         });
-        assert.fail("Expected buildOrderItemsFromProducts to throw");
+        expect.unreachable("Expected buildOrderItemsFromProducts to throw");
       } catch (error) {
         assertRouteError(error, ProductsNotPurchasable, {
           skus: ["INVALID"],
@@ -216,11 +213,11 @@ describe("checkout.utils", () => {
     it("does nothing when client and database prices match", () => {
       const products = [{ sku: "SKU1", sales_price: decimal(100) }] as any;
 
-      assert.doesNotThrow(() =>
+      expect(() =>
         validateCartUnitPrices(products, {
           SKU1: { quantity: 1, unitPrice: 100 },
         }),
-      );
+      ).not.toThrow();
     });
 
     it("throws a domain error when a unit price has changed", () => {
@@ -234,7 +231,7 @@ describe("checkout.utils", () => {
           SKU1: { quantity: 1, unitPrice: 100 },
           SKU2: { quantity: 2, unitPrice: 200 },
         });
-        assert.fail("Expected validateCartUnitPrices to throw");
+        expect.unreachable("Expected validateCartUnitPrices to throw");
       } catch (error) {
         assertRouteError(error, PriceMismatch, [{ sku: "SKU1", newUnitPrice: 125 }]);
       }
@@ -248,24 +245,23 @@ describe("checkout.utils", () => {
         { unitPrice: 50, quantity: 3 },
       ]);
 
-      assert.strictEqual(total, 350);
+      expect(total).toBe(350);
     });
 
     it("returns zero for empty or zero-value items", () => {
-      assert.strictEqual(calculateOrderTotal([]), 0);
-      assert.strictEqual(
+      expect(calculateOrderTotal([])).toBe(0);
+      expect(
         calculateOrderTotal([
           { unitPrice: 0, quantity: 5 },
           { unitPrice: 100, quantity: 0 },
         ]),
-        0,
-      );
+      ).toBe(0);
     });
   });
 
   describe("calculateOrderPricing", () => {
     it("returns unchanged pricing when no promo code is applied", () => {
-      assert.deepStrictEqual(calculateOrderPricing({ itemsSubtotal: 25 }), {
+      expect(calculateOrderPricing({ itemsSubtotal: 25 })).toStrictEqual({
         itemsSubtotal: 25,
         itemsDiscountAmount: null,
         discountedItemsSubtotal: null,
@@ -276,45 +272,42 @@ describe("checkout.utils", () => {
     });
 
     it("applies percent discounts", () => {
-      assert.deepStrictEqual(
+      expect(
         calculateOrderPricing({ itemsSubtotal: 20, discountType: "PERCENT", discountValue: 25 }),
-        {
-          itemsSubtotal: 20,
-          itemsDiscountAmount: 5,
-          discountedItemsSubtotal: 15,
-          chargedTotal: 15,
-          vatRate: 20,
-          includedVatAmount: 2.5,
-        },
-      );
+      ).toStrictEqual({
+        itemsSubtotal: 20,
+        itemsDiscountAmount: 5,
+        discountedItemsSubtotal: 15,
+        chargedTotal: 15,
+        vatRate: 20,
+        includedVatAmount: 2.5,
+      });
     });
 
     it("caps fixed discounts at the items subtotal", () => {
-      assert.deepStrictEqual(
+      expect(
         calculateOrderPricing({ itemsSubtotal: 7, discountType: "FIXED", discountValue: 20 }),
-        {
-          itemsSubtotal: 7,
-          itemsDiscountAmount: 7,
-          discountedItemsSubtotal: 0,
-          chargedTotal: 0,
-          vatRate: 20,
-          includedVatAmount: 0,
-        },
-      );
+      ).toStrictEqual({
+        itemsSubtotal: 7,
+        itemsDiscountAmount: 7,
+        discountedItemsSubtotal: 0,
+        chargedTotal: 0,
+        vatRate: 20,
+        includedVatAmount: 0,
+      });
     });
 
     it("rounds percent-based discounts through cents", () => {
-      assert.deepStrictEqual(
+      expect(
         calculateOrderPricing({ itemsSubtotal: 19.99, discountType: "PERCENT", discountValue: 10 }),
-        {
-          itemsSubtotal: 19.99,
-          itemsDiscountAmount: 2,
-          discountedItemsSubtotal: 17.99,
-          chargedTotal: 17.99,
-          vatRate: 20,
-          includedVatAmount: 3,
-        },
-      );
+      ).toStrictEqual({
+        itemsSubtotal: 19.99,
+        itemsDiscountAmount: 2,
+        discountedItemsSubtotal: 17.99,
+        chargedTotal: 17.99,
+        vatRate: 20,
+        includedVatAmount: 3,
+      });
     });
   });
 });

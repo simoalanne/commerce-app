@@ -1,32 +1,26 @@
-import assert from "node:assert/strict";
-
-import { describe, it } from "vitest";
-
 import { isNotFoundError } from "./isNotFoundError.ts";
 import { NotFoundError } from "./notFoundError.ts";
 
 describe("isNotFoundError", () => {
   it("returns true for NotFoundError", () => {
-    assert.equal(isNotFoundError(new NotFoundError("Missing vendor")), true);
+    expect(isNotFoundError(new NotFoundError("Missing vendor"))).toBe(true);
   });
 
   it("returns true for Prisma P2025 errors", () => {
-    assert.equal(
+    expect(
       isNotFoundError({
         code: "P2025",
         message: "Record to update not found.",
       }),
-      true,
-    );
+    ).toBe(true);
   });
 
   it("returns false for unrelated errors", () => {
-    assert.equal(isNotFoundError(new Error("Unexpected failure")), false);
-    assert.equal(
+    expect(isNotFoundError(new Error("Unexpected failure"))).toBe(false);
+    expect(
       isNotFoundError({
         code: "P2002",
       }),
-      false,
-    );
+    ).toBe(false);
   });
 });
