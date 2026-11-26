@@ -1,8 +1,8 @@
 import { PromotionCodeFormSchema } from "@acme/shared/schemas/promotionCodes";
+import { RouteError } from "@rest-rpc/server";
 import { eq } from "drizzle-orm";
 import z from "zod";
 
-import { orNotFound } from "#src/db/errors.ts";
 import { promotionCodeTable } from "#src/db/schema.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { EntityInUse } from "#src/routing/errors.ts";
@@ -47,18 +47,15 @@ export const promotionCodesRoutes = {
   getById: promotionCodeRoute
     .get("/promotion-codes/:id")
     .params(idParams)
-    .handler(async ({ params, context }) =>
-      toResponse(
-        orNotFound(
-          await context.db.query.promotionCode.findFirst({
-            where: {
-              id: params.id,
-            },
-          }),
-        ),
-        context.locale,
-      ),
-    ),
+    .handler(async ({ params, context }) => {
+      const promotionCode = await context.db.query.promotionCode.findFirst({
+        where: {
+          id: params.id,
+        },
+      });
+      if (!promotionCode) throw new RouteError("NOT_FOUND", { status: 404 });
+      return toResponse(promotionCode, context.locale);
+    }),
 
   create: promotionCodeTxRoute
     .post("/promotion-codes")
@@ -85,11 +82,10 @@ export const promotionCodesRoutes = {
     .params(idParams)
     .body(PromotionCodeFormSchema)
     .handler(async ({ params, body, context }) => {
-      const existingPromotionCode = orNotFound(
-        await context.db.query.promotionCode.findFirst({
-          where: { id: params.id },
-        }),
-      );
+      const existingPromotionCode = await context.db.query.promotionCode.findFirst({
+        where: { id: params.id },
+      });
+      if (!existingPromotionCode) throw new RouteError("NOT_FOUND", { status: 404 });
 
       const [updated] = await context.db
         .update(promotionCodeTable)
@@ -112,16 +108,13 @@ export const promotionCodesRoutes = {
     .params(idParams)
     .error(EntityInUse)
     .handler(async ({ params, context }) => {
-      const deleted = await tryDeleteEntity(async () =>
-        orNotFound(
-          (
-            await context.db
-              .delete(promotionCodeTable)
-              .where(eq(promotionCodeTable.id, params.id))
-              .returning()
-          )[0],
-        ),
+      const [deleted] = await tryDeleteEntity(() =>
+        context.db
+          .delete(promotionCodeTable)
+          .where(eq(promotionCodeTable.id, params.id))
+          .returning(),
       );
+      if (!deleted) throw new RouteError("NOT_FOUND", { status: 404 });
 
       await logAdminAction(context.db, {
         actor: context.authContext,

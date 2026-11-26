@@ -1,7 +1,6 @@
 import { RouteError } from "@rest-rpc/server";
 import z from "zod";
 
-import { orNotFound } from "#src/db/errors.ts";
 import { imageTable, reviewTable } from "#src/db/schema.ts";
 import { verifyOrderCapabilityJwt } from "#src/features/customer-api/orders/orderCapabilities.ts";
 import { ordersRoutes as customerOrdersRoutes } from "#src/features/customer-api/orders/orders.routes.ts";
@@ -57,17 +56,16 @@ export const orderReviewsRoutes = {
       // Prevent giving everyone access to upload images to our
       // object storage by ensuring the person actually has a valid order
       // before providing the presigned URL
-      orNotFound(
-        await context.db.query.order.findFirst({
-          where: {
-            id: capability.orderId,
-            status: "DELIVERED",
-          },
-          columns: {
-            id: true,
-          },
-        }),
-      );
+      const order = await context.db.query.order.findFirst({
+        where: {
+          id: capability.orderId,
+          status: "DELIVERED",
+        },
+        columns: {
+          id: true,
+        },
+      });
+      if (!order) throw new RouteError("NOT_FOUND", { status: 404 });
 
       if (!acceptedImageContentTypes.has(body.contentType)) {
         throw new ImageUploadInvalidContentType();
@@ -95,58 +93,57 @@ export const orderReviewsRoutes = {
         scope: "order:review",
       });
 
-      const order = orNotFound(
-        await context.db.query.order.findFirst({
-          where: {
-            id: capability.orderId,
-            status: "DELIVERED",
-          },
-          columns: {
-            id: true,
-          },
-          with: {
-            order_items: {
-              columns: {},
-              with: {
-                product: {
-                  columns: {
-                    id: true,
-                    name: true,
-                  },
-                  with: {
-                    images: FIRST_LINKED_IMAGE_SELECT,
-                    vendor: {
-                      columns: {
-                        id: true,
-                        name: true,
-                      },
+      const order = await context.db.query.order.findFirst({
+        where: {
+          id: capability.orderId,
+          status: "DELIVERED",
+        },
+        columns: {
+          id: true,
+        },
+        with: {
+          order_items: {
+            columns: {},
+            with: {
+              product: {
+                columns: {
+                  id: true,
+                  name: true,
+                },
+                with: {
+                  images: FIRST_LINKED_IMAGE_SELECT,
+                  vendor: {
+                    columns: {
+                      id: true,
+                      name: true,
                     },
                   },
                 },
               },
             },
-            reviews: {
-              columns: {
-                id: true,
-                kind: true,
-                product_id: true,
-                vendor_id: true,
-                show_reviewer_name: true,
-                rating: true,
-                comment: true,
-              },
-              with: {
-                images: {
-                  columns: {
-                    storage_key: true,
-                  },
+          },
+          reviews: {
+            columns: {
+              id: true,
+              kind: true,
+              product_id: true,
+              vendor_id: true,
+              show_reviewer_name: true,
+              rating: true,
+              comment: true,
+            },
+            with: {
+              images: {
+                columns: {
+                  storage_key: true,
                 },
               },
-              orderBy: { kind: "asc", id: "asc" },
             },
+            orderBy: { kind: "asc", id: "asc" },
           },
-        }),
-      );
+        },
+      });
+      if (!order) throw new RouteError("NOT_FOUND", { status: 404 });
 
       const products = [
         ...new Map(
@@ -287,45 +284,44 @@ export const orderReviewsRoutes = {
       });
       const orderId = capability.orderId;
 
-      const order = orNotFound(
-        await context.db.query.order.findFirst({
-          where: {
-            id: orderId,
-            status: "DELIVERED",
-          },
-          columns: {
-            id: true,
-            order_details: true,
-          },
-          with: {
-            order_items: {
-              columns: {},
-              with: {
-                product: {
-                  columns: {
-                    id: true,
-                  },
-                  with: {
-                    vendor: {
-                      columns: {
-                        id: true,
-                      },
+      const order = await context.db.query.order.findFirst({
+        where: {
+          id: orderId,
+          status: "DELIVERED",
+        },
+        columns: {
+          id: true,
+          order_details: true,
+        },
+        with: {
+          order_items: {
+            columns: {},
+            with: {
+              product: {
+                columns: {
+                  id: true,
+                },
+                with: {
+                  vendor: {
+                    columns: {
+                      id: true,
                     },
                   },
                 },
               },
             },
-            reviews: {
-              columns: {
-                id: true,
-                kind: true,
-                product_id: true,
-                vendor_id: true,
-              },
+          },
+          reviews: {
+            columns: {
+              id: true,
+              kind: true,
+              product_id: true,
+              vendor_id: true,
             },
           },
-        }),
-      );
+        },
+      });
+      if (!order) throw new RouteError("NOT_FOUND", { status: 404 });
 
       const products = [
         ...new Map(

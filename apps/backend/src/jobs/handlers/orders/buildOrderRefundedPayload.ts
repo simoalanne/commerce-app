@@ -1,5 +1,4 @@
 import { db } from "#src/db/client.ts";
-import { orNotFound } from "#src/db/errors.ts";
 import { ObjectStorage } from "#src/integrations/object-storage/objectStorage.provider.ts";
 import { FIRST_LINKED_IMAGE_SELECT, getFirstLinkedImageUrl } from "#src/utils/imageUrl.ts";
 import { getLocalizedValue } from "#src/utils/localizedObject.ts";
@@ -25,42 +24,41 @@ export type OrderRefundedPayload = {
 export const buildOrderRefundedPayload = async (
   refundId: number,
 ): Promise<OrderRefundedPayload> => {
-  const refund = orNotFound(
-    await db.query.refund.findFirst({
-      where: { id: refundId },
-      columns: {
-        total_amount_cents: true,
-      },
-      with: {
-        order: {
-          columns: {
-            id: true,
-            preferred_locale: true,
-            order_details: true,
-          },
+  const refund = await db.query.refund.findFirst({
+    where: { id: refundId },
+    columns: {
+      total_amount_cents: true,
+    },
+    with: {
+      order: {
+        columns: {
+          id: true,
+          preferred_locale: true,
+          order_details: true,
         },
-        refund_items: {
-          orderBy: { id: "asc" },
-          columns: {
-            quantity: true,
-            amount_cents: true,
-          },
-          with: {
-            order_item: {
-              with: {
-                product: {
-                  columns: {
-                    name: true,
-                  },
-                  with: { images: FIRST_LINKED_IMAGE_SELECT },
+      },
+      refund_items: {
+        orderBy: { id: "asc" },
+        columns: {
+          quantity: true,
+          amount_cents: true,
+        },
+        with: {
+          order_item: {
+            with: {
+              product: {
+                columns: {
+                  name: true,
                 },
+                with: { images: FIRST_LINKED_IMAGE_SELECT },
               },
             },
           },
         },
       },
-    }),
-  );
+    },
+  });
+  if (!refund) throw new Error(`Refund ${refundId} not found`);
 
   const order = refund.order;
   const orderDetails = order.order_details;

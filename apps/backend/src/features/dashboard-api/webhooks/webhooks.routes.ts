@@ -1,8 +1,8 @@
 import { WebhookSubscriptionFormSchema } from "@acme/shared/schemas/webhooks";
+import { RouteError } from "@rest-rpc/server";
 import { eq } from "drizzle-orm";
 import z from "zod";
 
-import { orNotFound } from "#src/db/errors.ts";
 import { webhookSubscriptionTable } from "#src/db/schema.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { EntityInUse } from "#src/routing/errors.ts";
@@ -30,16 +30,13 @@ export const webhooksRoutes = {
   getById: webhookRoute
     .get("/webhooks/:id")
     .params(idParams)
-    .handler(async ({ params, context }) =>
-      toResponse(
-        orNotFound(
-          await context.db.query.webhookSubscription.findFirst({
-            where: { id: params.id },
-          }),
-        ),
-        context.locale,
-      ),
-    ),
+    .handler(async ({ params, context }) => {
+      const subscription = await context.db.query.webhookSubscription.findFirst({
+        where: { id: params.id },
+      });
+      if (!subscription) throw new RouteError("NOT_FOUND", { status: 404 });
+      return toResponse(subscription, context.locale);
+    }),
 
   create: webhookTxRoute
     .post("/webhooks")
@@ -66,11 +63,10 @@ export const webhooksRoutes = {
     .params(idParams)
     .body(WebhookSubscriptionFormSchema)
     .handler(async ({ params, body, context }) => {
-      const existingSubscription = orNotFound(
-        await context.db.query.webhookSubscription.findFirst({
-          where: { id: params.id },
-        }),
-      );
+      const existingSubscription = await context.db.query.webhookSubscription.findFirst({
+        where: { id: params.id },
+      });
+      if (!existingSubscription) throw new RouteError("NOT_FOUND", { status: 404 });
 
       const [updated] = await context.db
         .update(webhookSubscriptionTable)
@@ -93,16 +89,13 @@ export const webhooksRoutes = {
     .params(idParams)
     .error(EntityInUse)
     .handler(async ({ params, context }) => {
-      const deleted = await tryDeleteEntity(async () =>
-        orNotFound(
-          (
-            await context.db
-              .delete(webhookSubscriptionTable)
-              .where(eq(webhookSubscriptionTable.id, params.id))
-              .returning()
-          )[0],
-        ),
+      const [deleted] = await tryDeleteEntity(() =>
+        context.db
+          .delete(webhookSubscriptionTable)
+          .where(eq(webhookSubscriptionTable.id, params.id))
+          .returning(),
       );
+      if (!deleted) throw new RouteError("NOT_FOUND", { status: 404 });
 
       await logAdminAction(context.db, {
         actor: context.authContext,

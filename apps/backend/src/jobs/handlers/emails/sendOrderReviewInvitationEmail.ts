@@ -1,6 +1,5 @@
 import envConfig from "#src/config.ts";
 import { db } from "#src/db/client.ts";
-import { orNotFound } from "#src/db/errors.ts";
 import { EmailService } from "#src/integrations/email/email.provider.ts";
 import logger from "#src/logger.ts";
 import { getOnlineStoreUrl } from "#src/utils/getOnlineStoreUrl.ts";
@@ -44,18 +43,17 @@ const buildReviewOrderUrl = ({
 export async function sendOrderReviewInvitationEmail({
   orderId,
 }: SendOrderReviewInvitationEmailPayload) {
-  const order = orNotFound(
-    await db.query.order.findFirst({
-      where: { id: orderId },
-      columns: {
-        id: true,
-        status: true,
-        claim_token: true,
-        preferred_locale: true,
-        order_details: true,
-      },
-    }),
-  );
+  const order = await db.query.order.findFirst({
+    where: { id: orderId },
+    columns: {
+      id: true,
+      status: true,
+      claim_token: true,
+      preferred_locale: true,
+      order_details: true,
+    },
+  });
+  if (!order) throw new Error(`Order ${orderId} not found`);
 
   if (order.status !== "DELIVERED") {
     logger.warn("Skipping order review invitation for non-delivered order", {

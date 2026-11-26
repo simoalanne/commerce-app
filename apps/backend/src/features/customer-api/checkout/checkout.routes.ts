@@ -1,6 +1,7 @@
 import { calculateOrderPricing } from "@acme/shared";
 import { DeliveryInstructionsSchema } from "@acme/shared/schemas";
 import { isValidPhoneNumber } from "@acme/shared/utils/addressValidation";
+import { RouteError } from "@rest-rpc/server";
 import * as Sentry from "@sentry/node";
 import { isAfter, isBefore } from "date-fns";
 import { eq, sql } from "drizzle-orm";
@@ -21,7 +22,6 @@ import { type AppContext, customerRoute } from "#src/routing/base.ts";
 import { MINUTE_MS, type RateLimitPolicy } from "#src/routing/rateLimit.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
 import { findCustomerIdByEmail } from "#src/utils/findCustomerIdByEmail.ts";
-import { NotFoundError } from "#src/utils/notFoundError.ts";
 import { relevantOrderStatuses } from "#src/utils/orderStatus.ts";
 
 import { releaseReservedStock, reserveStockOrThrow } from "./checkout.adjustStock.ts";
@@ -434,7 +434,7 @@ export const checkoutRoutes = {
       });
 
       if (!order) {
-        throw new NotFoundError("Order payment status not found");
+        throw new RouteError("NOT_FOUND", { status: 404 });
       }
 
       return toResponse(

@@ -10,7 +10,7 @@ The backend uses [Drizzle](https://orm.drizzle.team) 1.0 with node-postgres. Thi
 - `src/db/relations.ts`: the relations for relational queries. Query names are the entity names (`db.query.product`), relation names are the former Prisma relation fields (`product.images`, `order.order_items`).
 - `src/db/json.ts`: the types of the JSON columns, attached with `.$type<T>()`.
 - `src/db/client.ts`: the `db` instance and the `Db` type, which is the database or a transaction.
-- `src/db/errors.ts`: `orNotFound`, `isUniqueViolation`, `isForeignKeyViolation`.
+- `src/db/errors.ts`: `isUniqueViolation`, `isForeignKeyViolation`.
 
 Route modules may import `drizzle-orm`, `#src/db/schema.ts`, `#src/db/json.ts` and `#src/db/errors.ts` at runtime. `#src/db/client.ts` connects, so they import it as a type only and use `context.db`.
 
@@ -27,13 +27,14 @@ Schema changes: edit `schema.ts`, then `pnpm --filter backend db:push` (`drizzle
 | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | `db.product.findMany({ where, select, include, orderBy, take, skip })` | `db.query.product.findMany({ where, columns, with, orderBy, limit, offset })`              |
 | `findUnique` / `findFirst`                                             | `findFirst` (returns `undefined`, not `null`)                                              |
-| `findUniqueOrThrow` / `findFirstOrThrow`                               | `orNotFound(await db.query.x.findFirst(...))`                                              |
 | `select: { id: true, vendor: { select: { name: true } } }`             | `columns: { id: true }, with: { vendor: { columns: { name: true } } }`                     |
 | `include: { images: true }`                                            | `with: { images: true }` (all columns are selected by default)                             |
 | `orderBy: { created_at: "desc" }` or an array of those                 | `orderBy: { created_at: "desc" }` (one object, keys in priority order)                     |
 | `_count: { select: { reviews: true } }`                                | `extras: { reviewCount: (t) => db.$count(reviewTable, eq(reviewTable.product_id, t.id)) }` |
 | `count({ where })`                                                     | `db.$count(table, condition)`                                                              |
 | `aggregate` / `groupBy`                                                | `db.select({ total: sum(t.x).mapWith(Number) }).from(t).where(...).groupBy(...)`           |
+
+A missing row in a route is a 404: `if (!row) throw new RouteError("NOT_FOUND", { status: 404 })`. It is not declared with `.error(...)` on routes; clients handle 404 in their generic error handling. Jobs throw a plain `Error`.
 
 ### `where`
 

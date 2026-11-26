@@ -1,5 +1,6 @@
+import { RouteError } from "@rest-rpc/server";
+
 import type { Db } from "#src/db/client.ts";
-import { orNotFound } from "#src/db/errors.ts";
 import { FIRST_LINKED_IMAGE_SELECT } from "#src/utils/imageUrl.ts";
 import { type RelevantOrderStatus, relevantOrderStatuses } from "#src/utils/orderStatus.ts";
 
@@ -138,5 +139,6 @@ export const findRelevantOrderById = async (
 ) => {
   const [order] = await findRelevantOrderRows(db, { orderId, customerId, token });
 
-  return parseRelevantOrder(orNotFound(order));
+  if (!order) throw new RouteError("NOT_FOUND", { status: 404 });
+  return parseRelevantOrder(order);
 };

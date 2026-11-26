@@ -1,9 +1,9 @@
 import { ProductFormSchema } from "@acme/shared/schemas/products";
+import { RouteError } from "@rest-rpc/server";
 import { eq } from "drizzle-orm";
 import z from "zod";
 
 import type { Db } from "#src/db/client.ts";
-import { orNotFound } from "#src/db/errors.ts";
 import { productImageTable, productTable, productTagTable } from "#src/db/schema.ts";
 import { categoriesRoutes as customerCategoriesRoutes } from "#src/features/customer-api/categories/categories.routes.ts";
 import { productsRoutes as customerProductsRoutes } from "#src/features/customer-api/products/products.routes.ts";
@@ -62,17 +62,18 @@ const productLinksWith = {
   tags: { columns: { tag_id: true }, orderBy: { tag_id: "asc" } },
 } as const;
 
-const findProductForAudit = async (db: Db, id: number) =>
-  orNotFound(
-    await db.query.product.findFirst({
-      where: { id },
-      with: {
-        ...productLinksWith,
-        category: { columns: { id: true, name: true } },
-        vendor: { columns: { id: true, name: true } },
-      },
-    }),
-  );
+const findProductForAudit = async (db: Db, id: number) => {
+  const product = await db.query.product.findFirst({
+    where: { id },
+    with: {
+      ...productLinksWith,
+      category: { columns: { id: true, name: true } },
+      vendor: { columns: { id: true, name: true } },
+    },
+  });
+  if (!product) throw new RouteError("NOT_FOUND", { status: 404 });
+  return product;
+};
 
 const replaceProductLinks = async (
   db: Db,
@@ -104,12 +105,11 @@ export const productsRoutes = {
     .get("/products/:id")
     .params(idParams)
     .handler(async ({ params, context }) => {
-      const product = orNotFound(
-        await context.db.query.product.findFirst({
-          where: { id: params.id },
-          with: productLinksWith,
-        }),
-      );
+      const product = await context.db.query.product.findFirst({
+        where: { id: params.id },
+        with: productLinksWith,
+      });
+      if (!product) throw new RouteError("NOT_FOUND", { status: 404 });
 
       return toResponse(mapProduct(product), context.locale);
     }),

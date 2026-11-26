@@ -1,9 +1,9 @@
 import { CategoryFormSchema } from "@acme/shared/schemas/categories";
+import { RouteError } from "@rest-rpc/server";
 import { eq } from "drizzle-orm";
 import z from "zod";
 
 import type { Db } from "#src/db/client.ts";
-import { orNotFound } from "#src/db/errors.ts";
 import { categoryTable } from "#src/db/schema.ts";
 import { categoriesRoutes as customerCategoriesRoutes } from "#src/features/customer-api/categories/categories.routes.ts";
 import { productsRoutes as customerProductsRoutes } from "#src/features/customer-api/products/products.routes.ts";
@@ -45,13 +45,14 @@ const buildCategoryInvalidationTags = (productIds: number[] = []) => [
   ...productIds.map((productId) => buildTag(customerProductsRoutes.getById, productId)),
 ];
 
-const findCategoryForAudit = async (db: Db, id: number) =>
-  orNotFound(
-    await db.query.category.findFirst({
-      where: { id },
-      with: { image: { columns: { id: true, name: true } } },
-    }),
-  );
+const findCategoryForAudit = async (db: Db, id: number) => {
+  const category = await db.query.category.findFirst({
+    where: { id },
+    with: { image: { columns: { id: true, name: true } } },
+  });
+  if (!category) throw new RouteError("NOT_FOUND", { status: 404 });
+  return category;
+};
 
 // TODO: move this field to the database somewhere where it makes sense.
 // because I don't know where it makes sense in there (global, per category, etc.)
@@ -90,17 +91,14 @@ export const categoriesRoutes = {
   getById: categoryRoute
     .get("/categories/:id")
     .params(idParams)
-    .handler(async ({ params, context }) =>
-      toResponse(
-        orNotFound(
-          await context.db.query.category.findFirst({
-            where: { id: params.id },
-            columns: categoryColumns,
-          }),
-        ),
-        context.locale,
-      ),
-    ),
+    .handler(async ({ params, context }) => {
+      const category = await context.db.query.category.findFirst({
+        where: { id: params.id },
+        columns: categoryColumns,
+      });
+      if (!category) throw new RouteError("NOT_FOUND", { status: 404 });
+      return toResponse(category, context.locale);
+    }),
 
   create: categoryTxRoute
     .post("/categories")

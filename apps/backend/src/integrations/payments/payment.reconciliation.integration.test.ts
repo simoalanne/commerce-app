@@ -1,7 +1,6 @@
 import { inArray } from "drizzle-orm";
 
 import { db } from "#src/db/client.ts";
-import { orNotFound } from "#src/db/errors.ts";
 import { categoryTable, orderTable, productTable, userTable, vendorTable } from "#src/db/schema.ts";
 import { assertOrderStatus, assertStock } from "#src/tests/asserts.ts";
 import {
@@ -231,11 +230,10 @@ describe("payment reconciliation integration", () => {
     const updatedProduct = await db.query.product.findFirst({
       where: { sku: product.sku },
     });
-    const updatedOrderItem = orNotFound(
-      await db.query.orderItem.findFirst({
-        where: { order_id: order.id },
-      }),
-    );
+    const updatedOrderItem = await db.query.orderItem.findFirst({
+      where: { order_id: order.id },
+    });
+    if (!updatedOrderItem) throw new Error("updatedOrderItem not found");
 
     expect(result, "Expected late payment to recover the order").toBeTruthy();
     assertOrderStatus(updatedOrder, "PAID");

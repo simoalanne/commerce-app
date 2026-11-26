@@ -1,8 +1,8 @@
 import { DeliveryInstructionsSchema } from "@acme/shared/schemas";
+import { RouteError } from "@rest-rpc/server";
 import { and, eq } from "drizzle-orm";
 import z from "zod";
 
-import { orNotFound } from "#src/db/errors.ts";
 import { customerAddressTable } from "#src/db/schema.ts";
 import { customerRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
@@ -98,7 +98,8 @@ export const addressesRoutes = {
         .where(ownAddress(params.addressId, context.authContext.customerId))
         .returning();
 
-      return toResponse(toAddressResponse(orNotFound(address)), context.locale);
+      if (!address) throw new RouteError("NOT_FOUND", { status: 404 });
+      return toResponse(toAddressResponse(address), context.locale);
     }),
 
   delete: addressRoute
@@ -109,6 +110,6 @@ export const addressesRoutes = {
         .delete(customerAddressTable)
         .where(ownAddress(params.addressId, context.authContext.customerId))
         .returning({ id: customerAddressTable.id });
-      orNotFound(deleted);
+      if (!deleted) throw new RouteError("NOT_FOUND", { status: 404 });
     }),
 };

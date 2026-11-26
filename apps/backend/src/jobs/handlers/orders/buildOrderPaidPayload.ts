@@ -1,6 +1,5 @@
 import envConfig from "#src/config.ts";
 import { db } from "#src/db/client.ts";
-import { orNotFound } from "#src/db/errors.ts";
 import { ObjectStorage } from "#src/integrations/object-storage/objectStorage.provider.ts";
 import { getOnlineStoreUrl } from "#src/utils/getOnlineStoreUrl.ts";
 import { FIRST_LINKED_IMAGE_SELECT, getFirstLinkedImageUrl } from "#src/utils/imageUrl.ts";
@@ -54,38 +53,37 @@ const buildViewOrderUrl = ({
 };
 
 export const buildOrderPaidPayload = async (orderId: number): Promise<OrderPaidPayload> => {
-  const order = orNotFound(
-    await db.query.order.findFirst({
-      where: { id: orderId },
-      columns: {
-        id: true,
-        status: true,
-        items_subtotal_cents: true,
-        items_discount_cents: true,
-        charged_total_cents: true,
-        vat_rate: true,
-        included_vat_cents: true,
-        claim_token: true,
-        customer_id: true,
-        preferred_locale: true,
-        created_at: true,
-        order_details: true,
-      },
-      with: {
-        order_items: {
-          orderBy: { id: "asc" },
-          with: {
-            product: {
-              columns: {
-                name: true,
-              },
-              with: { images: FIRST_LINKED_IMAGE_SELECT },
+  const order = await db.query.order.findFirst({
+    where: { id: orderId },
+    columns: {
+      id: true,
+      status: true,
+      items_subtotal_cents: true,
+      items_discount_cents: true,
+      charged_total_cents: true,
+      vat_rate: true,
+      included_vat_cents: true,
+      claim_token: true,
+      customer_id: true,
+      preferred_locale: true,
+      created_at: true,
+      order_details: true,
+    },
+    with: {
+      order_items: {
+        orderBy: { id: "asc" },
+        with: {
+          product: {
+            columns: {
+              name: true,
             },
+            with: { images: FIRST_LINKED_IMAGE_SELECT },
           },
         },
       },
-    }),
-  );
+    },
+  });
+  if (!order) throw new Error(`Order ${orderId} not found`);
 
   const orderDetails = order.order_details;
   const locale = order.preferred_locale ?? "en";

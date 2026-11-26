@@ -4,7 +4,6 @@ import { errorResponse, interceptor, onError, RouteError } from "@rest-rpc/serve
 import * as Sentry from "@sentry/node";
 
 import logger from "#src/logger.ts";
-import { NotFoundError } from "#src/utils/notFoundError.ts";
 import {
   getClientRequestId,
   getRequestId,
@@ -61,20 +60,9 @@ export const cors = interceptor(async ({ request, next }) => {
 
 /**
  * Sends thrown errors as responses, so the interceptors before it (CORS, request
- * id) see them. A NotFoundError is a 404.
+ * id) see them.
  */
-export const sendErrors = interceptor(({ next }) =>
-  next().catch((error) =>
-    errorResponse(
-      error instanceof NotFoundError
-        ? new RouteError("NOT_FOUND", {
-            status: 404,
-            message: "Resource not found",
-          })
-        : error,
-    ),
-  ),
-);
+export const sendErrors = interceptor(({ next }) => next().catch(errorResponse));
 
 export const reportError = (error: unknown) => {
   if (error instanceof RouteError) return;

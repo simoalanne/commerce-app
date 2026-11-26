@@ -1,11 +1,10 @@
+import { RouteError } from "@rest-rpc/server";
 import z from "zod";
 
-import { orNotFound } from "#src/db/errors.ts";
 import type { ObjectStorageProvider } from "#src/integrations/object-storage/objectStorage.provider.ts";
 import { customerRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
 import { getFirstLinkedImageUrl, IMAGE_PLACEHOLDER_URL } from "#src/utils/imageUrl.ts";
-import { NotFoundError } from "#src/utils/notFoundError.ts";
 import { relevantOrderStatuses } from "#src/utils/orderStatus.ts";
 import { generateOrderInvoicePdf } from "#src/utils/pdf/generateOrderInvoicePdf.ts";
 import { generateRefundReceiptPdf } from "#src/utils/pdf/generateRefundReceiptPdf.ts";
@@ -165,19 +164,18 @@ export const ordersRoutes = {
 
       const { authContext } = context;
       if (!authContext.isAuthenticated || !orderId) {
-        throw new NotFoundError();
+        throw new RouteError("NOT_FOUND", { status: 404 });
       }
 
-      orNotFound(
-        await context.db.query.order.findFirst({
-          where: {
-            id: orderId,
-            customer_id: authContext.customerId,
-            status: scope === "order:review" ? "DELIVERED" : { in: [...relevantOrderStatuses] },
-          },
-          columns: { id: true },
-        }),
-      );
+      const order = await context.db.query.order.findFirst({
+        where: {
+          id: orderId,
+          customer_id: authContext.customerId,
+          status: scope === "order:review" ? "DELIVERED" : { in: [...relevantOrderStatuses] },
+        },
+        columns: { id: true },
+      });
+      if (!order) throw new RouteError("NOT_FOUND", { status: 404 });
 
       return toResponse(
         await createOrderCapabilityJwt(

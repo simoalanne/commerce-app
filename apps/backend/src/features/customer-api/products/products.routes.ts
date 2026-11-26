@@ -1,7 +1,7 @@
+import { RouteError } from "@rest-rpc/server";
 import z from "zod";
 
 import type { Db } from "#src/db/client.ts";
-import { orNotFound } from "#src/db/errors.ts";
 import { activeStorefrontProductWhere } from "#src/domain/storefrontVisibility.ts";
 import type { ObjectStorageProvider } from "#src/integrations/object-storage/objectStorage.provider.ts";
 import { customerRoute } from "#src/routing/base.ts";
@@ -74,7 +74,8 @@ export const productsRoutes = {
     .get("/products/:id")
     .params(z.object({ id: z.coerce.number<number>().int().positive() }))
     .handler(async ({ params, context }) => {
-      const product = orNotFound(await findProduct(context.db, params.id));
+      const product = await findProduct(context.db, params.id);
+      if (!product) throw new RouteError("NOT_FOUND", { status: 404 });
 
       return toResponse(
         {

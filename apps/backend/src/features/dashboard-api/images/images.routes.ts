@@ -1,8 +1,8 @@
 import { ImageMetadataSchema } from "@acme/shared/schemas/images";
+import { RouteError } from "@rest-rpc/server";
 import { and, eq } from "drizzle-orm";
 import z from "zod";
 
-import { orNotFound } from "#src/db/errors.ts";
 import type { LocalizedString } from "#src/db/json.ts";
 import { imageTable } from "#src/db/schema.ts";
 import { type AppContext, dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
@@ -62,11 +62,10 @@ export const imagesRoutes = {
     .get("/images/:id")
     .params(idParams)
     .handler(async ({ params, context }) => {
-      const image = orNotFound(
-        await context.db.query.image.findFirst({
-          where: { id: params.id, kind: "CMS" },
-        }),
-      );
+      const image = await context.db.query.image.findFirst({
+        where: { id: params.id, kind: "CMS" },
+      });
+      if (!image) throw new RouteError("NOT_FOUND", { status: 404 });
       return toResponse(toImageResponse(context.storage, image), context.locale);
     }),
 
@@ -75,11 +74,10 @@ export const imagesRoutes = {
     .params(idParams)
     .body(ImageMetadataSchema)
     .handler(async ({ params, body, context }) => {
-      const existingImage = orNotFound(
-        await context.db.query.image.findFirst({
-          where: { id: params.id, kind: "CMS" },
-        }),
-      );
+      const existingImage = await context.db.query.image.findFirst({
+        where: { id: params.id, kind: "CMS" },
+      });
+      if (!existingImage) throw new RouteError("NOT_FOUND", { status: 404 });
 
       const [updated] = await context.db
         .update(imageTable)
@@ -106,11 +104,10 @@ export const imagesRoutes = {
     .delete("/images/:id")
     .params(idParams)
     .handler(async ({ params, context }) => {
-      const image = orNotFound(
-        await context.db.query.image.findFirst({
-          where: { id: params.id, kind: "CMS" },
-        }),
-      );
+      const image = await context.db.query.image.findFirst({
+        where: { id: params.id, kind: "CMS" },
+      });
+      if (!image) throw new RouteError("NOT_FOUND", { status: 404 });
 
       const [deleted] = await context.db
         .delete(imageTable)

@@ -1,7 +1,7 @@
+import { RouteError } from "@rest-rpc/server";
 import { eq } from "drizzle-orm";
 import z from "zod";
 
-import { orNotFound } from "#src/db/errors.ts";
 import { reviewTable } from "#src/db/schema.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
@@ -115,17 +115,16 @@ export const reviewsRoutes = {
     .params(z.object({ id: z.coerce.number<number>().int().positive() }))
     .body(z.object({ status: reviewStatusSchema }))
     .handler(async ({ params, body, context }) => {
-      const existingReview = orNotFound(
-        await context.db.query.review.findFirst({
-          where: { id: params.id },
-          columns: {
-            status: true,
-            kind: true,
-            product_id: true,
-            vendor_id: true,
-          },
-        }),
-      );
+      const existingReview = await context.db.query.review.findFirst({
+        where: { id: params.id },
+        columns: {
+          status: true,
+          kind: true,
+          product_id: true,
+          vendor_id: true,
+        },
+      });
+      if (!existingReview) throw new RouteError("NOT_FOUND", { status: 404 });
 
       const [review] = await context.db
         .update(reviewTable)

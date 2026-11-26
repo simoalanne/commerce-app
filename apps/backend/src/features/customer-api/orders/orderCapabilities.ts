@@ -1,9 +1,9 @@
+import { RouteError } from "@rest-rpc/server";
 import { z } from "zod";
 
 import type { EnvConfig } from "#src/config.ts";
 import type { Db } from "#src/db/client.ts";
 import { createSignedJwt, verifyJwtToken } from "#src/utils/jwtUtils.ts";
-import { NotFoundError } from "#src/utils/notFoundError.ts";
 
 const OrderCapabilityPayloadSchema = z.object({
   typ: z.literal("order-capability"),
@@ -25,7 +25,7 @@ export const verifyOrderCapabilityJwt = async (
   const payload = await verifyJwtToken(config, token, OrderCapabilityPayloadSchema);
 
   if (!payload || payload.scope !== scope) {
-    throw new NotFoundError();
+    throw new RouteError("NOT_FOUND", { status: 404 });
   }
 
   return {
@@ -51,7 +51,7 @@ export const createOrderCapabilityJwt = async (
   });
 
   if (!order) {
-    throw new NotFoundError();
+    throw new RouteError("NOT_FOUND", { status: 404 });
   }
 
   const expiresAt = new Date(Date.now() + 30 * 60 * 1000);

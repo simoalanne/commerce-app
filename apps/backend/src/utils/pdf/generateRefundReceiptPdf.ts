@@ -1,8 +1,8 @@
+import { RouteError } from "@rest-rpc/server";
 import type { TableCell } from "pdfmake";
 
 import type { EnvConfig } from "#src/config.ts";
 import type { Db } from "#src/db/client.ts";
-import { orNotFound } from "#src/db/errors.ts";
 import {
   findRelevantOrderById,
   type RelevantOrder,
@@ -274,23 +274,23 @@ export const generateRefundReceiptPdf = async (
 ) => {
   const refundForOrder =
     input.access === "internal"
-      ? orNotFound(
-          await db.query.refund.findFirst({
-            where: {
-              id: input.refundId,
-              status: "SUCCEEDED",
-            },
-            columns: {
-              order_id: true,
-            },
-          }),
-        )
+      ? await db.query.refund.findFirst({
+          where: {
+            id: input.refundId,
+            status: "SUCCEEDED",
+          },
+          columns: {
+            order_id: true,
+          },
+        })
       : { order_id: input.orderId };
+  if (!refundForOrder) throw new RouteError("NOT_FOUND", { status: 404 });
   const order = await findRelevantOrderById(db, {
     orderId: refundForOrder.order_id,
     ...(input.access === "customer" ? { customerId: input.customerId } : {}),
   });
-  const refund = orNotFound(await findRefundForReceipt(db, input.refundId, order.id));
+  const refund = await findRefundForReceipt(db, input.refundId, order.id);
+  if (!refund) throw new RouteError("NOT_FOUND", { status: 404 });
 
   return renderRefundReceiptPdf({
     config,

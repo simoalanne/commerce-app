@@ -1,7 +1,7 @@
+import { RouteError } from "@rest-rpc/server";
 import { eq } from "drizzle-orm";
 import z from "zod";
 
-import { orNotFound } from "#src/db/errors.ts";
 import { productTagTable, tagTable } from "#src/db/schema.ts";
 import { productsRoutes as customerProductsRoutes } from "#src/features/customer-api/products/products.routes.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
@@ -51,17 +51,14 @@ export const tagsRoutes = {
   getById: tagRoute
     .get("/tags/:id")
     .params(idParams)
-    .handler(async ({ params, context }) =>
-      toResponse(
-        orNotFound(
-          await context.db.query.tag.findFirst({
-            where: { id: params.id },
-            columns: { id: true, name: true, color: true },
-          }),
-        ),
-        context.locale,
-      ),
-    ),
+    .handler(async ({ params, context }) => {
+      const tag = await context.db.query.tag.findFirst({
+        where: { id: params.id },
+        columns: { id: true, name: true, color: true },
+      });
+      if (!tag) throw new RouteError("NOT_FOUND", { status: 404 });
+      return toResponse(tag, context.locale);
+    }),
 
   create: tagTxRoute
     .post("/tags")
@@ -96,11 +93,10 @@ export const tagsRoutes = {
     .params(idParams)
     .body(TagFormSchema)
     .handler(async ({ params, body, context }) => {
-      const existingTag = orNotFound(
-        await context.db.query.tag.findFirst({
-          where: { id: params.id },
-        }),
-      );
+      const existingTag = await context.db.query.tag.findFirst({
+        where: { id: params.id },
+      });
+      if (!existingTag) throw new RouteError("NOT_FOUND", { status: 404 });
 
       const [updated] = await context.db
         .update(tagTable)
@@ -135,9 +131,10 @@ export const tagsRoutes = {
       // that uses it (the dashboard confirms first). Unlink before deleting so
       // the ProductTag restrict constraint is satisfied.
       await context.db.delete(productTagTable).where(eq(productTagTable.tag_id, params.id));
-      const deleted = orNotFound(
-        (await context.db.delete(tagTable).where(eq(tagTable.id, params.id)).returning())[0],
-      );
+      const deleted = (
+        await context.db.delete(tagTable).where(eq(tagTable.id, params.id)).returning()
+      )[0];
+      if (!deleted) throw new RouteError("NOT_FOUND", { status: 404 });
 
       await logAdminAction(context.db, {
         actor: context.authContext,

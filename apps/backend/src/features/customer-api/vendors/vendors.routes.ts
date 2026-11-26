@@ -1,11 +1,10 @@
+import { RouteError } from "@rest-rpc/server";
 import z from "zod";
 
-import { orNotFound } from "#src/db/errors.ts";
 import { activeStorefrontVendorWhere } from "#src/domain/storefrontVisibility.ts";
 import { customerRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
 import { FIRST_LINKED_IMAGE_SELECT, getFirstLinkedImageUrl } from "#src/utils/imageUrl.ts";
-import { NotFoundError } from "#src/utils/notFoundError.ts";
 
 const getReviewSummary = (reviews: Array<{ rating: number }>) => {
   if (reviews.length === 0) {
@@ -49,7 +48,7 @@ export const vendorsRoutes = {
       });
 
       if (!vendor) {
-        throw new NotFoundError(`Vendor with id ${params.id} not found`);
+        throw new RouteError("NOT_FOUND", { status: 404 });
       }
 
       return toResponse(
@@ -118,12 +117,11 @@ export const vendorsRoutes = {
       const { id } = params;
       const { limit = 10 } = query;
 
-      orNotFound(
-        await context.db.query.vendor.findFirst({
-          where: activeStorefrontVendorWhere({ vendorId: id }),
-          columns: { id: true },
-        }),
-      );
+      const vendor = await context.db.query.vendor.findFirst({
+        where: activeStorefrontVendorWhere({ vendorId: id }),
+        columns: { id: true },
+      });
+      if (!vendor) throw new RouteError("NOT_FOUND", { status: 404 });
 
       const reviews = await context.db.query.review.findMany({
         where: {

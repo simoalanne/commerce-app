@@ -1,4 +1,5 @@
-import { orNotFound } from "#src/db/errors.ts";
+import { RouteError } from "@rest-rpc/server";
+
 import type { DeliveryInstructions } from "#src/db/json.ts";
 import type { AppContext } from "#src/routing/base.ts";
 
@@ -39,105 +40,104 @@ export const buildCustomerDataExport = async (
     lastName: string | null;
   },
 ) => {
-  const customerAccount = orNotFound(
-    await db.query.customerAccount.findFirst({
-      where: {
-        id: customerId,
+  const customerAccount = await db.query.customerAccount.findFirst({
+    where: {
+      id: customerId,
+    },
+    columns: {},
+    with: {
+      customerSavedCartItems: {
+        columns: {
+          product_id: true,
+          quantity: true,
+          added_at: true,
+        },
+        orderBy: {
+          added_at: "desc",
+        },
       },
-      columns: {},
-      with: {
-        customerSavedCartItems: {
-          columns: {
-            product_id: true,
-            quantity: true,
-            added_at: true,
-          },
-          orderBy: {
-            added_at: "desc",
-          },
+      customerFavoriteProducts: {
+        columns: {
+          product_id: true,
+          added_at: true,
         },
-        customerFavoriteProducts: {
-          columns: {
-            product_id: true,
-            added_at: true,
-          },
-          orderBy: {
-            added_at: "desc",
-          },
+        orderBy: {
+          added_at: "desc",
         },
-        customerFavoriteVendors: {
-          columns: {
-            vendor_id: true,
-            added_at: true,
-          },
-          orderBy: {
-            added_at: "desc",
-          },
+      },
+      customerFavoriteVendors: {
+        columns: {
+          vendor_id: true,
+          added_at: true,
         },
-        addresses: {
-          columns: {
-            street: true,
-            street_number: true,
-            postal_code: true,
-            city: true,
-            delivery_details: true,
-          },
-          orderBy: {
-            id: "desc",
-          },
+        orderBy: {
+          added_at: "desc",
         },
-        orders: {
-          columns: {
-            id: true,
-            items_subtotal_cents: true,
-            items_discount_cents: true,
-            charged_total_cents: true,
-            status: true,
-            created_at: true,
-            order_details: true,
-          },
-          with: {
-            reviews: {
-              columns: {
-                id: true,
-                kind: true,
-                rating: true,
-                comment: true,
-                show_reviewer_name: true,
-                product_id: true,
-                vendor_id: true,
-                created_at: true,
-              },
-              with: {
-                images: {
-                  columns: {
-                    storage_key: true,
-                  },
+      },
+      addresses: {
+        columns: {
+          street: true,
+          street_number: true,
+          postal_code: true,
+          city: true,
+          delivery_details: true,
+        },
+        orderBy: {
+          id: "desc",
+        },
+      },
+      orders: {
+        columns: {
+          id: true,
+          items_subtotal_cents: true,
+          items_discount_cents: true,
+          charged_total_cents: true,
+          status: true,
+          created_at: true,
+          order_details: true,
+        },
+        with: {
+          reviews: {
+            columns: {
+              id: true,
+              kind: true,
+              rating: true,
+              comment: true,
+              show_reviewer_name: true,
+              product_id: true,
+              vendor_id: true,
+              created_at: true,
+            },
+            with: {
+              images: {
+                columns: {
+                  storage_key: true,
                 },
               },
-              orderBy: {
-                id: "asc",
-              },
             },
-            order_items: {
-              orderBy: {
-                id: "asc",
-              },
-              columns: {
-                name: true,
-                quantity: true,
-                unit_sales_price_cents: true,
-                vendor_name: true,
-              },
+            orderBy: {
+              id: "asc",
             },
           },
-          orderBy: {
-            created_at: "desc",
+          order_items: {
+            orderBy: {
+              id: "asc",
+            },
+            columns: {
+              name: true,
+              quantity: true,
+              unit_sales_price_cents: true,
+              vendor_name: true,
+            },
           },
         },
+        orderBy: {
+          created_at: "desc",
+        },
       },
-    }),
-  );
+    },
+  });
+  if (!customerAccount) throw new RouteError("NOT_FOUND", { status: 404 });
 
   const { firstName, lastName, email } = identity;
 

@@ -1,10 +1,10 @@
 import { slugify } from "@acme/shared";
 import { VendorFormSchema } from "@acme/shared/schemas/vendors";
+import { RouteError } from "@rest-rpc/server";
 import { eq } from "drizzle-orm";
 import z from "zod";
 
 import type { Db } from "#src/db/client.ts";
-import { orNotFound } from "#src/db/errors.ts";
 import { productTable, vendorImageTable, vendorTable } from "#src/db/schema.ts";
 import { productsRoutes as customerProductsRoutes } from "#src/features/customer-api/products/products.routes.ts";
 import { reviewsRoutes as customerReviewsRoutes } from "#src/features/customer-api/reviews/reviews.routes.ts";
@@ -42,13 +42,14 @@ const buildVendorInvalidationTags = (vendorId: number, productIds: number[] = []
   ]),
 ];
 
-const findVendorForAudit = async (db: Db, id: number) =>
-  orNotFound(
-    await db.query.vendor.findFirst({
-      where: { id },
-      with: { images: { columns: { image_id: true }, orderBy: { image_id: "asc" } } },
-    }),
-  );
+const findVendorForAudit = async (db: Db, id: number) => {
+  const vendor = await db.query.vendor.findFirst({
+    where: { id },
+    with: { images: { columns: { image_id: true }, orderBy: { image_id: "asc" } } },
+  });
+  if (!vendor) throw new RouteError("NOT_FOUND", { status: 404 });
+  return vendor;
+};
 
 const findVendorProductIds = async (db: Db, vendorId: number) =>
   (
@@ -86,18 +87,17 @@ export const vendorsRoutes = {
     .get("/vendors/:id")
     .params(idParams)
     .handler(async ({ params, context }) => {
-      const vendor = orNotFound(
-        await context.db.query.vendor.findFirst({
-          where: { id: params.id },
-          with: {
-            images: {
-              columns: {
-                image_id: true,
-              },
+      const vendor = await context.db.query.vendor.findFirst({
+        where: { id: params.id },
+        with: {
+          images: {
+            columns: {
+              image_id: true,
             },
           },
-        }),
-      );
+        },
+      });
+      if (!vendor) throw new RouteError("NOT_FOUND", { status: 404 });
 
       return toResponse(mapVendor(vendor), context.locale);
     }),

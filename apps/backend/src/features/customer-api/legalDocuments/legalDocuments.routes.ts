@@ -1,6 +1,6 @@
+import { RouteError } from "@rest-rpc/server";
 import z from "zod";
 
-import { orNotFound } from "#src/db/errors.ts";
 import { customerRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
 
@@ -16,9 +16,10 @@ export const legalDocumentsRoutes = {
     .get("/legal-documents/:key")
     .params(z.object({ key: LegalDocumentKeySchema }))
     .handler(async ({ params, context }) => {
-      const document = orNotFound(
-        await context.db.query.legalDocument.findFirst({ where: { key: params.key } }),
-      );
+      const document = await context.db.query.legalDocument.findFirst({
+        where: { key: params.key },
+      });
+      if (!document) throw new RouteError("NOT_FOUND", { status: 404 });
 
       return toResponse(
         {

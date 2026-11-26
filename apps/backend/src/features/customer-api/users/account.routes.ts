@@ -3,7 +3,7 @@ import { and, eq, sql } from "drizzle-orm";
 import z from "zod";
 
 import type { Db } from "#src/db/client.ts";
-import { isForeignKeyViolation, isUniqueViolation, orNotFound } from "#src/db/errors.ts";
+import { isForeignKeyViolation, isUniqueViolation } from "#src/db/errors.ts";
 import {
   customerAccountTable,
   customerFavoriteProductTable,
@@ -338,12 +338,11 @@ export const accountRoutes = {
     }),
 
   getPreferences: accountRoute.get("/users/account/preferences").handler(async ({ context }) => {
-    const account = orNotFound(
-      await context.db.query.customerAccount.findFirst({
-        where: { id: context.authContext.customerId },
-        columns: { preferred_locale: true },
-      }),
-    );
+    const account = await context.db.query.customerAccount.findFirst({
+      where: { id: context.authContext.customerId },
+      columns: { preferred_locale: true },
+    });
+    if (!account) throw new RouteError("NOT_FOUND", { status: 404 });
 
     return toResponse({ preferredLocale: account.preferred_locale }, context.locale);
   }),

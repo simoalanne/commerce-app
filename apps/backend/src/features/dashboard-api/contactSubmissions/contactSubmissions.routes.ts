@@ -1,8 +1,8 @@
 import { ContactSubmissionStatusSchema } from "@acme/shared/schemas/contactSubmissions";
+import { RouteError } from "@rest-rpc/server";
 import { eq } from "drizzle-orm";
 import z from "zod";
 
-import { orNotFound } from "#src/db/errors.ts";
 import { contactSubmissionTable } from "#src/db/schema.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
@@ -49,12 +49,12 @@ export const contactSubmissionsRoutes = {
     .get("/contact-submissions/:id")
     .params(idParams)
     .handler(async ({ params, context }) => {
-      const { created_at, updated_at, ...rest } = orNotFound(
-        await context.db.query.contactSubmission.findFirst({
-          where: { id: params.id },
-          columns: contactSubmissionColumns,
-        }),
-      );
+      const submission = await context.db.query.contactSubmission.findFirst({
+        where: { id: params.id },
+        columns: contactSubmissionColumns,
+      });
+      if (!submission) throw new RouteError("NOT_FOUND", { status: 404 });
+      const { created_at, updated_at, ...rest } = submission;
 
       return toResponse(
         {
@@ -71,15 +71,14 @@ export const contactSubmissionsRoutes = {
     .params(idParams)
     .body(z.object({ status: ContactSubmissionStatusSchema }))
     .handler(async ({ params, body, context }) => {
-      const existingSubmission = orNotFound(
-        await context.db.query.contactSubmission.findFirst({
-          where: { id: params.id },
-          columns: {
-            status: true,
-            topic: true,
-          },
-        }),
-      );
+      const existingSubmission = await context.db.query.contactSubmission.findFirst({
+        where: { id: params.id },
+        columns: {
+          status: true,
+          topic: true,
+        },
+      });
+      if (!existingSubmission) throw new RouteError("NOT_FOUND", { status: 404 });
 
       await context.db
         .update(contactSubmissionTable)

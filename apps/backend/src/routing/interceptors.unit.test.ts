@@ -1,6 +1,4 @@
-import { createApp, route } from "@rest-rpc/server";
-
-import { NotFoundError } from "#src/utils/notFoundError.ts";
+import { createApp, route, RouteError } from "@rest-rpc/server";
 
 import { cors, requestContext, sendErrors } from "./interceptors.ts";
 
@@ -8,7 +6,7 @@ const app = createApp(
   {
     ok: route.get("/ok").handler(() => "ok"),
     missing: route.get("/missing").handler(() => {
-      throw new NotFoundError();
+      throw new RouteError("NOT_FOUND", { status: 404 });
     }),
   },
   { interceptors: [requestContext, cors, sendErrors] },
@@ -38,7 +36,7 @@ describe("api interceptors", () => {
     );
   });
 
-  it("maps a NotFoundError to 404, with CORS headers", async () => {
+  it("sends a thrown RouteError with CORS headers", async () => {
     const response = await get("/missing");
 
     expect(response.status).toBe(404);
