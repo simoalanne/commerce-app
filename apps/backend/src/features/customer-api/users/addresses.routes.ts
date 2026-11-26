@@ -5,7 +5,6 @@ import z from "zod";
 
 import { customerAddressTable } from "#src/db/schema.ts";
 import { customerRoute } from "#src/routing/base.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
 
 const addressRoute = customerRoute.meta({ access: "AUTHENTICATED" });
 
@@ -69,7 +68,7 @@ export const addressesRoutes = {
       orderBy: { id: "desc" },
     });
 
-    return toResponse(addresses.map(toAddressResponse), context.locale);
+    return addresses.map(toAddressResponse);
   }),
 
   create: addressRoute
@@ -84,7 +83,7 @@ export const addressesRoutes = {
         })
         .returning();
 
-      return toResponse(toAddressResponse(address), context.locale);
+      return toAddressResponse(address);
     }),
 
   update: addressRoute
@@ -99,7 +98,7 @@ export const addressesRoutes = {
         .returning();
 
       if (!address) throw new RouteError("NOT_FOUND", { status: 404 });
-      return toResponse(toAddressResponse(address), context.locale);
+      return toAddressResponse(address);
     }),
 
   delete: addressRoute

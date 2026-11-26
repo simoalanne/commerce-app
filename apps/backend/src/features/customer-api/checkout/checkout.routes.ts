@@ -20,7 +20,6 @@ import type { SupportedLocale } from "#src/locales.ts";
 import type { AuthContext } from "#src/routing/auth.ts";
 import { type AppContext, customerRoute } from "#src/routing/base.ts";
 import { MINUTE_MS, type RateLimitPolicy } from "#src/routing/rateLimit.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
 import { findCustomerIdByEmail } from "#src/utils/findCustomerIdByEmail.ts";
 import { relevantOrderStatuses } from "#src/utils/orderStatus.ts";
 
@@ -381,7 +380,7 @@ export const checkoutRoutes = {
       });
 
       try {
-        return toResponse(await createPaymentInternal(context, body), context.locale);
+        return await createPaymentInternal(context, body);
       } catch (error) {
         await releaseCheckoutCreatePaymentRateLimit({
           authContext: context.authContext,
@@ -390,18 +389,15 @@ export const checkoutRoutes = {
         throw error;
       }
     }),
-  getPaymentMethods: customerRoute.get("/checkout/payment-methods").handler(async ({ context }) =>
-    toResponse(
-      {
-        // The registry's keys are provider names; Object.keys only knows string.
-        providers: Object.keys(context.payments) as PaymentProviderName[],
-        paytrailMethods: context.payments.PAYTRAIL
-          ? await getCachedPaytrailPaymentMethods(context.config)
-          : [],
-      },
-      context.locale,
-    ),
-  ),
+  getPaymentMethods: customerRoute
+    .get("/checkout/payment-methods")
+    .handler(async ({ context }) => ({
+      // The registry's keys are provider names; Object.keys only knows string.
+      providers: Object.keys(context.payments) as PaymentProviderName[],
+      paytrailMethods: context.payments.PAYTRAIL
+        ? await getCachedPaytrailPaymentMethods(context.config)
+        : [],
+    })),
   validatePromoCode: customerRoute
     .post("/checkout/validate-promo-code")
     .body(
@@ -417,7 +413,7 @@ export const checkoutRoutes = {
     .error(PromoCodeUsageLimitReached)
     .error(PromoCodeMinimumItemsValueNotMet)
     .handler(async ({ body, context }) => {
-      return toResponse(await getValidatedPromoCode(context.db, body), context.locale);
+      return await getValidatedPromoCode(context.db, body);
     }),
   // TODO: should work via authContext and orderId as well, not just via short-lived token.
   pollOrderStatus: customerRoute
@@ -437,11 +433,8 @@ export const checkoutRoutes = {
         throw new RouteError("NOT_FOUND", { status: 404 });
       }
 
-      return toResponse(
-        {
-          isPaid: (relevantOrderStatuses as readonly string[]).includes(order.status),
-        },
-        context.locale,
-      );
+      return {
+        isPaid: (relevantOrderStatuses as readonly string[]).includes(order.status),
+      };
     }),
 };

@@ -2,7 +2,6 @@ import z from "zod";
 
 import { adminAccountTable } from "#src/db/schema.ts";
 import { dashboardTxRoute } from "#src/routing/base.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
 import { logAdminAction } from "#src/utils/adminActionLog.ts";
 
 import { AlreadyAdmin, UserNotFound } from "./admins.errors.ts";
@@ -56,6 +55,6 @@ export const adminsRoutes = {
         },
       });
 
-      return toResponse({ success: true as const }, context.locale);
+      return { success: true as const };
     }),
 };

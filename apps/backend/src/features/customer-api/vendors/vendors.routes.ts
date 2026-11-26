@@ -7,7 +7,7 @@ import {
   type ReviewSummary,
 } from "#src/features/customer-api/reviews/reviews.utils.ts";
 import { customerRoute } from "#src/routing/base.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
+import { resolveLocalizedFields } from "#src/routing/localizedFields.ts";
 import { FIRST_LINKED_IMAGE_SELECT, getFirstLinkedImageUrl } from "#src/utils/imageUrl.ts";
 
 // Vendors without approved reviews have no rating rather than a zero.
@@ -37,7 +37,7 @@ export const vendorsRoutes = {
       }
       const ratings = await getReviewSummaryMap(context.db, "VENDOR", [vendor.id]);
 
-      return toResponse(
+      return resolveLocalizedFields(
         {
           id: vendor.id,
           slug: vendor.slug,
@@ -69,7 +69,7 @@ export const vendorsRoutes = {
       vendors.map((vendor) => vendor.id),
     );
 
-    return toResponse(
+    return resolveLocalizedFields(
       vendors.map((vendor) => ({
         id: vendor.id,
         slug: vendor.slug,
@@ -117,24 +117,21 @@ export const vendorsRoutes = {
         limit,
       });
 
-      return toResponse(
-        reviews.map((review) => {
-          const displayName = review.showReviewerName ? review.reviewerName.trim() : "Anonymous";
+      return reviews.map((review) => {
+        const displayName = review.showReviewerName ? review.reviewerName.trim() : "Anonymous";
 
-          return {
-            id: review.id,
-            vendorId: review.vendorId ?? id,
-            rating: review.rating,
-            comment: review.comment ?? null,
-            createdAt: review.createdAt,
-            updatedAt: review.updatedAt,
-            reviewer: {
-              isAnonymous: !review.showReviewerName,
-              displayName,
-            },
-          };
-        }),
-        context.locale,
-      );
+        return {
+          id: review.id,
+          vendorId: review.vendorId ?? id,
+          rating: review.rating,
+          comment: review.comment ?? null,
+          createdAt: review.createdAt,
+          updatedAt: review.updatedAt,
+          reviewer: {
+            isAnonymous: !review.showReviewerName,
+            displayName,
+          },
+        };
+      });
     }),
 };

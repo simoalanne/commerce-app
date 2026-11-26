@@ -5,7 +5,6 @@ import z from "zod";
 
 import { contactSubmissionTable } from "#src/db/schema.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
 import { logAdminAction } from "#src/utils/adminActionLog.ts";
 
 const contactSubmissionRoute = dashboardRoute.meta({ access: "ADMIN" });
@@ -35,14 +34,11 @@ export const contactSubmissionsRoutes = {
       columns: contactSubmissionColumns,
     });
 
-    return toResponse(
-      submissions.map(({ createdAt, updatedAt, ...rest }) => ({
-        ...rest,
-        createdAt,
-        updatedAt,
-      })),
-      context.locale,
-    );
+    return submissions.map(({ createdAt, updatedAt, ...rest }) => ({
+      ...rest,
+      createdAt,
+      updatedAt,
+    }));
   }),
 
   getById: contactSubmissionRoute
@@ -56,14 +52,11 @@ export const contactSubmissionsRoutes = {
       if (!submission) throw new RouteError("NOT_FOUND", { status: 404 });
       const { createdAt, updatedAt, ...rest } = submission;
 
-      return toResponse(
-        {
-          ...rest,
-          createdAt,
-          updatedAt,
-        },
-        context.locale,
-      );
+      return {
+        ...rest,
+        createdAt,
+        updatedAt,
+      };
     }),
 
   updateStatus: contactSubmissionTxRoute

@@ -6,7 +6,7 @@ import { productTagTable, tagTable } from "#src/db/schema.ts";
 import { productsRoutes as customerProductsRoutes } from "#src/features/customer-api/products/products.routes.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { EntityInUse } from "#src/routing/errors.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
+import { resolveLocalizedFields } from "#src/routing/localizedFields.ts";
 import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import { buildTag } from "#src/utils/buildTags.ts";
 import { mergeLocalizedString, toLocalizedString } from "#src/utils/localizedObject.ts";
@@ -45,7 +45,7 @@ export const tagsRoutes = {
       orderBy: { id: "asc" },
     });
 
-    return toResponse(tags, context.locale);
+    return resolveLocalizedFields(tags, context.locale);
   }),
 
   getById: tagRoute
@@ -57,7 +57,7 @@ export const tagsRoutes = {
         columns: { id: true, name: true, color: true },
       });
       if (!tag) throw new RouteError("NOT_FOUND", { status: 404 });
-      return toResponse(tag, context.locale);
+      return resolveLocalizedFields(tag, context.locale);
     }),
 
   create: tagTxRoute
@@ -85,7 +85,7 @@ export const tagsRoutes = {
         payload: { tags: tagInvalidationTags() },
       });
 
-      return toResponse({ id: tag.id }, context.locale);
+      return { id: tag.id };
     }),
 
   update: tagTxRoute
@@ -154,7 +154,7 @@ export const tagsRoutes = {
     const result = await context.db.query.tag.findMany({
       columns: { id: true, name: true },
     });
-    return toResponse(
+    return resolveLocalizedFields(
       result.map(({ id, name }) => ({ id, name })),
       context.locale,
     );

@@ -9,7 +9,7 @@ import {
 } from "#src/features/customer-api/reviews/reviews.utils.ts";
 import type { ObjectStorageProvider } from "#src/integrations/object-storage/objectStorage.provider.ts";
 import { customerRoute } from "#src/routing/base.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
+import { resolveLocalizedFields } from "#src/routing/localizedFields.ts";
 import {
   ALL_LINKED_IMAGES_SELECT,
   FIRST_LINKED_IMAGE_SELECT,
@@ -67,7 +67,7 @@ export const productsRoutes = {
       if (!product) throw new RouteError("NOT_FOUND", { status: 404 });
       const reviewSummaries = await getReviewSummaryMap(context.db, "PRODUCT", [product.id]);
 
-      return toResponse(
+      return resolveLocalizedFields(
         {
           ...toProductSummary(context.storage, product, reviewSummaries.get(product.id)),
           fullDescription: product.fullDescription,
@@ -99,7 +99,7 @@ export const productsRoutes = {
         products.map((product) => product.id),
       );
 
-      return toResponse(
+      return resolveLocalizedFields(
         products.map((product) =>
           toProductSummary(context.storage, product, reviewSummaries.get(product.id)),
         ),

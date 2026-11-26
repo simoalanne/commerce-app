@@ -1,5 +1,4 @@
 import { customerRoute } from "#src/routing/base.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
 
 import { accountRoutes } from "./account.routes.ts";
 import { addressesRoutes } from "./addresses.routes.ts";
@@ -19,6 +18,6 @@ export const userRoutes = {
         lastName: identity.lastName,
       });
 
-      return toResponse(exportData, context.locale);
+      return exportData;
     }),
 };

@@ -12,7 +12,7 @@ import { storefrontRoutes } from "#src/features/customer-api/storefront/storefro
 import { vendorsRoutes as customerVendorsRoutes } from "#src/features/customer-api/vendors/vendors.routes.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { EntityInUse } from "#src/routing/errors.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
+import { resolveLocalizedFields } from "#src/routing/localizedFields.ts";
 import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import { buildTag } from "#src/utils/buildTags.ts";
 import { mergeLocalizedString, toLocalizedString } from "#src/utils/localizedObject.ts";
@@ -78,7 +78,7 @@ export const vendorsRoutes = {
       },
     });
 
-    return toResponse(vendors.map(mapVendor), context.locale);
+    return resolveLocalizedFields(vendors.map(mapVendor), context.locale);
   }),
 
   getById: vendorRoute
@@ -97,7 +97,7 @@ export const vendorsRoutes = {
       });
       if (!vendor) throw new RouteError("NOT_FOUND", { status: 404 });
 
-      return toResponse(mapVendor(vendor), context.locale);
+      return resolveLocalizedFields(mapVendor(vendor), context.locale);
     }),
 
   create: vendorTxRoute
@@ -132,7 +132,7 @@ export const vendorsRoutes = {
         payload: { tags: buildVendorInvalidationTags(vendor.id) },
       });
 
-      return toResponse({ id: vendor.id }, context.locale);
+      return { id: vendor.id };
     }),
 
   update: vendorTxRoute
@@ -221,9 +221,6 @@ export const vendorsRoutes = {
       columns: { id: true, name: true },
     });
 
-    return toResponse(
-      result.map(({ id, name }) => ({ id, name })),
-      context.locale,
-    );
+    return result.map(({ id, name }) => ({ id, name }));
   }),
 };

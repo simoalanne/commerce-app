@@ -7,7 +7,7 @@ import z from "zod";
 import { legalDocumentTable } from "#src/db/schema.ts";
 import { legalDocumentsRoutes as customerLegalDocumentsRoutes } from "#src/features/customer-api/legalDocuments/legalDocuments.routes.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
+import { resolveLocalizedFields } from "#src/routing/localizedFields.ts";
 import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import { buildTag } from "#src/utils/buildTags.ts";
 import { mergeLocalizedString, toLocalizedString } from "#src/utils/localizedObject.ts";
@@ -24,7 +24,7 @@ export const legalDocumentsRoutes = {
         where: { key: query.key },
       });
 
-      return toResponse(
+      return resolveLocalizedFields(
         document
           ? {
               key: document.key,
@@ -90,7 +90,7 @@ export const legalDocumentsRoutes = {
         },
       });
 
-      return toResponse(
+      return resolveLocalizedFields(
         {
           key: document.key,
           title: document.title,

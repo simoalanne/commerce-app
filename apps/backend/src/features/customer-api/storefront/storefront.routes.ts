@@ -3,7 +3,7 @@ import {
   activeStorefrontProductWhere,
 } from "#src/domain/storefrontVisibility.ts";
 import { customerRoute } from "#src/routing/base.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
+import { resolveLocalizedFields } from "#src/routing/localizedFields.ts";
 import { FIRST_LINKED_IMAGE_SELECT, getFirstLinkedImageUrl } from "#src/utils/imageUrl.ts";
 
 export const storefrontRoutes = {
@@ -50,7 +50,7 @@ export const storefrontRoutes = {
       }),
     ]);
 
-    return toResponse(
+    return resolveLocalizedFields(
       {
         vendors: vendors.map(({ images, updatedAt, isFeatured, ...vendor }) => ({
           ...vendor,

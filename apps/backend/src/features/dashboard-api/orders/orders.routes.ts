@@ -10,7 +10,6 @@ import {
   type RelevantOrder,
 } from "#src/features/customer-api/orders/relevantOrders.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
 import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import { generateOrderInvoicePdf } from "#src/utils/pdf/generateOrderInvoicePdf.ts";
 import { generateRefundReceiptPdf } from "#src/utils/pdf/generateRefundReceiptPdf.ts";
@@ -177,31 +176,28 @@ export const ordersRoutes = {
         customerId: query.customerId,
       });
 
-      return toResponse(
-        orders.map((order) => {
-          const orderDetails = order.orderDetails;
+      return orders.map((order) => {
+        const orderDetails = order.orderDetails;
 
-          return {
-            id: order.id,
-            totalCents: order.chargedTotalCents,
-            status: order.status,
-            createdAt: order.createdAt,
-            customerId: order.customerId,
-            contact: {
-              name: orderDetails.customer.name,
-              email: orderDetails.customer.email,
-              phone: orderDetails.customer.phone,
-            },
-            delivery: {
-              addressLabel: orderDetails.delivery.addressLabel,
-              instructions: orderDetails.delivery.instructions,
-            },
-            refundSummary: buildOrderRefundSummary(order),
-            refundReceipts: order.refundReceipts,
-          };
-        }),
-        context.locale,
-      );
+        return {
+          id: order.id,
+          totalCents: order.chargedTotalCents,
+          status: order.status,
+          createdAt: order.createdAt,
+          customerId: order.customerId,
+          contact: {
+            name: orderDetails.customer.name,
+            email: orderDetails.customer.email,
+            phone: orderDetails.customer.phone,
+          },
+          delivery: {
+            addressLabel: orderDetails.delivery.addressLabel,
+            instructions: orderDetails.delivery.instructions,
+          },
+          refundSummary: buildOrderRefundSummary(order),
+          refundReceipts: order.refundReceipts,
+        };
+      });
     }),
 
   getById: orderRoute
@@ -228,40 +224,37 @@ export const ordersRoutes = {
       };
       const pricing = buildOrderPricing(order);
 
-      return toResponse(
-        {
-          ...strippedOrder,
-          customer: {
-            name: orderDetails.customer.name,
-            email: orderDetails.customer.email,
-            phone: orderDetails.customer.phone,
-          },
-          delivery: {
-            addressLabel: orderDetails.delivery.addressLabel,
-            instructions: orderDetails.delivery.instructions,
-          },
-          items: order.orderItems.map((item) => ({
-            id: item.id,
-            sku: item.sku,
-            quantity: item.quantity,
-            uncommittedQuantity: item.uncommittedQuantity,
-            refundedQuantity: refundableItemById.get(item.id)?.refundedQuantity ?? 0,
-            unitPriceCents: item.unitSalesPriceCents,
-            productId: item.productId,
-            productName: item.name,
-            productImageUrl: item.product?.images[0]?.image.storageKey
-              ? context.storage.getPublicUrl(item.product.images[0].image.storageKey)
-              : undefined,
-            vendorId: item.vendorId,
-            vendorName: item.vendorName,
-          })),
-          pricing,
-          refundSummary,
-          refundReceipts: order.refundReceipts,
-          refundability,
+      return {
+        ...strippedOrder,
+        customer: {
+          name: orderDetails.customer.name,
+          email: orderDetails.customer.email,
+          phone: orderDetails.customer.phone,
         },
-        context.locale,
-      );
+        delivery: {
+          addressLabel: orderDetails.delivery.addressLabel,
+          instructions: orderDetails.delivery.instructions,
+        },
+        items: order.orderItems.map((item) => ({
+          id: item.id,
+          sku: item.sku,
+          quantity: item.quantity,
+          uncommittedQuantity: item.uncommittedQuantity,
+          refundedQuantity: refundableItemById.get(item.id)?.refundedQuantity ?? 0,
+          unitPriceCents: item.unitSalesPriceCents,
+          productId: item.productId,
+          productName: item.name,
+          productImageUrl: item.product?.images[0]?.image.storageKey
+            ? context.storage.getPublicUrl(item.product.images[0].image.storageKey)
+            : undefined,
+          vendorId: item.vendorId,
+          vendorName: item.vendorName,
+        })),
+        pricing,
+        refundSummary,
+        refundReceipts: order.refundReceipts,
+        refundability,
+      };
     }),
 
   downloadInvoice: orderRoute
@@ -440,6 +433,6 @@ export const ordersRoutes = {
         status: "PENDING" as const,
       };
 
-      return toResponse(result, context.locale);
+      return result;
     }),
 };

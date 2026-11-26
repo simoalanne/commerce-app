@@ -11,7 +11,7 @@ import { reviewsRoutes as customerReviewsRoutes } from "#src/features/customer-a
 import { storefrontRoutes } from "#src/features/customer-api/storefront/storefront.routes.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { EntityInUse } from "#src/routing/errors.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
+import { resolveLocalizedFields } from "#src/routing/localizedFields.ts";
 import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import { buildTag } from "#src/utils/buildTags.ts";
 import {
@@ -94,7 +94,7 @@ export const productsRoutes = {
   getAll: productRoute.get("/products").handler(async ({ context }) => {
     const products = await context.db.query.product.findMany({ with: productLinksWith });
 
-    return toResponse(products.map(mapProduct), context.locale);
+    return resolveLocalizedFields(products.map(mapProduct), context.locale);
   }),
 
   getById: productRoute
@@ -107,7 +107,7 @@ export const productsRoutes = {
       });
       if (!product) throw new RouteError("NOT_FOUND", { status: 404 });
 
-      return toResponse(mapProduct(product), context.locale);
+      return resolveLocalizedFields(mapProduct(product), context.locale);
     }),
 
   create: productTxRoute
@@ -148,7 +148,7 @@ export const productsRoutes = {
         payload: { productIds: [product.id] },
       });
 
-      return toResponse({ id: product.id }, context.locale);
+      return { id: product.id };
     }),
 
   update: productTxRoute
@@ -236,7 +236,7 @@ export const productsRoutes = {
       columns: { id: true, name: true, sku: true },
     });
 
-    return toResponse(
+    return resolveLocalizedFields(
       result.map(({ id, name }) => ({ id, name })),
       context.locale,
     );

@@ -2,7 +2,7 @@ import { RouteError } from "@rest-rpc/server";
 import z from "zod";
 
 import { customerRoute } from "#src/routing/base.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
+import { resolveLocalizedFields } from "#src/routing/localizedFields.ts";
 
 const LegalDocumentKeySchema = z.enum([
   "PRIVACY_NOTICE",
@@ -21,7 +21,7 @@ export const legalDocumentsRoutes = {
       });
       if (!document) throw new RouteError("NOT_FOUND", { status: 404 });
 
-      return toResponse(
+      return resolveLocalizedFields(
         {
           key: document.key,
           title: document.title,

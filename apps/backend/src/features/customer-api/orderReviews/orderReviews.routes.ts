@@ -6,7 +6,7 @@ import { verifyOrderCapabilityJwt } from "#src/features/customer-api/orders/orde
 import { ordersRoutes as customerOrdersRoutes } from "#src/features/customer-api/orders/orders.routes.ts";
 import { customerRoute, customerTxRoute } from "#src/routing/base.ts";
 import { ImageUploadInvalidContentType, ImageUploadTooLarge } from "#src/routing/errors.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
+import { resolveLocalizedFields } from "#src/routing/localizedFields.ts";
 import { buildTag } from "#src/utils/buildTags.ts";
 import { FIRST_LINKED_IMAGE_SELECT, getFirstLinkedImageUrl } from "#src/utils/imageUrl.ts";
 import { buildReviewInvalidationTags } from "#src/utils/reviewInvalidationTags.ts";
@@ -75,13 +75,10 @@ export const orderReviewsRoutes = {
         throw new ImageUploadTooLarge();
       }
 
-      return toResponse(
-        await context.storage.getPresignedUrl({
-          contentType: body.contentType,
-          contentLength: body.contentLength,
-        }),
-        context.locale,
-      );
+      return await context.storage.getPresignedUrl({
+        contentType: body.contentType,
+        contentLength: body.contentLength,
+      });
     }),
 
   getByOrder: customerRoute
@@ -220,7 +217,7 @@ export const orderReviewsRoutes = {
         };
       });
 
-      return toResponse(
+      return resolveLocalizedFields(
         {
           reviewables: [...productReviews, ...vendorReviews, storeReview],
         },

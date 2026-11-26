@@ -13,7 +13,6 @@ import {
 } from "#src/db/schema.ts";
 import { supportedLocales } from "#src/locales.ts";
 import { dashboardRoute } from "#src/routing/base.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
 
 import {
   buildSummaryResponse,
@@ -192,15 +191,13 @@ export const summaryRoutes = {
         queryLocalizationCoverageRows(context.db),
       ]);
 
-      return toResponse(
-        buildSummaryResponse({
-          now,
-          days,
-          orderRow: orderRows[0],
-          activeProducts,
-          customers,
-          localizationRow: localizationRows[0],
-        }),
-      );
+      return buildSummaryResponse({
+        now,
+        days,
+        orderRow: orderRows[0],
+        activeProducts,
+        customers,
+        localizationRow: localizationRows[0],
+      });
     }),
 };

@@ -1,5 +1,4 @@
 import { dashboardRoute } from "#src/routing/base.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
 
 const adminActionLogRoute = dashboardRoute.meta({ access: "ADMIN" });
 
@@ -14,17 +13,15 @@ export const adminActionLogsRoutes = {
       limit: ADMIN_ACTION_LOG_ENTRY_LIMIT,
     });
 
-    return toResponse(
-      logs.map((log) => ({
-        id: log.id,
-        adminAccountId: log.adminAccountId,
-        adminEmail: log.adminEmail,
-        action: log.action,
-        entity: log.entity,
-        entityId: log.entityId,
-        details: log.details,
-        createdAt: log.createdAt,
-      })),
-    );
+    return logs.map((log) => ({
+      id: log.id,
+      adminAccountId: log.adminAccountId,
+      adminEmail: log.adminEmail,
+      action: log.action,
+      entity: log.entity,
+      entityId: log.entityId,
+      details: log.details,
+      createdAt: log.createdAt,
+    }));
   }),
 };

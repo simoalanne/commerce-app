@@ -4,7 +4,6 @@ import z from "zod";
 import { customerAccountTable, orderTable } from "#src/db/schema.ts";
 import logger from "#src/logger.ts";
 import { dashboardRoute } from "#src/routing/base.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
 
 const customerRoute = dashboardRoute.meta({ access: "ADMIN" });
 
@@ -39,35 +38,31 @@ export const customersRoutes = {
         .where(query.customerId ? eq(customerAccountTable.id, query.customerId) : undefined)
         .groupBy(customerAccountTable.id);
 
-      if (customers.length === 0) {
-        return toResponse([], context.locale);
-      }
-
-      const clerkIds = customers.map((customer) => customer.clerkId);
-      const authUsers = await context.auth.getUsersByIds(clerkIds);
+      // Skip the Clerk call when there is no one to look up.
+      const authUsers =
+        customers.length > 0
+          ? await context.auth.getUsersByIds(customers.map((customer) => customer.clerkId))
+          : [];
       const clerkUserById = new Map(authUsers.map((user) => [user.id, user] as const));
 
-      return toResponse(
-        customers
-          .filter((customer) => {
-            const exists = clerkUserById.has(customer.clerkId);
-            if (!exists) {
-              logger.warn(
-                `Customer with id ${customer.id} has Clerk id ${customer.clerkId} which does not exist in Clerk. This customer will be skipped.`,
-              );
-            }
-            return exists;
-          })
-          .map(({ clerkId, ...customer }) => {
-            const clerkUser = clerkUserById.get(clerkId)!;
-            return {
-              ...customer,
-              email: clerkUser.email,
-              fullName: clerkUser.fullName ?? clerkUser.email,
-            };
-          }),
-        context.locale,
-      );
+      return customers
+        .filter((customer) => {
+          const exists = clerkUserById.has(customer.clerkId);
+          if (!exists) {
+            logger.warn(
+              `Customer with id ${customer.id} has Clerk id ${customer.clerkId} which does not exist in Clerk. This customer will be skipped.`,
+            );
+          }
+          return exists;
+        })
+        .map(({ clerkId, ...customer }) => {
+          const clerkUser = clerkUserById.get(clerkId)!;
+          return {
+            ...customer,
+            email: clerkUser.email,
+            fullName: clerkUser.fullName ?? clerkUser.email,
+          };
+        });
     }),
 
   // TODO: implement this once we actually have detailed data for customers.

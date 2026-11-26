@@ -3,7 +3,7 @@ import z from "zod";
 
 import type { ObjectStorageProvider } from "#src/integrations/object-storage/objectStorage.provider.ts";
 import { customerRoute } from "#src/routing/base.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
+import { resolveLocalizedFields } from "#src/routing/localizedFields.ts";
 import { getFirstLinkedImageUrl, IMAGE_PLACEHOLDER_URL } from "#src/utils/imageUrl.ts";
 import { relevantOrderStatuses } from "#src/utils/orderStatus.ts";
 import { generateOrderInvoicePdf } from "#src/utils/pdf/generateOrderInvoicePdf.ts";
@@ -70,7 +70,7 @@ export const ordersRoutes = {
         customerId: context.authContext.customerId,
       });
 
-      return toResponse(buildOrderDetail(context.storage, order), context.locale);
+      return resolveLocalizedFields(buildOrderDetail(context.storage, order), context.locale);
     }),
 
   downloadInvoice: customerRoute
@@ -136,7 +136,7 @@ export const ordersRoutes = {
       const order = await findRelevantOrderById(context.db, {
         orderId: capability.orderId,
       });
-      return toResponse(buildOrderDetail(context.storage, order), context.locale);
+      return resolveLocalizedFields(buildOrderDetail(context.storage, order), context.locale);
     }),
 
   createAccessToken: customerRoute
@@ -153,12 +153,9 @@ export const ordersRoutes = {
       const { orderId, token, scope } = body;
 
       if (token) {
-        return toResponse(
-          await createOrderCapabilityJwt(
-            { db: context.db, config: context.config },
-            { token, scope },
-          ),
-          context.locale,
+        return await createOrderCapabilityJwt(
+          { db: context.db, config: context.config },
+          { token, scope },
         );
       }
 
@@ -177,12 +174,9 @@ export const ordersRoutes = {
       });
       if (!order) throw new RouteError("NOT_FOUND", { status: 404 });
 
-      return toResponse(
-        await createOrderCapabilityJwt(
-          { db: context.db, config: context.config },
-          { orderId, customerId: authContext.customerId, scope },
-        ),
-        context.locale,
+      return await createOrderCapabilityJwt(
+        { db: context.db, config: context.config },
+        { orderId, customerId: authContext.customerId, scope },
       );
     }),
 
@@ -194,7 +188,7 @@ export const ordersRoutes = {
         customerId: context.authContext.customerId,
       });
 
-      return toResponse(
+      return resolveLocalizedFields(
         orders.map((order) => {
           const detail = buildOrderDetail(context.storage, order);
           const [itemPreview, ...remainingItems] = detail.orderDetails.items;

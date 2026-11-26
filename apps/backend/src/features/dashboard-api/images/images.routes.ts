@@ -7,7 +7,7 @@ import type { LocalizedString } from "#src/db/json.ts";
 import { imageTable } from "#src/db/schema.ts";
 import { type AppContext, dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { ImageUploadInvalidContentType, ImageUploadTooLarge } from "#src/routing/errors.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
+import { resolveLocalizedFields } from "#src/routing/localizedFields.ts";
 import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import { mergeLocalizedString, toLocalizedString } from "#src/utils/localizedObject.ts";
 
@@ -47,15 +47,12 @@ export const imagesRoutes = {
       },
       orderBy: { createdAt: "desc", id: "desc" },
     });
-    return toResponse(
-      images.map((img) => ({
-        id: img.id,
-        url: context.storage.getPublicUrl(img.storageKey),
-        name: img.name,
-        createdAt: img.createdAt,
-      })),
-      context.locale,
-    );
+    return images.map((img) => ({
+      id: img.id,
+      url: context.storage.getPublicUrl(img.storageKey),
+      name: img.name,
+      createdAt: img.createdAt,
+    }));
   }),
 
   getById: imageRoute
@@ -66,7 +63,7 @@ export const imagesRoutes = {
         where: { id: params.id, kind: "CMS" },
       });
       if (!image) throw new RouteError("NOT_FOUND", { status: 404 });
-      return toResponse(toImageResponse(context.storage, image), context.locale);
+      return resolveLocalizedFields(toImageResponse(context.storage, image), context.locale);
     }),
 
   update: imageTxRoute
@@ -97,7 +94,7 @@ export const imagesRoutes = {
         after: updated,
       });
 
-      return toResponse(toImageResponse(context.storage, updated), context.locale);
+      return resolveLocalizedFields(toImageResponse(context.storage, updated), context.locale);
     }),
 
   delete: imageTxRoute
@@ -126,7 +123,7 @@ export const imagesRoutes = {
       // rolls the row back.
       await context.storage.deleteObject(image.storageKey);
 
-      return toResponse(toImageResponse(context.storage, deleted), context.locale);
+      return resolveLocalizedFields(toImageResponse(context.storage, deleted), context.locale);
     }),
 
   getPresignedUrl: imageRoute
@@ -148,13 +145,10 @@ export const imagesRoutes = {
         throw new ImageUploadTooLarge();
       }
 
-      return toResponse(
-        await context.storage.getPresignedUrl({
-          contentType: body.contentType,
-          contentLength: body.contentLength,
-        }),
-        context.locale,
-      );
+      return await context.storage.getPresignedUrl({
+        contentType: body.contentType,
+        contentLength: body.contentLength,
+      });
     }),
 
   create: imageTxRoute
@@ -185,6 +179,6 @@ export const imagesRoutes = {
         after: image,
       });
 
-      return toResponse(toImageResponse(context.storage, image), context.locale);
+      return resolveLocalizedFields(toImageResponse(context.storage, image), context.locale);
     }),
 };

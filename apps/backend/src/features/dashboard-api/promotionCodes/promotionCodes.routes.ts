@@ -6,7 +6,6 @@ import z from "zod";
 import { promotionCodeTable } from "#src/db/schema.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { EntityInUse } from "#src/routing/errors.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
 import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import tryDeleteEntity from "#src/utils/tryDeleteEntity.ts";
 
@@ -16,13 +15,11 @@ const promotionCodeTxRoute = dashboardTxRoute.meta({ access: "ADMIN" });
 const idParams = z.object({ id: z.coerce.number<number>().int().positive() });
 
 export const promotionCodesRoutes = {
-  getAll: promotionCodeRoute.get("/promotion-codes").handler(async ({ context }) =>
-    toResponse(
+  getAll: promotionCodeRoute.get("/promotion-codes").handler(
+    async ({ context }) =>
       await context.db.query.promotionCode.findMany({
         orderBy: { createdAt: "desc", id: "desc" },
       }),
-      context.locale,
-    ),
   ),
 
   getById: promotionCodeRoute
@@ -35,7 +32,7 @@ export const promotionCodesRoutes = {
         },
       });
       if (!promotionCode) throw new RouteError("NOT_FOUND", { status: 404 });
-      return toResponse(promotionCode, context.locale);
+      return promotionCode;
     }),
 
   create: promotionCodeTxRoute
@@ -52,7 +49,7 @@ export const promotionCodesRoutes = {
         after: promotionCode,
       });
 
-      return toResponse({ id: promotionCode.id }, context.locale);
+      return { id: promotionCode.id };
     }),
 
   update: promotionCodeTxRoute
@@ -114,12 +111,9 @@ export const promotionCodesRoutes = {
         orderBy: { code: "asc", id: "asc" },
       });
 
-      return toResponse(
-        promotionCodes.map(({ id, code }) => ({
-          id,
-          name: code,
-        })),
-        context.locale,
-      );
+      return promotionCodes.map(({ id, code }) => ({
+        id,
+        name: code,
+      }));
     }),
 };

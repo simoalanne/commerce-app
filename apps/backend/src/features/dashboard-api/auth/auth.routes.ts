@@ -1,7 +1,6 @@
 import { RouteError } from "@rest-rpc/server";
 
 import { dashboardRoute } from "#src/routing/base.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
 
 export const authRoutes = {
   getSession: dashboardRoute
@@ -15,6 +14,6 @@ export const authRoutes = {
       });
       if (!user) throw new RouteError("NOT_FOUND", { status: 404 });
 
-      return toResponse({ role: user.adminAccount ? ("ADMIN" as const) : null }, context.locale);
+      return { role: user.adminAccount ? ("ADMIN" as const) : null };
     }),
 };

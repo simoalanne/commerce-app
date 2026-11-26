@@ -3,7 +3,7 @@ import z from "zod";
 
 import { reviewTable } from "#src/db/schema.ts";
 import { customerRoute } from "#src/routing/base.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
+import { resolveLocalizedFields } from "#src/routing/localizedFields.ts";
 
 import { getReviewSummaryMap, getReviewerDisplayName } from "./reviews.utils.ts";
 
@@ -87,7 +87,7 @@ export const reviewsRoutes = {
         };
       });
 
-    return toResponse(
+    return resolveLocalizedFields(
       {
         summary: {
           avgRating:
@@ -123,23 +123,20 @@ export const reviewsRoutes = {
       ]);
       const summary = summaries.get(params.productId) ?? { avgRating: 0, reviewCount: 0 };
 
-      return toResponse(
-        {
-          summary,
-          items: reviews.map((review) => ({
-            id: review.id,
-            productId: review.productId ?? params.productId,
-            rating: review.rating,
-            comment: review.comment ?? null,
-            createdAt: review.createdAt,
-            updatedAt: review.updatedAt,
-            reviewer: {
-              isAnonymous: !review.showReviewerName,
-              displayName: getReviewerDisplayName(review.reviewerName, review.showReviewerName),
-            },
-          })),
-        },
-        context.locale,
-      );
+      return {
+        summary,
+        items: reviews.map((review) => ({
+          id: review.id,
+          productId: review.productId ?? params.productId,
+          rating: review.rating,
+          comment: review.comment ?? null,
+          createdAt: review.createdAt,
+          updatedAt: review.updatedAt,
+          reviewer: {
+            isAnonymous: !review.showReviewerName,
+            displayName: getReviewerDisplayName(review.reviewerName, review.showReviewerName),
+          },
+        })),
+      };
     }),
 };

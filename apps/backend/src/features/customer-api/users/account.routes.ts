@@ -18,7 +18,6 @@ import {
 } from "#src/domain/storefrontVisibility.ts";
 import logger from "#src/logger.ts";
 import { customerRoute, customerTxRoute } from "#src/routing/base.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
 
 import { AccountDeletionBlockedByPaidOrders } from "./account.errors.ts";
 
@@ -172,14 +171,11 @@ export const accountRoutes = {
       },
     });
 
-    return toResponse(
-      cartItems.map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        addedAt: item.addedAt,
-      })),
-      context.locale,
-    );
+    return cartItems.map((item) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+      addedAt: item.addedAt,
+    }));
   }),
 
   setSavedCart: accountTxRoute
@@ -234,13 +230,10 @@ export const accountRoutes = {
         },
       });
 
-      return toResponse(
-        products.map((item) => ({
-          id: item.productId,
-          addedAt: item.addedAt,
-        })),
-        context.locale,
-      );
+      return products.map((item) => ({
+        id: item.productId,
+        addedAt: item.addedAt,
+      }));
     }),
 
   addFavoriteProduct: accountRoute
@@ -291,13 +284,10 @@ export const accountRoutes = {
         },
       });
 
-      return toResponse(
-        vendors.map((item) => ({
-          id: item.vendorId,
-          addedAt: item.addedAt,
-        })),
-        context.locale,
-      );
+      return vendors.map((item) => ({
+        id: item.vendorId,
+        addedAt: item.addedAt,
+      }));
     }),
 
   addFavoriteVendor: accountRoute
@@ -338,7 +328,7 @@ export const accountRoutes = {
     });
     if (!account) throw new RouteError("NOT_FOUND", { status: 404 });
 
-    return toResponse({ preferredLocale: account.preferredLocale }, context.locale);
+    return { preferredLocale: account.preferredLocale };
   }),
 
   setPreferences: accountRoute

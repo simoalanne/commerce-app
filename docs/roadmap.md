@@ -26,7 +26,7 @@ The sections below are input for these steps.
 ## Decisions
 
 - **Money:** integer cents (minor units). Columns and API fields carry a `_cents` / `Cents` suffix; percentages (`vatRate`, `markupPercent`) are not money.
-- **Localized content:** stays in JSON columns, resolved by `toResponse`. Query-level localization may replace that later, not now.
+- **Localized content:** stays in JSON columns, resolved by `resolveLocalizedFields` where a response has them. Query-level localization may replace that later, not now.
 - **Job queue:** pg-boss.
 - **Test runner:** Vitest with its default setup.
 - **Checkout tips, UTM attribution, per-kg pricing, delivery fee model:** not core; removed.

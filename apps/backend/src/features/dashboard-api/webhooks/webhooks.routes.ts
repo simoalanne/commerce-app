@@ -6,7 +6,6 @@ import z from "zod";
 import { webhookSubscriptionTable } from "#src/db/schema.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { EntityInUse } from "#src/routing/errors.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
 import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import tryDeleteEntity from "#src/utils/tryDeleteEntity.ts";
 
@@ -16,15 +15,13 @@ const webhookTxRoute = dashboardTxRoute.meta({ access: "ADMIN" });
 const idParams = z.object({ id: z.coerce.number<number>().int().positive() });
 
 export const webhooksRoutes = {
-  getAll: webhookRoute.get("/webhooks").handler(async ({ context }) =>
-    toResponse(
+  getAll: webhookRoute.get("/webhooks").handler(
+    async ({ context }) =>
       await context.db.query.webhookSubscription.findMany({
         orderBy: {
           id: "asc",
         },
       }),
-      context.locale,
-    ),
   ),
 
   getById: webhookRoute
@@ -35,7 +32,7 @@ export const webhooksRoutes = {
         where: { id: params.id },
       });
       if (!subscription) throw new RouteError("NOT_FOUND", { status: 404 });
-      return toResponse(subscription, context.locale);
+      return subscription;
     }),
 
   create: webhookTxRoute
@@ -55,7 +52,7 @@ export const webhooksRoutes = {
         after: subscription,
       });
 
-      return toResponse({ id: subscription.id }, context.locale);
+      return { id: subscription.id };
     }),
 
   update: webhookTxRoute
@@ -117,12 +114,9 @@ export const webhooksRoutes = {
       },
     });
 
-    return toResponse(
-      subscriptions.map(({ id, event }) => ({
-        id,
-        name: event,
-      })),
-      context.locale,
-    );
+    return subscriptions.map(({ id, event }) => ({
+      id,
+      name: event,
+    }));
   }),
 };

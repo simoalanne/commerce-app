@@ -4,7 +4,7 @@ import z from "zod";
 
 import { reviewTable } from "#src/db/schema.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
+import { resolveLocalizedFields } from "#src/routing/localizedFields.ts";
 import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import { buildReviewInvalidationTags } from "#src/utils/reviewInvalidationTags.ts";
 
@@ -57,7 +57,7 @@ export const reviewsRoutes = {
         },
       });
 
-      return toResponse(
+      return resolveLocalizedFields(
         reviews.map((review) => {
           const baseRecord = {
             id: review.id,

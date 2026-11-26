@@ -10,7 +10,7 @@ import { productsRoutes as customerProductsRoutes } from "#src/features/customer
 import { storefrontRoutes } from "#src/features/customer-api/storefront/storefront.routes.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { EntityInUse } from "#src/routing/errors.ts";
-import { toResponse } from "#src/routing/toResponse.ts";
+import { resolveLocalizedFields } from "#src/routing/localizedFields.ts";
 import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import { buildTag } from "#src/utils/buildTags.ts";
 import {
@@ -67,22 +67,19 @@ export const categoriesRoutes = {
         columns: { id: true, markupPercent: true },
       });
 
-      return toResponse(
-        {
-          defaultMarkupPercent: DEFAULT_PRODUCT_MARKUP_PERCENT,
-          categories: categories.map((category) => ({
-            id: category.id,
-            markupPercent: category.markupPercent,
-          })),
-        },
-        context.locale,
-      );
+      return {
+        defaultMarkupPercent: DEFAULT_PRODUCT_MARKUP_PERCENT,
+        categories: categories.map((category) => ({
+          id: category.id,
+          markupPercent: category.markupPercent,
+        })),
+      };
     }),
 
   getAll: categoryRoute
     .get("/categories")
     .handler(async ({ context }) =>
-      toResponse(
+      resolveLocalizedFields(
         await context.db.query.category.findMany({ columns: categoryColumns }),
         context.locale,
       ),
@@ -97,7 +94,7 @@ export const categoriesRoutes = {
         columns: categoryColumns,
       });
       if (!category) throw new RouteError("NOT_FOUND", { status: 404 });
-      return toResponse(category, context.locale);
+      return resolveLocalizedFields(category, context.locale);
     }),
 
   create: categoryTxRoute
@@ -128,7 +125,7 @@ export const categoriesRoutes = {
         payload: { tags: buildCategoryInvalidationTags() },
       });
 
-      return toResponse({ id: category.id }, context.locale);
+      return { id: category.id };
     }),
 
   update: categoryTxRoute
@@ -212,7 +209,7 @@ export const categoriesRoutes = {
   getOptionsForForm: categoryRoute
     .get("/categories/options-for-form")
     .handler(async ({ context }) =>
-      toResponse(
+      resolveLocalizedFields(
         await context.db.query.category.findMany({
           columns: { id: true, name: true },
         }),
