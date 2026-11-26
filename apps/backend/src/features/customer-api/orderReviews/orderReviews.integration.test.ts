@@ -328,13 +328,6 @@ describe("customerApi.orderReviews integration", () => {
       );
     expect(storedReviewSummaries).toStrictEqual([
       {
-        kind: "STORE_EXPERIENCE",
-        productId: null,
-        rating: 4,
-        comment: "Easy order",
-        showReviewerName: false,
-      },
-      {
         kind: "PRODUCT",
         productId: scenario.productOne.id,
         rating: 4,
@@ -353,6 +346,13 @@ describe("customerApi.orderReviews integration", () => {
         productId: scenario.productThree.id,
         rating: 3,
         comment: null,
+        showReviewerName: false,
+      },
+      {
+        kind: "STORE_EXPERIENCE",
+        productId: null,
+        rating: 4,
+        comment: "Easy order",
         showReviewerName: false,
       },
     ]);

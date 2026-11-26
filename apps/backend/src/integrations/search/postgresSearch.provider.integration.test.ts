@@ -1,3 +1,4 @@
+import { supportedLocales } from "#src/locales.ts";
 import prismaClient from "#src/prisma.ts";
 import { createCategory, createVendor, createProduct } from "#src/tests/factories.ts";
 
@@ -37,7 +38,9 @@ afterEach(async () => {
   }
 });
 
-const uniqueSuffix = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+// Short and random: a shared prefix such as a timestamp would make unrelated
+// names look alike to trigram similarity.
+const uniqueSuffix = () => Math.random().toString(36).slice(2, 8);
 
 const createSearchStoryFixture = async () => {
   const suffix = uniqueSuffix();
@@ -169,7 +172,8 @@ describe("PostgresSearchProvider", () => {
     const documents = await listIndexedProductIds(product.id);
     const result = await search("index carrot");
 
-    expect(documents).toStrictEqual([product.id, product.id]);
+    // One search document per supported locale.
+    expect(documents).toStrictEqual(supportedLocales.map(() => product.id));
     expect(result.results.products.map((product) => product.id)).toStrictEqual([product.id]);
     expect(result.total).toBe(1);
   });
