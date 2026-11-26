@@ -1,11 +1,12 @@
 // Route modules are imported at build time without an environment (contract
 // extraction), so everything with side effects is imported as a type and
 // provided per request by index.ts as initial context.
-import { route } from "@rest-rpc/server";
+import { route, RouteError } from "@rest-rpc/server";
 
 import { customerApiPrefix, dashboardApiPrefix } from "#src/apiPrefixes.ts";
 import type envConfig from "#src/config.ts";
 import type { Db } from "#src/db/client.ts";
+import { adminActionLogTable } from "#src/db/schema.ts";
 import type { AuthProvider } from "#src/integrations/auth/auth.provider.ts";
 import type { EmailServiceProvider } from "#src/integrations/email/email.provider.ts";
 import type { ObjectStorageProvider } from "#src/integrations/object-storage/objectStorage.provider.ts";
@@ -130,4 +131,35 @@ const withTransaction = withContext.use(({ context, next }) =>
 
 export const customerTxRoute = withTransaction.prefix(customerApiPrefix);
 
-export const dashboardTxRoute = withTransaction.prefix(dashboardApiPrefix);
+// Like customerTxRoute, and logs the admin action: the admin, route, params,
+// body and outcome. The log commits with the change; a failed action rolls
+// back and is logged after.
+export const dashboardTxRoute = withContext
+  .prefix(dashboardApiPrefix)
+  .use(async ({ context, route, params, body, next }) => {
+    const log = (db: Db, status: number, result: unknown) =>
+      db.insert(adminActionLogTable).values({
+        adminAccountId: context.authContext.adminId,
+        route: `${route.method} ${route.path}`,
+        params,
+        body,
+        status,
+        result,
+      });
+
+    try {
+      return await context.db.transaction(async (tx) => {
+        const enqueueJob: EnqueueJob = (job) => context.jobQueue.enqueue(tx, job);
+        const response = await next({ context: { db: tx, enqueueJob } });
+        await log(tx, response.status, response.body);
+        return response;
+      });
+    } catch (error) {
+      await log(
+        context.db,
+        error instanceof RouteError ? error.status : 500,
+        error instanceof RouteError ? { code: error.code, data: error.data } : null,
+      );
+      throw error;
+    }
+  });

@@ -25,7 +25,6 @@ import {
 
 import type {
   CustomerAddressDeliveryDetails,
-  JsonValue,
   LocalizedString,
   LocalizedStringArray,
   OrderDetails,
@@ -75,12 +74,6 @@ export const promotionCodeDiscountTypeEnum = pgEnum("promotion_code_discount_typ
 ]);
 export const imageKindEnum = pgEnum("image_kind", ["CMS", "USER_REVIEW"]);
 export const reviewStatusEnum = pgEnum("review_status", ["PENDING", "APPROVED", "REJECTED"]);
-export const adminActionTypeEnum = pgEnum("admin_action_type", [
-  "CREATE",
-  "UPDATE",
-  "DELETE",
-  "OTHER",
-]);
 export const storefrontVisibilityEnum = pgEnum("storefront_visibility", ["ACTIVE", "INACTIVE"]);
 export const refundStatusEnum = pgEnum("refund_status", [
   "PENDING",
@@ -473,6 +466,7 @@ export const productSearchDocumentTable = snakeCase.table(
   ],
 );
 
+// One row per dashboardTxRoute request: the route is the action.
 export const adminActionLogTable = snakeCase.table(
   "admin_action_log",
   {
@@ -480,17 +474,14 @@ export const adminActionLogTable = snakeCase.table(
     adminAccountId: integer().references(() => adminAccountTable.id, {
       onDelete: "set null",
     }),
-    adminEmail: text().notNull(),
-    action: adminActionTypeEnum().notNull(),
-    entity: text().notNull(),
-    entityId: text(),
-    details: jsonb().$type<JsonValue>(),
+    // Method and path, such as "PUT /api/dashboard/products/:id".
+    route: text().notNull(),
+    params: jsonb(),
+    body: jsonb(),
+    status: integer().notNull(),
+    // The response body, or the error's code and data.
+    result: jsonb(),
     createdAt: createdAt(),
   },
-  (t) => [
-    index().on(t.adminAccountId),
-    index().on(t.createdAt),
-    index().on(t.entity, t.entityId),
-    index().on(t.action),
-  ],
+  (t) => [index().on(t.adminAccountId), index().on(t.createdAt)],
 );

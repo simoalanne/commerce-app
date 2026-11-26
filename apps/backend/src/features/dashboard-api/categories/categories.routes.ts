@@ -3,7 +3,6 @@ import { RouteError } from "@rest-rpc/server";
 import { eq } from "drizzle-orm";
 import z from "zod";
 
-import type { Db } from "#src/db/client.ts";
 import { categoryTable } from "#src/db/schema.ts";
 import { categoriesRoutes as customerCategoriesRoutes } from "#src/features/customer-api/categories/categories.routes.ts";
 import { productsRoutes as customerProductsRoutes } from "#src/features/customer-api/products/products.routes.ts";
@@ -11,7 +10,6 @@ import { storefrontRoutes } from "#src/features/customer-api/storefront/storefro
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { EntityInUse } from "#src/routing/errors.ts";
 import { resolveLocalizedFields } from "#src/routing/localizedFields.ts";
-import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import { buildTag } from "#src/utils/buildTags.ts";
 import {
   mergeLocalizedSlug,
@@ -44,15 +42,6 @@ const buildCategoryInvalidationTags = (productIds: number[] = []) => [
   buildTag(storefrontRoutes.getContext),
   ...productIds.map((productId) => buildTag(customerProductsRoutes.getById, productId)),
 ];
-
-const findCategoryForAudit = async (db: Db, id: number) => {
-  const category = await db.query.category.findFirst({
-    where: { id },
-    with: { image: { columns: { id: true, name: true } } },
-  });
-  if (!category) throw new RouteError("NOT_FOUND", { status: 404 });
-  return category;
-};
 
 // TODO: move this field to the database somewhere where it makes sense.
 // because I don't know where it makes sense in there (global, per category, etc.)
@@ -110,22 +99,13 @@ export const categoriesRoutes = {
           imageId: body.imageId,
         })
         .returning({ id: categoryTable.id });
-      const category = await findCategoryForAudit(context.db, id);
-
-      await logAdminAction(context, {
-        actor: context.authContext,
-        action: "CREATE",
-        entity: "category",
-        entityId: category.id,
-        after: category,
-      });
 
       await context.enqueueJob({
         type: "invalidateStorefrontCache",
         payload: { tags: buildCategoryInvalidationTags() },
       });
 
-      return { id: category.id };
+      return { id };
     }),
 
   update: categoryTxRoute
@@ -133,7 +113,11 @@ export const categoriesRoutes = {
     .params(idParams)
     .body(CategoryFormSchema)
     .handler(async ({ params, body, context }) => {
-      const existingCategory = await findCategoryForAudit(context.db, params.id);
+      const existingCategory = await context.db.query.category.findFirst({
+        where: { id: params.id },
+        columns: { name: true, slug: true },
+      });
+      if (!existingCategory) throw new RouteError("NOT_FOUND", { status: 404 });
       const affectedProducts = await context.db.query.product.findMany({
         where: { categoryId: params.id },
         columns: { id: true },
@@ -149,16 +133,6 @@ export const categoriesRoutes = {
           imageId: body.imageId,
         })
         .where(eq(categoryTable.id, params.id));
-      const updated = await findCategoryForAudit(context.db, params.id);
-
-      await logAdminAction(context, {
-        actor: context.authContext,
-        action: "UPDATE",
-        entity: "category",
-        entityId: params.id,
-        before: existingCategory,
-        after: updated,
-      });
 
       await context.enqueueJob({
         type: "invalidateStorefrontCache",
@@ -177,7 +151,6 @@ export const categoriesRoutes = {
     .params(idParams)
     .error(EntityInUse)
     .handler(async ({ params, context }) => {
-      const deleted = await findCategoryForAudit(context.db, params.id);
       const products = await context.db.query.product.findMany({
         where: { categoryId: params.id },
         columns: { id: true },
@@ -187,14 +160,6 @@ export const categoriesRoutes = {
       await tryDeleteEntity(() =>
         context.db.delete(categoryTable).where(eq(categoryTable.id, params.id)),
       );
-
-      await logAdminAction(context, {
-        actor: context.authContext,
-        action: "DELETE",
-        entity: "category",
-        entityId: params.id,
-        before: deleted,
-      });
 
       await context.enqueueJob({
         type: "invalidateStorefrontCache",

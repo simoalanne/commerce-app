@@ -80,7 +80,7 @@ Keep the good parts: the transactional enqueue (jobs are rows written in the sam
 
 ### `runAppTransaction`: replaced by transactional builders (done)
 
-Handlers no longer call it. A route that writes is built with `customerTxRoute` / `dashboardTxRoute`, whose middleware runs the whole handler in one transaction and provides it as `context.db`, with `context.enqueueJob` for jobs. `logAdminAction(db, entry)` is a plain helper. `AppContext.db` is typed as a transaction client, so handlers cannot open nested transactions.
+Handlers no longer call it. A route that writes is built with `customerTxRoute` / `dashboardTxRoute`, whose middleware runs the whole handler in one transaction and provides it as `context.db`, with `context.enqueueJob` for jobs. `dashboardTxRoute` also writes the admin action log. `AppContext.db` is typed as a transaction client, so handlers cannot open nested transactions.
 
 What remains of `runAppTransaction` is plumbing: the builders' middleware, jobs, webhooks, and the few plain routes that must keep an external call outside a transaction (checkout payment creation, account deletion, and auth's user creation). Its only extra job is handing enqueued job ids to the in-memory queue after commit. With pg-boss that step disappears and it becomes `db.transaction`; the builders and `context.enqueueJob` stay. Done: `runAppTransaction` is gone, and code outside the builders calls `db.transaction` and `jobQueue.enqueue(tx, job)`.
 

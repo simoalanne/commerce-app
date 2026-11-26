@@ -7,7 +7,6 @@ import { imageTable } from "#src/db/schema.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { ImageUploadInvalidContentType, ImageUploadTooLarge } from "#src/routing/errors.ts";
 import { resolveLocalizedFields } from "#src/routing/localizedFields.ts";
-import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import { mergeLocalizedString, toLocalizedString } from "#src/utils/localizedObject.ts";
 
 const imageRoute = dashboardRoute.meta({ access: "ADMIN" });
@@ -73,15 +72,6 @@ export const imagesRoutes = {
         .where(and(eq(imageTable.id, params.id), eq(imageTable.kind, "CMS")))
         .returning();
 
-      await logAdminAction(context, {
-        actor: context.authContext,
-        action: "UPDATE",
-        entity: "image",
-        entityId: params.id,
-        before: existingImage,
-        after: updated,
-      });
-
       return resolveLocalizedFields(
         { ...updated, url: context.storage.getPublicUrl(updated.storageKey) },
         context.locale,
@@ -92,27 +82,15 @@ export const imagesRoutes = {
     .delete("/images/:id")
     .params(idParams)
     .handler(async ({ params, context }) => {
-      const image = await context.db.query.image.findFirst({
-        where: { id: params.id, kind: "CMS" },
-      });
-      if (!image) throw new RouteError("NOT_FOUND", { status: 404 });
-
       const [deleted] = await context.db
         .delete(imageTable)
-        .where(and(eq(imageTable.id, image.id), eq(imageTable.kind, "CMS")))
+        .where(and(eq(imageTable.id, params.id), eq(imageTable.kind, "CMS")))
         .returning();
-
-      await logAdminAction(context, {
-        actor: context.authContext,
-        action: "DELETE",
-        entity: "image",
-        entityId: params.id,
-        before: deleted,
-      });
+      if (!deleted) throw new RouteError("NOT_FOUND", { status: 404 });
 
       // Last, so a failed row delete keeps the file and a failed file delete
       // rolls the row back.
-      await context.storage.deleteObject(image.storageKey);
+      await context.storage.deleteObject(deleted.storageKey);
 
       return resolveLocalizedFields(
         { ...deleted, url: context.storage.getPublicUrl(deleted.storageKey) },
@@ -164,14 +142,6 @@ export const imagesRoutes = {
           kind: "CMS",
         })
         .returning();
-
-      await logAdminAction(context, {
-        actor: context.authContext,
-        action: "CREATE",
-        entity: "image",
-        entityId: image.id,
-        after: image,
-      });
 
       return resolveLocalizedFields(
         { ...image, url: context.storage.getPublicUrl(image.storageKey) },

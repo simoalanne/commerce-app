@@ -5,7 +5,6 @@ import z from "zod";
 
 import { contactSubmissionTable } from "#src/db/schema.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
-import { logAdminAction } from "#src/utils/adminActionLog.ts";
 
 const contactSubmissionRoute = dashboardRoute.meta({ access: "ADMIN" });
 const contactSubmissionTxRoute = dashboardTxRoute.meta({ access: "ADMIN" });
@@ -64,32 +63,11 @@ export const contactSubmissionsRoutes = {
     .params(idParams)
     .body(z.object({ status: ContactSubmissionStatusSchema }))
     .handler(async ({ params, body, context }) => {
-      const existingSubmission = await context.db.query.contactSubmission.findFirst({
-        where: { id: params.id },
-        columns: {
-          status: true,
-          topic: true,
-        },
-      });
-      if (!existingSubmission) throw new RouteError("NOT_FOUND", { status: 404 });
-
-      await context.db
+      const [updated] = await context.db
         .update(contactSubmissionTable)
         .set({ status: body.status })
-        .where(eq(contactSubmissionTable.id, params.id));
-
-      await logAdminAction(context, {
-        actor: context.authContext,
-        action: "OTHER",
-        entity: "contactSubmission",
-        entityId: params.id,
-        details: {
-          operation: "contactSubmission.updateStatus",
-          submissionId: params.id,
-          fromStatus: existingSubmission.status,
-          toStatus: body.status,
-          topic: existingSubmission.topic,
-        },
-      });
+        .where(eq(contactSubmissionTable.id, params.id))
+        .returning({ id: contactSubmissionTable.id });
+      if (!updated) throw new RouteError("NOT_FOUND", { status: 404 });
     }),
 };

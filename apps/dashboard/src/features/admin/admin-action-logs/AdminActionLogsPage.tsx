@@ -21,34 +21,13 @@ const formatDateTime = (date: string) =>
     timeStyle: "short",
   }).format(new Date(date));
 
-const formatDetails = (details: unknown) => {
-  if (details == null) return "-";
-  if (typeof details === "string") return details;
+const formatJson = (value: unknown, indent?: number) =>
+  value == null ? "-" : JSON.stringify(value, null, indent);
 
-  try {
-    return JSON.stringify(details);
-  } catch {
-    return String(details);
-  }
-};
-
-const formatDetailsBlock = (details: unknown) => {
-  if (details == null) return "-";
-  if (typeof details === "string") return details;
-
-  try {
-    return JSON.stringify(details, null, 2);
-  } catch {
-    return String(details);
-  }
-};
-
-const actionBadgeClassName: Record<AdminActionLogEntry["action"], string> = {
-  CREATE: "bg-emerald-100 text-emerald-800 hover:bg-emerald-100",
-  UPDATE: "bg-sky-100 text-sky-800 hover:bg-sky-100",
-  DELETE: "bg-rose-100 text-rose-800 hover:bg-rose-100",
-  OTHER: "bg-amber-100 text-amber-800 hover:bg-amber-100",
-};
+const statusBadgeClassName = (status: number) =>
+  status < 400
+    ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100"
+    : "bg-rose-100 text-rose-800 hover:bg-rose-100";
 
 const columns: DataTableColumn<AdminActionLogEntry>[] = [
   {
@@ -62,44 +41,32 @@ const columns: DataTableColumn<AdminActionLogEntry>[] = [
     accessorKey: "adminEmail",
     header: "Admin",
     cell: ({ row }) => (
-      <span className="block max-w-[260px] truncate font-medium">{row.original.adminEmail}</span>
+      <span className="block max-w-[260px] truncate font-medium">
+        {row.original.adminEmail ?? "-"}
+      </span>
     ),
   },
   {
-    accessorKey: "action",
-    header: "Action",
-    cell: ({ row }) => (
-      <Badge className={actionBadgeClassName[row.original.action]}>{row.original.action}</Badge>
-    ),
+    accessorKey: "route",
+    header: "Route",
+    cell: ({ row }) => <code className="text-xs whitespace-nowrap">{row.original.route}</code>,
   },
   {
-    accessorKey: "entity",
-    header: "Entity",
-    cell: ({ row }) => <span className="whitespace-nowrap">{row.original.entity}</span>,
-  },
-  {
-    accessorKey: "entityId",
-    header: "Entity ID",
+    id: "params",
+    header: "Params",
+    accessorFn: (row) => formatJson(row.params),
     cell: ({ row }) => (
-      <code className="block max-w-[140px] truncate text-xs text-muted-foreground">
-        {row.original.entityId ?? "-"}
+      <code className="block max-w-[200px] truncate text-xs text-muted-foreground">
+        {formatJson(row.original.params)}
       </code>
     ),
   },
   {
-    id: "details",
-    header: "Details",
-    accessorFn: (row) => formatDetails(row.details),
+    accessorKey: "status",
+    header: "Status",
     cell: ({ row }) => (
-      <code className="block max-w-[420px] truncate rounded bg-muted px-1.5 py-1 text-xs">
-        {formatDetails(row.original.details)}
-      </code>
+      <Badge className={statusBadgeClassName(row.original.status)}>{row.original.status}</Badge>
     ),
-  },
-  {
-    accessorKey: "id",
-    header: "ID",
-    cell: ({ row }) => <code className="text-xs text-muted-foreground">{row.original.id}</code>,
   },
 ];
 
@@ -151,7 +118,7 @@ function AdminActionLogsContent() {
         columns={columns}
         getRowId={(log) => String(log.id)}
         searchPlaceholder="Search admin actions"
-        searchableColumnIds={["adminEmail", "action", "entity", "entityId", "details", "id"]}
+        searchableColumnIds={["adminEmail", "route", "params"]}
         emptyMessage="No admin action logs found."
         initialSorting={[{ id: "createdAt", desc: true }]}
         initialPageSize={25}
@@ -185,22 +152,21 @@ function AdminActionLogDetailsDialog({
         </DialogHeader>
         {log ? (
           <div className="flex flex-col gap-4">
-            <LogDetail label="ID">
-              <code className="text-sm break-all">{log.id}</code>
-            </LogDetail>
             <LogDetail label="Created">{formatDateTime(log.createdAt)}</LogDetail>
-            <LogDetail label="Admin">{log.adminEmail}</LogDetail>
-            <LogDetail label="Admin Account ID">{log.adminAccountId ?? "-"}</LogDetail>
-            <LogDetail label="Action">
-              <Badge className={actionBadgeClassName[log.action]}>{log.action}</Badge>
+            <LogDetail label="Admin">{log.adminEmail ?? "-"}</LogDetail>
+            <LogDetail label="Route">
+              <code className="text-sm">{log.route}</code>
             </LogDetail>
-            <LogDetail label="Entity">{log.entity}</LogDetail>
-            <LogDetail label="Entity ID">{log.entityId ?? "-"}</LogDetail>
-            <LogDetail label="Details">
-              <pre className="max-h-[55vh] overflow-auto rounded-md bg-muted p-3 text-xs break-words whitespace-pre-wrap">
-                {formatDetailsBlock(log.details)}
-              </pre>
+            <LogDetail label="Status">
+              <Badge className={statusBadgeClassName(log.status)}>{log.status}</Badge>
             </LogDetail>
+            {(["params", "body", "result"] as const).map((key) => (
+              <LogDetail key={key} label={key[0].toUpperCase() + key.slice(1)}>
+                <pre className="max-h-[40vh] overflow-auto rounded-md bg-muted p-3 text-xs break-words whitespace-pre-wrap">
+                  {formatJson(log[key], 2)}
+                </pre>
+              </LogDetail>
+            ))}
           </div>
         ) : null}
       </DialogContent>

@@ -12,7 +12,6 @@ import { storefrontRoutes } from "#src/features/customer-api/storefront/storefro
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { EntityInUse } from "#src/routing/errors.ts";
 import { resolveLocalizedFields } from "#src/routing/localizedFields.ts";
-import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import { buildTag } from "#src/utils/buildTags.ts";
 import {
   mergeLocalizedSlug,
@@ -47,19 +46,6 @@ const productLinksWith = {
   images: { columns: { imageId: true }, orderBy: { imageId: "asc" } },
   tags: { columns: { tagId: true }, orderBy: { tagId: "asc" } },
 } as const;
-
-const findProductForAudit = async (db: Db, id: number) => {
-  const product = await db.query.product.findFirst({
-    where: { id },
-    with: {
-      ...productLinksWith,
-      category: { columns: { id: true, name: true } },
-      vendor: { columns: { id: true, name: true } },
-    },
-  });
-  if (!product) throw new RouteError("NOT_FOUND", { status: 404 });
-  return product;
-};
 
 const replaceProductLinks = async (
   db: Db,
@@ -115,26 +101,17 @@ export const productsRoutes = {
         })
         .returning({ id: productTable.id });
       await replaceProductLinks(context.db, id, { images, tags });
-      const product = await findProductForAudit(context.db, id);
-
-      await logAdminAction(context, {
-        actor: context.authContext,
-        action: "CREATE",
-        entity: "product",
-        entityId: product.id,
-        after: product,
-      });
 
       await context.enqueueJob({
         type: "invalidateStorefrontCache",
-        payload: { tags: buildProductInvalidationTags(product.id) },
+        payload: { tags: buildProductInvalidationTags(id) },
       });
       await context.enqueueJob({
         type: "invalidateSearchIndex",
-        payload: { productIds: [product.id] },
+        payload: { productIds: [id] },
       });
 
-      return { id: product.id };
+      return { id };
     }),
 
   update: productTxRoute
@@ -144,7 +121,11 @@ export const productsRoutes = {
     .handler(async ({ params, body, context }) => {
       const { id } = params;
       const { categoryId, images, tags, ...data } = body;
-      const existingProduct = await findProductForAudit(context.db, id);
+      const existingProduct = await context.db.query.product.findFirst({
+        where: { id },
+        columns: { name: true, slug: true, headline: true, fullDescription: true },
+      });
+      if (!existingProduct) throw new RouteError("NOT_FOUND", { status: 404 });
 
       await context.db
         .update(productTable)
@@ -168,16 +149,6 @@ export const productsRoutes = {
         })
         .where(eq(productTable.id, id));
       await replaceProductLinks(context.db, id, { images, tags });
-      const updated = await findProductForAudit(context.db, id);
-
-      await logAdminAction(context, {
-        actor: context.authContext,
-        action: "UPDATE",
-        entity: "product",
-        entityId: id,
-        before: existingProduct,
-        after: updated,
-      });
 
       await context.enqueueJob({
         type: "invalidateStorefrontCache",
@@ -196,16 +167,7 @@ export const productsRoutes = {
     .handler(async ({ params, context }) => {
       const { id } = params;
 
-      const deleted = await findProductForAudit(context.db, id);
       await tryDeleteEntity(() => context.db.delete(productTable).where(eq(productTable.id, id)));
-
-      await logAdminAction(context, {
-        actor: context.authContext,
-        action: "DELETE",
-        entity: "product",
-        entityId: id,
-        before: deleted,
-      });
 
       await context.enqueueJob({
         type: "invalidateStorefrontCache",

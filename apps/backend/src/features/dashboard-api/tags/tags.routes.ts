@@ -7,7 +7,6 @@ import { productsRoutes as customerProductsRoutes } from "#src/features/customer
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { EntityInUse } from "#src/routing/errors.ts";
 import { resolveLocalizedFields } from "#src/routing/localizedFields.ts";
-import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import { buildTag } from "#src/utils/buildTags.ts";
 import { mergeLocalizedString, toLocalizedString } from "#src/utils/localizedObject.ts";
 
@@ -72,14 +71,6 @@ export const tagsRoutes = {
         })
         .returning();
 
-      await logAdminAction(context, {
-        actor: context.authContext,
-        action: "CREATE",
-        entity: "tag",
-        entityId: tag.id,
-        after: tag,
-      });
-
       await context.enqueueJob({
         type: "invalidateStorefrontCache",
         payload: { tags: tagInvalidationTags() },
@@ -98,23 +89,13 @@ export const tagsRoutes = {
       });
       if (!existingTag) throw new RouteError("NOT_FOUND", { status: 404 });
 
-      const [updated] = await context.db
+      await context.db
         .update(tagTable)
         .set({
           name: mergeLocalizedString(existingTag.name, body.name, context.locale),
           color: body.color,
         })
-        .where(eq(tagTable.id, params.id))
-        .returning();
-
-      await logAdminAction(context, {
-        actor: context.authContext,
-        action: "UPDATE",
-        entity: "tag",
-        entityId: params.id,
-        before: existingTag,
-        after: updated,
-      });
+        .where(eq(tagTable.id, params.id));
 
       await context.enqueueJob({
         type: "invalidateStorefrontCache",
@@ -135,14 +116,6 @@ export const tagsRoutes = {
         await context.db.delete(tagTable).where(eq(tagTable.id, params.id)).returning()
       )[0];
       if (!deleted) throw new RouteError("NOT_FOUND", { status: 404 });
-
-      await logAdminAction(context, {
-        actor: context.authContext,
-        action: "DELETE",
-        entity: "tag",
-        entityId: params.id,
-        before: deleted,
-      });
 
       await context.enqueueJob({
         type: "invalidateStorefrontCache",

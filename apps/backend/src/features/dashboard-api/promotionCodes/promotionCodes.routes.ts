@@ -6,7 +6,6 @@ import z from "zod";
 import { promotionCodeTable } from "#src/db/schema.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { EntityInUse } from "#src/routing/errors.ts";
-import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import tryDeleteEntity from "#src/utils/tryDeleteEntity.ts";
 
 const promotionCodeRoute = dashboardRoute.meta({ access: "ADMIN" });
@@ -41,14 +40,6 @@ export const promotionCodesRoutes = {
     .handler(async ({ body, context }) => {
       const [promotionCode] = await context.db.insert(promotionCodeTable).values(body).returning();
 
-      await logAdminAction(context, {
-        actor: context.authContext,
-        action: "CREATE",
-        entity: "promotionCode",
-        entityId: promotionCode.id,
-        after: promotionCode,
-      });
-
       return { id: promotionCode.id };
     }),
 
@@ -57,25 +48,12 @@ export const promotionCodesRoutes = {
     .params(idParams)
     .body(PromotionCodeFormSchema)
     .handler(async ({ params, body, context }) => {
-      const existingPromotionCode = await context.db.query.promotionCode.findFirst({
-        where: { id: params.id },
-      });
-      if (!existingPromotionCode) throw new RouteError("NOT_FOUND", { status: 404 });
-
       const [updated] = await context.db
         .update(promotionCodeTable)
         .set(body)
         .where(eq(promotionCodeTable.id, params.id))
-        .returning();
-
-      await logAdminAction(context, {
-        actor: context.authContext,
-        action: "UPDATE",
-        entity: "promotionCode",
-        entityId: params.id,
-        before: existingPromotionCode,
-        after: updated,
-      });
+        .returning({ id: promotionCodeTable.id });
+      if (!updated) throw new RouteError("NOT_FOUND", { status: 404 });
     }),
 
   delete: promotionCodeTxRoute
@@ -90,14 +68,6 @@ export const promotionCodesRoutes = {
           .returning(),
       );
       if (!deleted) throw new RouteError("NOT_FOUND", { status: 404 });
-
-      await logAdminAction(context, {
-        actor: context.authContext,
-        action: "DELETE",
-        entity: "promotionCode",
-        entityId: params.id,
-        before: deleted,
-      });
     }),
 
   getOptionsForForm: promotionCodeRoute

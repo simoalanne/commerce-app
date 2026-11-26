@@ -13,7 +13,6 @@ import { vendorsRoutes as customerVendorsRoutes } from "#src/features/customer-a
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { EntityInUse } from "#src/routing/errors.ts";
 import { resolveLocalizedFields } from "#src/routing/localizedFields.ts";
-import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import { buildTag } from "#src/utils/buildTags.ts";
 import { mergeLocalizedString, toLocalizedString } from "#src/utils/localizedObject.ts";
 import tryDeleteEntity from "#src/utils/tryDeleteEntity.ts";
@@ -36,15 +35,6 @@ const buildVendorInvalidationTags = (vendorId: number, productIds: number[] = []
     buildTag(customerReviewsRoutes.getByProduct, productId),
   ]),
 ];
-
-const findVendorForAudit = async (db: Db, id: number) => {
-  const vendor = await db.query.vendor.findFirst({
-    where: { id },
-    with: { images: { columns: { imageId: true }, orderBy: { imageId: "asc" } } },
-  });
-  if (!vendor) throw new RouteError("NOT_FOUND", { status: 404 });
-  return vendor;
-};
 
 const findVendorProductIds = async (db: Db, vendorId: number) =>
   (
@@ -98,22 +88,13 @@ export const vendorsRoutes = {
         })
         .returning({ id: vendorTable.id });
       await replaceVendorImages(context.db, id, images);
-      const vendor = await findVendorForAudit(context.db, id);
-
-      await logAdminAction(context, {
-        actor: context.authContext,
-        action: "CREATE",
-        entity: "vendor",
-        entityId: vendor.id,
-        after: vendor,
-      });
 
       await context.enqueueJob({
         type: "invalidateStorefrontCache",
-        payload: { tags: buildVendorInvalidationTags(vendor.id) },
+        payload: { tags: buildVendorInvalidationTags(id) },
       });
 
-      return { id: vendor.id };
+      return { id };
     }),
 
   update: vendorTxRoute
@@ -123,7 +104,11 @@ export const vendorsRoutes = {
     .handler(async ({ params, body, context }) => {
       const { id } = params;
       const { images, ...data } = body;
-      const existingVendor = await findVendorForAudit(context.db, id);
+      const existingVendor = await context.db.query.vendor.findFirst({
+        where: { id },
+        columns: { slogan: true, story: true, tags: true },
+      });
+      if (!existingVendor) throw new RouteError("NOT_FOUND", { status: 404 });
       const affectedProductIds = await findVendorProductIds(context.db, id);
 
       await context.db
@@ -139,16 +124,6 @@ export const vendorsRoutes = {
         })
         .where(eq(vendorTable.id, id));
       await replaceVendorImages(context.db, id, images);
-      const updated = await findVendorForAudit(context.db, id);
-
-      await logAdminAction(context, {
-        actor: context.authContext,
-        action: "UPDATE",
-        entity: "vendor",
-        entityId: id,
-        before: existingVendor,
-        after: updated,
-      });
 
       await context.enqueueJob({
         type: "invalidateStorefrontCache",
@@ -170,18 +145,9 @@ export const vendorsRoutes = {
     .error(EntityInUse)
     .handler(async ({ params, context }) => {
       const { id } = params;
-      const deleted = await findVendorForAudit(context.db, id);
       const productIds = await findVendorProductIds(context.db, id);
 
       await tryDeleteEntity(() => context.db.delete(vendorTable).where(eq(vendorTable.id, id)));
-
-      await logAdminAction(context, {
-        actor: context.authContext,
-        action: "DELETE",
-        entity: "vendor",
-        entityId: id,
-        before: deleted,
-      });
 
       await context.enqueueJob({
         type: "invalidateStorefrontCache",

@@ -6,7 +6,6 @@ import z from "zod";
 import { webhookSubscriptionTable } from "#src/db/schema.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { EntityInUse } from "#src/routing/errors.ts";
-import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import tryDeleteEntity from "#src/utils/tryDeleteEntity.ts";
 
 const webhookRoute = dashboardRoute.meta({ access: "ADMIN" });
@@ -44,14 +43,6 @@ export const webhooksRoutes = {
         .values(body)
         .returning();
 
-      await logAdminAction(context, {
-        actor: context.authContext,
-        action: "CREATE",
-        entity: "webhookSubscription",
-        entityId: subscription.id,
-        after: subscription,
-      });
-
       return { id: subscription.id };
     }),
 
@@ -60,25 +51,12 @@ export const webhooksRoutes = {
     .params(idParams)
     .body(WebhookSubscriptionFormSchema)
     .handler(async ({ params, body, context }) => {
-      const existingSubscription = await context.db.query.webhookSubscription.findFirst({
-        where: { id: params.id },
-      });
-      if (!existingSubscription) throw new RouteError("NOT_FOUND", { status: 404 });
-
       const [updated] = await context.db
         .update(webhookSubscriptionTable)
         .set(body)
         .where(eq(webhookSubscriptionTable.id, params.id))
-        .returning();
-
-      await logAdminAction(context, {
-        actor: context.authContext,
-        action: "UPDATE",
-        entity: "webhookSubscription",
-        entityId: params.id,
-        before: existingSubscription,
-        after: updated,
-      });
+        .returning({ id: webhookSubscriptionTable.id });
+      if (!updated) throw new RouteError("NOT_FOUND", { status: 404 });
     }),
 
   delete: webhookTxRoute
@@ -93,14 +71,6 @@ export const webhooksRoutes = {
           .returning(),
       );
       if (!deleted) throw new RouteError("NOT_FOUND", { status: 404 });
-
-      await logAdminAction(context, {
-        actor: context.authContext,
-        action: "DELETE",
-        entity: "webhookSubscription",
-        entityId: params.id,
-        before: deleted,
-      });
     }),
 
   getOptionsForForm: webhookRoute.get("/webhooks/options-for-form").handler(async ({ context }) => {

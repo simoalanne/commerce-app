@@ -9,7 +9,6 @@ import {
   type RelevantOrder,
 } from "#src/features/customer-api/orders/relevantOrders.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
-import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import { generateOrderInvoicePdf } from "#src/utils/pdf/generateOrderInvoicePdf.ts";
 import { generateRefundReceiptPdf } from "#src/utils/pdf/generateRefundReceiptPdf.ts";
 
@@ -389,22 +388,6 @@ export const ordersRoutes = {
           amountCents: item.amountCents,
         })),
       );
-
-      await logAdminAction(context, {
-        actor: context.authContext,
-        action: "OTHER",
-        entity: "order",
-        entityId: id,
-        details: {
-          operation: "order.refund.intent.create",
-          orderId: id,
-          refundId: refund.id,
-          reason,
-          internalNotes,
-          totalAmountCents,
-          items,
-        },
-      });
 
       await context.enqueueJob({
         type: "processRefund",

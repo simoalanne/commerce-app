@@ -5,7 +5,6 @@ import z from "zod";
 import { reviewTable } from "#src/db/schema.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { resolveLocalizedFields } from "#src/routing/localizedFields.ts";
-import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import { buildReviewInvalidationTags } from "#src/utils/reviewInvalidationTags.ts";
 
 const reviewRoute = dashboardRoute.meta({ access: "ADMIN" });
@@ -115,17 +114,6 @@ export const reviewsRoutes = {
     .params(z.object({ id: z.coerce.number<number>().int().positive() }))
     .body(z.object({ status: reviewStatusSchema }))
     .handler(async ({ params, body, context }) => {
-      const existingReview = await context.db.query.review.findFirst({
-        where: { id: params.id },
-        columns: {
-          status: true,
-          kind: true,
-          productId: true,
-          vendorId: true,
-        },
-      });
-      if (!existingReview) throw new RouteError("NOT_FOUND", { status: 404 });
-
       const [review] = await context.db
         .update(reviewTable)
         .set({ status: body.status })
@@ -135,22 +123,7 @@ export const reviewsRoutes = {
           productId: reviewTable.productId,
           vendorId: reviewTable.vendorId,
         });
-
-      await logAdminAction(context, {
-        actor: context.authContext,
-        action: "OTHER",
-        entity: "review",
-        entityId: params.id,
-        details: {
-          operation: "review.updateStatus",
-          reviewId: params.id,
-          fromStatus: existingReview.status,
-          toStatus: body.status,
-          kind: review.kind,
-          productId: review.productId,
-          vendorId: review.vendorId,
-        },
-      });
+      if (!review) throw new RouteError("NOT_FOUND", { status: 404 });
 
       await context.enqueueJob({
         type: "invalidateStorefrontCache",
