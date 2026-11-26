@@ -1,11 +1,16 @@
 import { inArray, sql } from "drizzle-orm";
 
 import { db as appDb, type Db } from "#src/db/client.ts";
-import type { ProductSearchDocumentData } from "#src/db/json.ts";
+import type {
+  LocalizedString,
+  LocalizedStringArray,
+  ProductSearchDocumentData,
+} from "#src/db/json.ts";
 import { productSearchDocumentTable } from "#src/db/schema.ts";
 import { activeStorefrontProductWhere } from "#src/domain/storefrontVisibility.ts";
 import { ObjectStorage } from "#src/integrations/object-storage/objectStorage.provider.ts";
 import { type SupportedLocale, supportedLocales } from "#src/locales.ts";
+import { localize } from "#src/routing/localizedFields.ts";
 import { FIRST_LINKED_IMAGE_SELECT, getFirstLinkedImageUrl } from "#src/utils/imageUrl.ts";
 
 import type {
@@ -46,19 +51,12 @@ const getPostgresSearchDictionary = (locale: string) => searchDictionaries[local
 
 const buildSearchText = (
   locale: string,
-  parts: Array<string | string[] | Record<string, string | string[]>>,
+  parts: Array<string | LocalizedString | LocalizedStringArray>,
 ) =>
   parts
-    .flatMap((part) => {
-      if (typeof part === "string") return [part];
-      if (Array.isArray(part)) return part;
-
-      const localizedValue =
-        part[locale] ??
-        supportedLocales.map((locale) => part[locale]).find((value) => Boolean(value));
-      if (!localizedValue) return [];
-      return Array.isArray(localizedValue) ? localizedValue : [localizedValue];
-    })
+    .flatMap((part) =>
+      typeof part === "string" ? part : (localize<string | string[]>(part, locale) ?? []),
+    )
     .filter(Boolean)
     .join(" ");
 

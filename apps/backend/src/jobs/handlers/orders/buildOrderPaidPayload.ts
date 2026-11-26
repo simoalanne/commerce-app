@@ -3,9 +3,9 @@ import type { ShippingAddress } from "@acme/shared/schemas/shippingAddress";
 import envConfig from "#src/config.ts";
 import { db } from "#src/db/client.ts";
 import { ObjectStorage } from "#src/integrations/object-storage/objectStorage.provider.ts";
+import { localize } from "#src/routing/localizedFields.ts";
 import { getOnlineStoreUrl } from "#src/utils/getOnlineStoreUrl.ts";
 import { FIRST_LINKED_IMAGE_SELECT, getFirstLinkedImageUrl } from "#src/utils/imageUrl.ts";
-import { getLocalizedValue } from "#src/utils/localizedObject.ts";
 
 type OrderPaidPayload = {
   orderId: number;
@@ -111,7 +111,7 @@ export const buildOrderPaidPayload = async (orderId: number): Promise<OrderPaidP
     items: order.orderItems.map((item) => {
       return {
         sku: item.sku,
-        name: (getLocalizedValue(item.product?.name, locale) as string | undefined) ?? item.name,
+        name: (item.product && localize(item.product.name, locale)) ?? item.name,
         vendorName: item.vendorName,
         imageUrl: getFirstLinkedImageUrl(ObjectStorage, item.product?.images),
         quantity: item.quantity,

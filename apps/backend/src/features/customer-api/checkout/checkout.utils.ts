@@ -1,10 +1,10 @@
 import type z from "zod";
 
 import type { Db } from "#src/db/client.ts";
-import type { LocalizedString } from "#src/db/json.ts";
 import type { productTable } from "#src/db/schema.ts";
 import { activeStorefrontProductWhere } from "#src/domain/storefrontVisibility.ts";
 import type { SupportedLocale } from "#src/locales.ts";
+import { localize } from "#src/routing/localizedFields.ts";
 
 import { PriceMismatch, ProductsNotPurchasable, PurchaseLimitExceeded } from "./checkout.errors.ts";
 import type { CheckoutCartSchema } from "./checkout.routes.ts";
@@ -33,7 +33,7 @@ export const buildOrderItemsFromProducts = (
   return products.map((p) => ({
     sku: p.sku,
     productId: p.id,
-    productName: resolveLocalizedSnapshotName(p.name, locale),
+    productName: localize(p.name, locale) ?? "",
     vendorId: p.vendorId,
     vendorName: p.vendor.name,
     quantity: cart[p.sku].quantity,
@@ -41,9 +41,6 @@ export const buildOrderItemsFromProducts = (
     unitCostPriceCents: p.costPriceCents,
   }));
 };
-
-const resolveLocalizedSnapshotName = (value: LocalizedString, locale: SupportedLocale) =>
-  value[locale] ?? value.en ?? Object.values(value)[0] ?? "";
 
 export const validateCartPurchaseLimits = (
   products: Product[],

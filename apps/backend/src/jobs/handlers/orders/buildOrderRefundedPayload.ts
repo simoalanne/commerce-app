@@ -1,7 +1,7 @@
 import { db } from "#src/db/client.ts";
 import { ObjectStorage } from "#src/integrations/object-storage/objectStorage.provider.ts";
+import { localize } from "#src/routing/localizedFields.ts";
 import { FIRST_LINKED_IMAGE_SELECT, getFirstLinkedImageUrl } from "#src/utils/imageUrl.ts";
-import { getLocalizedValue } from "#src/utils/localizedObject.ts";
 
 export type OrderRefundedPayload = {
   orderId: number;
@@ -72,7 +72,7 @@ export const buildOrderRefundedPayload = async (
     return {
       sku: orderedItem.sku,
       name:
-        (getLocalizedValue(orderedItem.product?.name, locale) as string | undefined) ??
+        (orderedItem.product && localize(orderedItem.product.name, locale)) ??
         orderedItem.name ??
         orderedItem.sku,
       vendorName: orderedItem.vendorName ?? null,

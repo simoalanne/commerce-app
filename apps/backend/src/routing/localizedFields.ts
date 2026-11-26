@@ -1,18 +1,13 @@
+import type { LocalizedString, LocalizedStringArray } from "#src/db/json.ts";
 import { type SupportedLocale, supportedLocales } from "#src/locales.ts";
 
 type Equal<A, B> =
   (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
 
-type LocalizedValue<T> = T[keyof T] extends string[] | undefined
-  ? string[]
-  : T[keyof T] extends string | undefined
-    ? string
-    : Localized<NonNullable<T[keyof T]>>;
-
 /**
  * A value with each object keyed exactly by `SupportedLocale`
- * (`LocalizedString`, `LocalizedStringArray`, or records of localized objects
- * such as CMS blocks) replaced by its value for one locale.
+ * (`LocalizedString` or `LocalizedStringArray`) replaced by its value for one
+ * locale.
  */
 type Localized<T> = T extends string | number | boolean | null | undefined
   ? T
@@ -20,7 +15,9 @@ type Localized<T> = T extends string | number | boolean | null | undefined
     ? Localized<U>[]
     : T extends object
       ? Equal<keyof T, SupportedLocale> extends true
-        ? LocalizedValue<T>
+        ? T[keyof T] extends string[] | undefined
+          ? string[]
+          : string
         : { [K in keyof T]: Localized<T[K]> }
       : T;
 
@@ -35,26 +32,33 @@ const isLocalizedObject = (value: Record<string, unknown>) => {
   return keys.length > 0 && keys.every(isSupportedLocale);
 };
 
-const hasUsableLocalizedValue = (value: unknown): value is string | string[] =>
+const hasUsableValue = <T extends string | string[]>(value: T | undefined): value is T =>
   (typeof value === "string" && value.trim().length > 0) ||
   (Array.isArray(value) && value.length > 0);
 
-// The requested locale first, then the supported locales in order. When no
-// locale has a usable value, an empty value of the stored kind.
-const localize = (value: Record<string, unknown>, locale: SupportedLocale) => {
-  const candidates = [locale, ...supportedLocales.filter((l) => l !== locale)];
-  for (const candidate of candidates) {
-    const localized = value[candidate];
-    if (hasUsableLocalizedValue(localized)) return localized;
-    if (isPlainObject(localized)) return resolve(localized, locale);
-  }
-  return Object.values(value).some(Array.isArray) ? [] : "";
-};
+/**
+ * The value for `locale`, falling back to the supported locales in order.
+ * `undefined` when no locale has a usable value.
+ */
+export const localize = <T extends string | string[]>(
+  value: Partial<Record<SupportedLocale, T>>,
+  // Wider than SupportedLocale because stored locale preferences are plain text.
+  locale: string,
+) =>
+  [locale, ...supportedLocales]
+    // An unsupported locale just finds no value.
+    .map((candidate) => value[candidate as SupportedLocale])
+    .find(hasUsableValue);
 
 const resolve = (value: unknown, locale: SupportedLocale): unknown => {
   if (Array.isArray(value)) return value.map((item) => resolve(item, locale));
   if (!isPlainObject(value)) return value;
-  if (isLocalizedObject(value)) return localize(value, locale);
+  if (isLocalizedObject(value)) {
+    // Only the localized column types are keyed by locale.
+    const localized = value as LocalizedString | LocalizedStringArray;
+    const empty = Object.values(localized).some(Array.isArray) ? [] : "";
+    return localize<string | string[]>(localized, locale) ?? empty;
+  }
 
   return Object.fromEntries(
     Object.entries(value).map(([key, item]) => [key, resolve(item, locale)]),

@@ -1,7 +1,5 @@
 import { slugify } from "@acme/shared";
 
-import { supportedLocales } from "#src/locales.ts";
-
 type LocalizedValue<TValue extends string | string[]> = TValue extends string[]
   ? Record<string, string[]>
   : Record<string, string>;
@@ -39,56 +37,3 @@ export const mergeLocalizedSlug = <TValue extends string>(
   locale: string,
 ): LocalizedValue<TValue> =>
   mergeLocalizedString(existingValue, slugify(value), locale) as LocalizedValue<TValue>;
-
-const isPlainObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && Object.getPrototypeOf(value) === Object.prototype;
-
-const hasUsableLocalizedValue = (value: unknown): value is string | string[] =>
-  (typeof value === "string" && value.trim().length > 0) ||
-  (Array.isArray(value) && value.length > 0);
-
-const localeFallbackOrder = (locale?: string) =>
-  [locale, ...supportedLocales].filter(
-    (candidate, index, array): candidate is string =>
-      typeof candidate === "string" && array.indexOf(candidate) === index,
-  );
-
-export const getLocalizedValue = (
-  value: Record<string, unknown> | undefined,
-  locale?: string,
-): string | string[] | Record<string, unknown> | unknown => {
-  if (!value || !isPlainObject(value)) {
-    return value;
-  }
-
-  const hasLocaleKeys = localeFallbackOrder(locale).some(
-    (candidateLocale) => candidateLocale in value,
-  );
-
-  if (!hasLocaleKeys) {
-    return value;
-  }
-
-  let hasArray = false;
-  let hasString = false;
-
-  for (const candidateLocale of localeFallbackOrder(locale)) {
-    const localizedValue = value[candidateLocale];
-
-    if (hasUsableLocalizedValue(localizedValue)) {
-      return localizedValue;
-    }
-
-    if (Array.isArray(localizedValue)) hasArray = true;
-    if (typeof localizedValue === "string") hasString = true;
-
-    if (isPlainObject(localizedValue)) {
-      return localizedValue;
-    }
-  }
-
-  if (hasArray) return [];
-  if (hasString) return "";
-
-  return value;
-};
