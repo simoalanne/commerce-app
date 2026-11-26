@@ -2,8 +2,10 @@ import { and, eq } from "drizzle-orm";
 
 import { db } from "#src/db/client.ts";
 import { orderTable } from "#src/db/schema.ts";
-import { releaseReservedStock } from "#src/features/customer-api/checkout/checkout.adjustStock.ts";
-import { enqueueProductStockInvalidationJobs } from "#src/jobs/handlers/jobAggregrates.ts";
+import {
+  enqueueProductStockInvalidationJobs,
+  releaseReservedStock,
+} from "#src/features/customer-api/checkout/checkout.adjustStock.ts";
 import type { JobHandlerContext } from "#src/jobs/queue.ts";
 import logger from "#src/logger.ts";
 

@@ -2,6 +2,9 @@ import { sql } from "drizzle-orm";
 
 import type { Db } from "#src/db/client.ts";
 import { productTable } from "#src/db/schema.ts";
+import { productsRoutes as customerProductsRoutes } from "#src/features/customer-api/products/products.routes.ts";
+import type { EnqueueJob } from "#src/jobs/queue.ts";
+import { buildTag } from "#src/utils/buildTags.ts";
 
 import { InsufficientStock } from "./checkout.errors.ts";
 
@@ -151,4 +154,26 @@ export const commitAsMuchStockAsPossible = async ({
 		WHERE updated."uncommittedQuantity" > 0
 	`);
   return rows;
+};
+
+export const enqueueProductStockInvalidationJobs = async ({
+  productIds,
+  enqueueJob,
+}: {
+  productIds: number[];
+  enqueueJob: EnqueueJob;
+}) => {
+  await enqueueJob({
+    type: "invalidateStorefrontCache",
+    payload: {
+      tags: [
+        buildTag(customerProductsRoutes.getAll),
+        ...productIds.map((productId) => buildTag(customerProductsRoutes.getById, productId)),
+      ],
+    },
+  });
+  await enqueueJob({
+    type: "invalidateSearchIndex",
+    payload: { productIds },
+  });
 };

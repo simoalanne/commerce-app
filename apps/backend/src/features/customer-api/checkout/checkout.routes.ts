@@ -13,7 +13,6 @@ import { getCompanyDetails } from "#src/domain/getCompanyDetails.ts";
 import { verifyOrderCapabilityJwt } from "#src/features/customer-api/orders/orderCapabilities.ts";
 import type { PaymentProviderName } from "#src/integrations/payments/payment.provider.ts";
 import { getCachedPaytrailPaymentMethods } from "#src/integrations/payments/paytrail.paymentMethods.ts";
-import { enqueueProductStockInvalidationJobs } from "#src/jobs/handlers/jobAggregrates.ts";
 import type { EnqueueJob } from "#src/jobs/queue.ts";
 import type { SupportedLocale } from "#src/locales.ts";
 import type { AuthContext } from "#src/routing/auth.ts";
@@ -22,7 +21,11 @@ import { MINUTE_MS, type RateLimitPolicy } from "#src/routing/rateLimit.ts";
 import { findCustomerIdByEmail } from "#src/utils/findCustomerIdByEmail.ts";
 import { relevantOrderStatuses } from "#src/utils/orderStatus.ts";
 
-import { releaseReservedStock, reserveStockOrThrow } from "./checkout.adjustStock.ts";
+import {
+  enqueueProductStockInvalidationJobs,
+  releaseReservedStock,
+  reserveStockOrThrow,
+} from "./checkout.adjustStock.ts";
 import {
   AccountExistsForEmail,
   InsufficientStock,

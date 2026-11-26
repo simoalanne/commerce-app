@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "#src/db/client.ts";
 import { orderTable, refundTable } from "#src/db/schema.ts";
 import { getPaymentProvider } from "#src/integrations/payments/payment.provider.ts";
-import { enqueueOrderRefundSucceededSideEffectJobs } from "#src/jobs/handlers/jobAggregrates.ts";
+import { enqueueOrderRefundSucceededSideEffectJobs } from "#src/integrations/payments/payment.reconciliation.ts";
 import type { JobHandlerContext } from "#src/jobs/queue.ts";
 import logger from "#src/logger.ts";
 
