@@ -3,16 +3,6 @@ import type { ShippingAddress } from "@acme/shared/schemas/shippingAddress";
 
 import type { SupportedLocale } from "#src/locales.ts";
 
-export type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonValue[]
-  | { [key: string]: JsonValue };
-
-export type JsonObject = { [key: string]: JsonValue };
-
 // Keys are exactly SupportedLocale so resolveLocalizedFields() can tell localized values
 // from other records, such as Record<string, string> fields.
 type LocalizedValueLike<TValue> = Partial<Record<SupportedLocale, TValue>>;

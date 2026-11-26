@@ -9,7 +9,7 @@ export const ALL_LINKED_IMAGES_SELECT = {
 
 export const FIRST_LINKED_IMAGE_SELECT = { ...ALL_LINKED_IMAGES_SELECT, limit: 1 } as const;
 
-export type ImageLinkWithUrl = {
+type ImageLinkWithUrl = {
   image: {
     storageKey: string;
   };

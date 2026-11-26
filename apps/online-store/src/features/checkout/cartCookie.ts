@@ -5,7 +5,7 @@ import type { CartItems } from "./cartState";
 export const CART_COOKIE_NAME = "online-store-cart";
 const CART_COOKIE_VERSION = 3;
 
-export type CartCookie = {
+type CartCookie = {
   version: typeof CART_COOKIE_VERSION;
   items: CartItems;
   updatedAt?: number;

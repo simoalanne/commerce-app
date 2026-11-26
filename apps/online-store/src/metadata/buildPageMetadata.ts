@@ -5,7 +5,7 @@ import { routing } from "@/i18n/routing";
 
 import { storefrontMetadataAssets } from "./storefrontMetadataAssets";
 
-export type BuildPageMetadataOptions = {
+type BuildPageMetadataOptions = {
   locale: string;
   title: string;
   description: string;

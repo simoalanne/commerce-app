@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { FieldGroup } from "@/components/ui/field";
 import { useDashboardLocalization } from "@/context/LocalizationContext";
 
-export const imageFormSchema = ImageMetadataSchema;
+const imageFormSchema = ImageMetadataSchema;
 
 type ImageFormInput = z.input<typeof imageFormSchema>;
 export type ImageFormValues = z.output<typeof imageFormSchema>;

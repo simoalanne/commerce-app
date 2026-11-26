@@ -7,7 +7,7 @@ import { getOnlineStoreUrl } from "#src/utils/getOnlineStoreUrl.ts";
 import { FIRST_LINKED_IMAGE_SELECT, getFirstLinkedImageUrl } from "#src/utils/imageUrl.ts";
 import { getLocalizedValue } from "#src/utils/localizedObject.ts";
 
-export type OrderPaidPayload = {
+type OrderPaidPayload = {
   orderId: number;
   placedAt: string;
   locale: string;

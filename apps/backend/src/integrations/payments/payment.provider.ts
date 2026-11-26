@@ -16,7 +16,7 @@ export type PaymentMetadata = {
   locale?: string;
 };
 
-export type CreatedPayment =
+type CreatedPayment =
   | {
       provider: "STRIPE";
       paymentId: string;

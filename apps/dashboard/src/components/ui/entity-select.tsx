@@ -16,7 +16,7 @@ import type { SuspenseOptions } from "@/components/ui/entity-page";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-export interface EntitySelectProps<MMultiSelect extends boolean = false> {
+interface EntitySelectProps<MMultiSelect extends boolean = false> {
   /** e.g. `queryUtils.x.getOptionsForForm.queryOptions({ select: (r) => r.body })` */
   options: SuspenseOptions<{ id: number; name: string }[]>;
   multiSelect?: MMultiSelect;

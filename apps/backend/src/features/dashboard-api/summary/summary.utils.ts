@@ -35,7 +35,7 @@ export const toCoverage = (completed: number, outOf: number) => ({
   outOf,
 });
 
-export type ChartItem = {
+type ChartItem = {
   date: string;
   revenueCents: number | string;
   orders: number | string;

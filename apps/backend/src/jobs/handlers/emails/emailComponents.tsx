@@ -206,7 +206,7 @@ export const FieldTable = ({ rows }: { rows: { label: string; value: ReactNode }
   </table>
 );
 
-export type EmailItem = {
+type EmailItem = {
   name: string;
   initials: string;
   imageUrl: string | null;

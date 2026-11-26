@@ -2,16 +2,16 @@ import type { ProductSearchDocumentData } from "#src/db/json.ts";
 
 import postgresSearchProvider from "./postgresSearch.provider.ts";
 
-export type SearchResultProduct = ProductSearchDocumentData["product"];
+type SearchResultProduct = ProductSearchDocumentData["product"];
 
-export type SearchResultVendor = {
+type SearchResultVendor = {
   id: number;
   name: string;
   slug: string;
   imageUrl: string | null;
 };
 
-export type SearchResultCategory = {
+type SearchResultCategory = {
   id: number;
   name: string;
   slug: string;

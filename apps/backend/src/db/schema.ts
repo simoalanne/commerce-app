@@ -84,7 +84,6 @@ export const refundStatusEnum = pgEnum("refund_status", [
 
 export type OrderStatus = (typeof orderStatusEnum.enumValues)[number];
 export type PaymentProvider = (typeof paymentProviderEnum.enumValues)[number];
-export type RefundStatus = (typeof refundStatusEnum.enumValues)[number];
 
 export const userTable = snakeCase.table("user", {
   clerkId: text().primaryKey(),

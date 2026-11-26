@@ -11,9 +11,9 @@ import {
 
 import styles from "./Popover.module.css";
 
-export type PopoverSide = "top" | "right" | "bottom" | "left";
-export type PopoverAlign = "start" | "center" | "end";
-export type PopoverAnimation = "grow" | "slide";
+type PopoverSide = "top" | "right" | "bottom" | "left";
+type PopoverAlign = "start" | "center" | "end";
+type PopoverAnimation = "grow" | "slide";
 
 type PopoverProps = {
   children?: ReactElement;

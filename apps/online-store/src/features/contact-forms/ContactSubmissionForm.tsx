@@ -10,13 +10,6 @@ import { useApiClient } from "@/providers/ApiClientProvider";
 
 import styles from "./ContactSubmissionForm.module.css";
 
-export type ContactSubmissionPayload = {
-  name: string;
-  email: string | null;
-  phone: string | null;
-  message: string;
-};
-
 type ContactFormState = {
   name: string;
   email: string;

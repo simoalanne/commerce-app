@@ -1,6 +1,6 @@
 export type AuthMode = "sign-in" | "sign-up";
 
-export type AuthBaseViewProps = {
+type AuthBaseViewProps = {
   isPending: boolean;
   errorMessage: string | null;
   setIsPending?: (value: boolean) => void;

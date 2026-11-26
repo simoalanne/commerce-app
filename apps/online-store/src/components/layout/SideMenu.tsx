@@ -7,7 +7,7 @@ import Logo from "./Logo";
 
 import styles from "./SideMenu.module.css";
 
-export interface SideMenuProps {
+interface SideMenuProps {
   onNavigate?: () => void;
   variant?: "sidebar" | "rail";
 }

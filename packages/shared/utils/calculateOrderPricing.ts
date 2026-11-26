@@ -1,5 +1,3 @@
-import type { OrderPricingSummary } from "../schemas/index.ts";
-
 // One flat placeholder rate in whole percent; tax rules per product or region
 // are out of scope.
 const ORDER_VAT_RATE = 20;
@@ -19,7 +17,7 @@ export const calculateOrderPricing = ({
   itemsSubtotalCents,
   discountType,
   discountValue = 0,
-}: OrderPricingInput): OrderPricingSummary => {
+}: OrderPricingInput) => {
   const itemsDiscountCents =
     !discountType || !discountValue
       ? null

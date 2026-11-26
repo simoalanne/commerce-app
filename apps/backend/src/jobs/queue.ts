@@ -7,7 +7,7 @@ import logger from "#src/logger.ts";
 
 import { type JobPayload, type JobType, jobDefinitions } from "./jobDefinitions.ts";
 
-export type EnqueueJobParams<T extends JobType> = {
+type EnqueueJobParams<T extends JobType> = {
   type: T;
   payload: JobPayload<T>;
   /** pg-boss's send options, such as `startAfter` and `retryLimit`. */

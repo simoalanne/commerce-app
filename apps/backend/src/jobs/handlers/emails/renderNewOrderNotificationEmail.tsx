@@ -15,7 +15,7 @@ import {
 } from "./emailComponents.tsx";
 import { formatCents, formatLine, getInitials } from "./emailHelpers.ts";
 
-export type NewOrderNotificationEmailPayload = {
+type NewOrderNotificationEmailPayload = {
   orderId: number;
   placedAt: string;
   customer: {

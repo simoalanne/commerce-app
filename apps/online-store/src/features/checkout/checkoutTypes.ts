@@ -53,17 +53,17 @@ export const initialCheckoutPromoCodeState: CheckoutPromoCodeState = {
   isValidating: false,
 };
 
-export type CheckoutRecoveryPromoCodeState = {
+type CheckoutRecoveryPromoCodeState = {
   appliedCode: string;
   validatedPromoCode: ValidatedPromoCode;
 };
 
-export type CheckoutRecoveryDraft = {
+type CheckoutRecoveryDraft = {
   formState: CheckoutFormState;
   promoCodeState: CheckoutRecoveryPromoCodeState | null;
 };
 
-export type RevivedCheckoutRecoveryDraft = {
+type RevivedCheckoutRecoveryDraft = {
   formState: CheckoutFormState;
   promoCodeState: CheckoutPromoCodeState;
 };

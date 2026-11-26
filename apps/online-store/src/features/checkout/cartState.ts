@@ -1,13 +1,11 @@
 import type { ProductSummary } from "@/types/api";
 
-export type CartItem = {
+type CartItem = {
   quantity: number;
   unitPriceCents: number;
 };
 
 export type CartItems = Record<string, CartItem>;
-export type CartQuantities = Record<string, number>;
-
 export type CheckoutCartProductItem = {
   product: ProductSummary;
   quantity: number;

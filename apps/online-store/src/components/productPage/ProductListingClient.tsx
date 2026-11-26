@@ -22,7 +22,7 @@ import MobileFilterPanel from "../productFilter/MobileFilterPanel";
 
 import styles from "./allProductsClient.module.css";
 
-export type ProductListingClientProps = {
+type ProductListingClientProps = {
   products: ProductSummary[];
   title: string;
   categories?: Category[];

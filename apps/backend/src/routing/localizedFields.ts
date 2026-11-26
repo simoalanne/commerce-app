@@ -14,7 +14,7 @@ type LocalizedValue<T> = T[keyof T] extends string[] | undefined
  * (`LocalizedString`, `LocalizedStringArray`, or records of localized objects
  * such as CMS blocks) replaced by its value for one locale.
  */
-export type Localized<T> = T extends string | number | boolean | null | undefined
+type Localized<T> = T extends string | number | boolean | null | undefined
   ? T
   : T extends readonly (infer U)[]
     ? Localized<U>[]
