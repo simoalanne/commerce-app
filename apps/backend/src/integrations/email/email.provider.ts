@@ -30,27 +30,26 @@ export interface EmailServiceProvider {
   sendEmail(input: SendEmailInput): Promise<void>;
 }
 
-const mockedService: EmailServiceProvider = {
+// Local default: prints the email so flows like order confirmation can be
+// followed without an email account.
+const consoleEmailService: EmailServiceProvider = {
   async sendEmail(input) {
-    logger.warn(
-      "EmailService is not configured because RESEND_API_KEY is not set. Email content:",
-      {
-        to: input.to,
-        subject: input.subject,
-        locale: input.locale,
-        replyTo: input.replyTo,
-        idempotencyKey: input.idempotencyKey,
-        scheduledAt: input.scheduledAt,
-        tags: input.tags,
-        metadata: input.metadata,
-        attachments: input.attachments?.map((attachment) => ({
-          filename: attachment.filename,
-          size:
-            typeof attachment.content === "string"
-              ? attachment.content.length
-              : attachment.content.byteLength,
-        })),
-      },
+    if (envConfig.NODE_ENV === "test") {
+      return;
+    }
+    const attachments = input.attachments?.map((attachment) => attachment.filename).join(", ");
+    console.info(
+      [
+        "",
+        "──── email (not sent: RESEND_API_KEY is not set) ────",
+        `To:      ${input.to.name ? `${input.to.name} <${input.to.email}>` : input.to.email}`,
+        `Subject: ${input.subject}`,
+        ...(input.scheduledAt ? [`Send at: ${input.scheduledAt}`] : []),
+        ...(attachments ? [`Attachments: ${attachments}`] : []),
+        "",
+        input.text,
+        "─────────────────────────────────────────────────────",
+      ].join("\n"),
     );
   },
 };
@@ -59,7 +58,7 @@ const canEnableResend =
   envConfig.RESEND_API_KEY && envConfig.RESEND_FROM_EMAIL && envConfig.RESEND_FROM_NAME;
 
 if (!canEnableResend && envConfig.NODE_ENV === "development") {
-  logger.warn("Email service will be disabled and email related features will not work");
+  logger.info("Resend is not configured; emails are printed to the console");
 }
 
 const resendAdapter =
@@ -70,6 +69,6 @@ const resendAdapter =
         fromName: envConfig.RESEND_FROM_NAME,
         replyTo: envConfig.RESEND_REPLY_TO_EMAIL,
       })
-    : mockedService;
+    : consoleEmailService;
 
 export const EmailService: EmailServiceProvider = resendAdapter;
