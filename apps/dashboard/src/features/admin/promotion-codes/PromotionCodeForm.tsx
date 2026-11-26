@@ -64,18 +64,6 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
   timeStyle: "short",
 });
 
-const isDate = (value: unknown): value is Date =>
-  typeof value === "object" && value instanceof Date;
-
-// The form edits Dates, while the response carries ISO strings.
-const toFormValues = (promotionCode: PromotionCode): FormOutput => ({
-  ...promotionCode,
-  validFrom: promotionCode.validFrom ? new Date(promotionCode.validFrom) : null,
-  validUntil: promotionCode.validUntil ? new Date(promotionCode.validUntil) : null,
-  createdAt: new Date(promotionCode.createdAt),
-  updatedAt: new Date(promotionCode.updatedAt),
-});
-
 type NumberFieldProps<TFieldValues extends FieldValues> = {
   control: Control<TFieldValues>;
   name: FieldPath<TFieldValues>;
@@ -206,21 +194,26 @@ function DateField<TFieldValues extends FieldValues>({
                 className="w-full justify-between font-normal"
                 disabled={disabled}
               >
-                <span>{isDate(field.value) ? format(field.value, "PPP") : "Select date"}</span>
+                <span>{field.value ? format(field.value, "PPP") : "Select date"}</span>
                 <CalendarIcon className="h-4 w-4 text-muted-foreground" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
               <Calendar
                 mode="single"
-                selected={isDate(field.value) ? field.value : undefined}
+                selected={field.value ? new Date(field.value) : undefined}
                 onSelect={(nextDate) => {
                   if (!nextDate) {
                     field.onChange(null);
                     return;
                   }
 
-                  field.onChange(boundary === "start" ? startOfDay(nextDate) : endOfDay(nextDate));
+                  field.onChange(
+                    (boundary === "start"
+                      ? startOfDay(nextDate)
+                      : endOfDay(nextDate)
+                    ).toISOString(),
+                  );
                 }}
               />
             </PopoverContent>
@@ -247,12 +240,9 @@ export default function PromotionCodeForm({ entityData, onSuccess }: PromotionCo
     discountType: "PERCENT",
     discountValue: 0,
     usageLimit: null,
-    timesUsed: 0,
-    createdAt: undefined,
-    updatedAt: undefined,
   };
 
-  const formDefaults = entityData ? toFormValues(entityData) : fallbackDefaults;
+  const formDefaults: FormOutput = entityData ?? fallbackDefaults;
 
   const form = useForm<FormInput, unknown, FormOutput>({
     resolver: zodResolver(formSchema),

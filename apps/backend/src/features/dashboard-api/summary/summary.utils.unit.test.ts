@@ -116,7 +116,7 @@ describe("summary.utils", () => {
       });
 
       expect(result).toStrictEqual({
-        generatedAt: now,
+        generatedAt: now.toISOString(),
         windowDays: 30,
         kpis: {
           totalRevenueCents: 12550,

@@ -31,11 +31,11 @@ export const formatMoney = (cents: number) =>
     currency: "EUR",
   }).format(cents / 100);
 
-export const formatDateTime = (value: Date) =>
+export const formatDateTime = (value: string) =>
   new Intl.DateTimeFormat("en", {
     dateStyle: "medium",
     timeZone: "UTC",
-  }).format(value);
+  }).format(new Date(value));
 
 export const rightCell = (text: string): TableCell => ({
   text,

@@ -15,20 +15,6 @@ const promotionCodeTxRoute = dashboardTxRoute.meta({ access: "ADMIN" });
 
 const idParams = z.object({ id: z.coerce.number<number>().int().positive() });
 
-const toPromotionCodeWriteData = <
-  T extends {
-    createdAt?: Date;
-    updatedAt?: Date;
-    timesUsed?: number;
-  },
->(
-  request: T,
-) => {
-  const { createdAt: _createdAt, updatedAt: _updatedAt, timesUsed: _timesUsed, ...data } = request;
-
-  return data;
-};
-
 export const promotionCodesRoutes = {
   getAll: promotionCodeRoute.get("/promotion-codes").handler(async ({ context }) =>
     toResponse(
@@ -56,10 +42,7 @@ export const promotionCodesRoutes = {
     .post("/promotion-codes")
     .body(PromotionCodeFormSchema)
     .handler(async ({ body, context }) => {
-      const [promotionCode] = await context.db
-        .insert(promotionCodeTable)
-        .values(toPromotionCodeWriteData(body))
-        .returning();
+      const [promotionCode] = await context.db.insert(promotionCodeTable).values(body).returning();
 
       await logAdminAction(context.db, {
         actor: context.authContext,
@@ -84,7 +67,7 @@ export const promotionCodesRoutes = {
 
       const [updated] = await context.db
         .update(promotionCodeTable)
-        .set(toPromotionCodeWriteData(body))
+        .set(body)
         .where(eq(promotionCodeTable.id, params.id))
         .returning();
 

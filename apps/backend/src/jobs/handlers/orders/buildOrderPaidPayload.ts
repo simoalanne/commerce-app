@@ -7,7 +7,7 @@ import { getLocalizedValue } from "#src/utils/localizedObject.ts";
 
 export type OrderPaidPayload = {
   orderId: number;
-  placedAt: Date;
+  placedAt: string;
   locale: string;
   recipientEmail: string;
   recipientPhone?: string | null;

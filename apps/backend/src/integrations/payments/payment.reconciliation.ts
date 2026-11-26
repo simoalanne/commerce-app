@@ -150,7 +150,7 @@ const recoverPaidOrderAfterPendingCancellation = async ({
     .set({
       status: "PAID",
       paymentId,
-      paidAt: new Date(),
+      paidAt: sql`now()`,
     })
     .where(eq(orderTable.id, orderId))
     .returning({
@@ -357,7 +357,10 @@ export const reconcileOrder = async ({
       return null;
     }
 
-    await tx.update(orderTable).set({ paidAt: new Date() }).where(eq(orderTable.id, orderId));
+    await tx
+      .update(orderTable)
+      .set({ paidAt: sql`now()` })
+      .where(eq(orderTable.id, orderId));
 
     const orderItems = await getOrderStockAdjustments({
       orderId,

@@ -358,7 +358,7 @@ class PostgresSearchProvider implements SearchProvider {
               : null,
             ranking: {
               isFeatured: product.isFeatured,
-              createdAt: product.createdAt.toISOString(),
+              createdAt: product.createdAt,
             },
           },
           searchText: buildSearchText(locale, [

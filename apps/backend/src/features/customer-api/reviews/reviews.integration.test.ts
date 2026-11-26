@@ -104,11 +104,11 @@ describe("customerApi.reviews", () => {
 
     await db
       .update(reviewTable)
-      .set({ updatedAt: new Date("2026-02-01T10:00:00.000Z") })
+      .set({ updatedAt: "2026-02-01T10:00:00.000Z" })
       .where(eq(reviewTable.id, namedReview.id));
     await db
       .update(reviewTable)
-      .set({ updatedAt: new Date("2026-02-02T10:00:00.000Z") })
+      .set({ updatedAt: "2026-02-02T10:00:00.000Z" })
       .where(eq(reviewTable.id, anonymousReview.id));
 
     const { body: result } = await client.reviews.getByProduct({

@@ -26,7 +26,7 @@ const toImageResponse = (
     storageKey: string;
     name?: string | null;
     alt?: LocalizedString | null;
-    createdAt: Date;
+    createdAt: string;
   },
 ) => ({
   ...image,

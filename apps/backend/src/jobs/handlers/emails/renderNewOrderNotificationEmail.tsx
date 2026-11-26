@@ -13,7 +13,7 @@ import { formatCents, formatLine, getInitials } from "./emailHelpers.ts";
 
 export type NewOrderNotificationEmailPayload = {
   orderId: number;
-  placedAt: Date;
+  placedAt: string;
   customer: {
     name: string;
     email: string;
@@ -71,7 +71,7 @@ export async function renderNewOrderNotificationEmail(
   payload: NewOrderNotificationEmailPayload,
 ): Promise<NewOrderNotificationEmailContent> {
   const subject = formatLine(copy.subject, { orderId: payload.orderId });
-  const placedAt = dateTimeFormatter.format(payload.placedAt);
+  const placedAt = dateTimeFormatter.format(new Date(payload.placedAt));
   const addressLines = payload.formattedAddress.split("\n").filter(Boolean);
   const items = payload.items.map((item) => ({
     name: item.name,

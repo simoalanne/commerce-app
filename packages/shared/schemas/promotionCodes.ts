@@ -6,16 +6,13 @@ export const PromotionCodeFormSchema = z
   .object({
     code: z.string().trim().toUpperCase().min(1),
     isActive: z.boolean(),
-    validFrom: z.coerce.date().nullish(),
-    validUntil: z.coerce.date().nullish(),
+    validFrom: z.iso.datetime().nullish(),
+    validUntil: z.iso.datetime().nullish(),
     minimumItemsValueCents: z.int().nonnegative().nullish(),
     discountType: PromotionCodeDiscountTypeSchema,
     // Percent for PERCENT codes, cents for FIXED codes.
     discountValue: z.int().nonnegative(),
     usageLimit: z.number().int().positive().nullish(),
-    timesUsed: z.number().int().nonnegative().default(0),
-    createdAt: z.coerce.date().optional(),
-    updatedAt: z.coerce.date().optional(),
   })
   .refine(
     (data) =>

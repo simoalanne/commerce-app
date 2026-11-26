@@ -83,7 +83,7 @@ export const buildSummaryResponse = ({
   const previousPaidOrders = orderRow.previous_paid_orders;
 
   return {
-    generatedAt: now,
+    generatedAt: now.toISOString(),
     windowDays: days,
     kpis: {
       totalRevenueCents: Number(currentRevenue),
