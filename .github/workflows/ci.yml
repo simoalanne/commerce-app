@@ -24,4 +24,5 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter backend exec prisma generate
       - run: pnpm check
+      - run: pnpm --filter dashboard build
       - run: pnpm test:unit

@@ -101,7 +101,7 @@ function ApiClientProvider({ children }: { children: ReactNode }) {
   return <DashboardModeProvider>{children}</DashboardModeProvider>;
 }
 
-const useDashboardSession = () => {
+export const useDashboardSession = () => {
   const context = useContext(DashboardSessionContext);
   if (!context) {
     throw new Error("useDashboardSession must be used within ApiClientProvider");
@@ -110,4 +110,3 @@ const useDashboardSession = () => {
 };
 
 export default ApiClientProvider;
-export { useDashboardSession };
