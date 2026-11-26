@@ -35,7 +35,7 @@ Per-job settings are pg-boss's send options, passed as `options`: `{ startAfter:
 
 Each worker validates the payload with the job's schema, runs the handler, and logs a failure before rethrowing it to pg-boss.
 
-Workers poll their queue (every 2 seconds by default). Unlike the earlier in-memory scheduler, this keeps the database awake, which matters only for a database that scales to zero; raise pg-boss's polling interval if that becomes a cost.
+Workers poll their queue (every 2 seconds by default). This keeps the database awake, which matters only for a database that scales to zero; raise pg-boss's polling interval if that becomes a cost.
 
 ## Retries
 

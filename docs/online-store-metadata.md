@@ -8,9 +8,7 @@ The goal is to keep metadata generation explicit, centralized, and easy to audit
 
 ## Intent
 
-The storefront previously had route-level metadata generation spread across many `app/**` files, with some pages missing metadata entirely.
-
-The current direction is:
+The rules:
 
 - keep `app/**` route files thin
 - keep metadata rules in `apps/online-store/src/metadata/**`
@@ -153,15 +151,3 @@ When adding a new private or transactional page:
 1. Add a title key under `metadata.noIndex`.
 2. Add or reuse a helper in `src/metadata/noIndexMetadata.ts`.
 3. Re-export it from the route file.
-
-## Bottom Line
-
-The current metadata setup is meant to be:
-
-- centralized
-- explicit
-- locale-aware
-- easy to audit
-- thin at the route layer
-
-If metadata logic starts drifting back into many route files, or starts reusing unrelated translation keys, that is a sign the structure is being weakened again.

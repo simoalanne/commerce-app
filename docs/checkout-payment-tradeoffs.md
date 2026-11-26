@@ -135,25 +135,3 @@ Likely characteristics:
 - refund or manually resolve rare successful payments that cannot be fulfilled
 
 This is the simpler but less strict inventory path.
-
-## Devolution does not mean the current choice failed
-
-If the current stricter model turns out to be too awkward, moving toward "commit on paid" is simpler than the reverse and shouldn't take too long to implement.
-
-That makes the current choice safer:
-
-- if it works, we keep stronger stock protection
-- if it does not work, the likely fallback is easier, not harder
-
-The reverse move would be much more expensive. Adding reservation lifecycle and stronger backend-owned checkout state later is meaningfully harder than removing it.
-
-## Decision Rule For Now
-
-For the current stage of the product:
-
-- keep the implementation understandable
-- accept clear tradeoffs rather than fake certainty
-- avoid half-session client-side workarounds
-- revisit only if real usage shows the current balance is wrong
-
-The right trigger for redesign is production evidence, not theoretical discomfort.

@@ -22,38 +22,7 @@ pnpm typecheck  # typecheck every workspace
 
 `oxlint` and `oxfmt` also take paths, for example `pnpm oxlint --fix apps/online-store/src/path/to/file.tsx`.
 
-CI (`.github/workflows/ci.yml`) runs `pnpm check` and the unit tests. Integration tests are not in CI yet because they need a database.
-
-## Commit Messages
-
-Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
-
-- `feat`: a new feature or user-facing capability
-- `fix`: a bug fix
-- `style`: formatting or visual UI changes
-- `refactor`: restructuring without changing behavior
-- `chore`: tooling, configuration and other maintenance
-- `docs`: documentation
-- `test`: tests
-
-Examples:
-
-```text
-feat(checkout): add Stripe payment element
-fix(auth): preserve reset code after password validation error
-refactor(checkout): simplify order summary rendering
-chore: update dependencies
-```
-
-## Branches
-
-Name branches `type/short-description`, lowercase with hyphens, using the same types as commits:
-
-```text
-feat/stripe-checkout
-refactor/drizzle
-chore/tooling-update
-```
+CI (`.github/workflows/ci.yml`) runs `pnpm check`, the dashboard build and the unit tests. Integration tests are not in CI yet because they need a database.
 
 ## Database
 

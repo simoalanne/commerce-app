@@ -48,7 +48,7 @@ For example, an active product under an inactive vendor should not appear on the
 
 ## Search Index
 
-Search uses denormalized `ProductSearchDocument` rows.
+Search uses denormalized `product_search_document` rows.
 
 Vendor and category search results are not independent index rows. They are derived from matching product search documents:
 
