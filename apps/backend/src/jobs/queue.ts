@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/node";
 import { sql } from "drizzle-orm";
-import { fromDrizzle, PgBoss } from "pg-boss";
+import { fromDrizzle, PgBoss, type SendOptions } from "pg-boss";
 
 import envConfig from "#src/config.ts";
 import type { Db } from "#src/db/client.ts";
@@ -11,8 +11,8 @@ import { type JobPayload, type JobType, jobDefinitions } from "./jobDefinitions.
 export type EnqueueJobParams<T extends JobType> = {
   type: T;
   payload: JobPayload<T>;
-  delayMs?: number;
-  maxAttempts?: number;
+  /** pg-boss's send options, such as `startAfter` and `retryLimit`. */
+  options?: Omit<SendOptions, "db">;
 };
 
 export type EnqueueJob = <T extends JobType>(params: EnqueueJobParams<T>) => Promise<void>;
@@ -82,13 +82,8 @@ export const createJobQueue = (connectionString: string): JobQueue => {
   });
 
   return {
-    enqueue: async (db, { type, payload, delayMs, maxAttempts }) => {
-      await boss.send(type, payload, {
-        db: fromDrizzle(db, sql),
-        // pg-boss rejects options that are present but undefined.
-        ...(delayMs && { startAfter: new Date(Date.now() + delayMs) }),
-        ...(maxAttempts !== undefined && { retryLimit: maxAttempts - 1 }),
-      });
+    enqueue: async (db, { type, payload, options }) => {
+      await boss.send(type, payload, { ...options, db: fromDrizzle(db, sql) });
     },
 
     listRecent: async (limit) => {

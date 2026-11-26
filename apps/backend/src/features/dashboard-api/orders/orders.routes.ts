@@ -432,7 +432,7 @@ export const ordersRoutes = {
       await context.enqueueJob({
         type: "processRefund",
         payload: { refundId: refund.id },
-        maxAttempts: 1,
+        options: { retryLimit: 0 },
       });
 
       const result = {

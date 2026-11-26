@@ -27,7 +27,7 @@ Given a transaction, the job exists only if the transaction commits, and workers
 
 Route handlers built with `customerTxRoute` / `dashboardTxRoute` get `context.enqueueJob(job)`, which enqueues in the handler's transaction. Plain routes that open their own transactions, jobs and webhooks call `jobQueue.enqueue(tx, job)`; job handlers get the queue from their handler context, and webhooks import it.
 
-Options per job: `delayMs` (pg-boss `startAfter`) and `maxAttempts` (pg-boss `retryLimit`, one less).
+Per-job settings are pg-boss's send options, passed as `options`: `{ startAfter: seconds }` delays a job, `{ retryLimit: 0 }` runs it at most once.
 
 ## Running Jobs
 
@@ -39,7 +39,7 @@ Workers poll their queue (every 2 seconds by default). Unlike the earlier in-mem
 
 ## Retries
 
-Every queue uses the same policy (`queueOptions` in `queue.ts`): two retries with exponential backoff starting at 5 minutes, capped at an hour. Most jobs succeed on the first attempt, and the rare failure is unlikely to clear up immediately. Jobs that must not repeat, such as refunds, enqueue with `maxAttempts: 1`.
+Every queue uses the same policy (`queueOptions` in `queue.ts`): two retries with exponential backoff starting at 5 minutes, capped at an hour. Most jobs succeed on the first attempt, and the rare failure is unlikely to clear up immediately. Jobs that must not repeat, such as refunds, enqueue with `retryLimit: 0`.
 
 A job that exhausts its retries is `failed` and stays in pg-boss's table. Pending-order expiry has no extra safety net: if `expirePendingOrder` fails three times, the order's stock stays reserved until the job is retried.
 

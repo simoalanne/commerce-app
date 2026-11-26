@@ -206,7 +206,7 @@ const createPaymentInternal = async (
     await context.jobQueue.enqueue(tx, {
       type: "expirePendingOrder",
       payload: { orderId: order.id },
-      delayMs: config.PENDING_ORDER_EXPIRY_MINUTES * 60 * 1000,
+      options: { startAfter: config.PENDING_ORDER_EXPIRY_MINUTES * 60 },
     });
 
     return order;

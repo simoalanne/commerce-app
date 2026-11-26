@@ -15,7 +15,7 @@ describe("jobQueue", () => {
       await jobQueue.enqueue(tx, {
         type: "expirePendingOrder",
         payload: { orderId: 9001 },
-        delayMs: 60_000,
+        options: { startAfter: 60 },
       });
     });
 
@@ -35,11 +35,11 @@ describe("jobQueue", () => {
     expect(await findExpiryJobs(9002)).toEqual([]);
   });
 
-  it("takes the retry limit from maxAttempts", async () => {
+  it("passes send options through", async () => {
     await jobQueue.enqueue(db, {
       type: "processRefund",
       payload: { refundId: 9003 },
-      maxAttempts: 1,
+      options: { retryLimit: 0 },
     });
 
     const [job] = (await jobQueue.listRecent(1000)).filter(
