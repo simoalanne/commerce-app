@@ -6,7 +6,10 @@ import z from "zod";
 import envConfig from "./config.ts";
 import AuthProvider from "./integrations/auth/auth.provider.ts";
 import { EmailService } from "./integrations/email/email.provider.ts";
-import { ObjectStorage } from "./integrations/object-storage/objectStorage.provider.ts";
+import {
+  filesystemObjectStorage,
+  ObjectStorage,
+} from "./integrations/object-storage/objectStorage.provider.ts";
 import { getWebhookRoutes, paymentProviders } from "./integrations/payments/payment.provider.ts";
 import { searchProvider } from "./integrations/search/search.provider.ts";
 import { jobQueue } from "./jobs/queue.ts";
@@ -86,10 +89,17 @@ const server = Bun.serve({
   ...api,
   // The webhooks are third-party callers with their own signing, so they are
   // plain routes beside the API.
-  routes: { ...api.routes, ...docsRoutes, ...(await getWebhookRoutes()) },
+  // Local filesystem storage serves and accepts objects itself.
+  routes: {
+    ...api.routes,
+    ...docsRoutes,
+    ...(await getWebhookRoutes()),
+    ...(filesystemObjectStorage ? filesystemObjectStorage.routes() : {}),
+  },
   port: process.env.PORT ? Number(process.env.PORT) : 3000,
-  // Request bodies here are small JSON; uploads go through presigned URLs.
-  maxRequestBodySize: 1024 * 1024,
+  // Request bodies here are small JSON; uploads go through presigned URLs,
+  // which hit this server only with local filesystem storage.
+  maxRequestBodySize: (filesystemObjectStorage ? 10 : 1) * 1024 * 1024,
   // Errors the interceptors never see, such as webhook handlers.
   error: (error) => {
     reportError(error);

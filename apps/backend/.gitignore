@@ -3,3 +3,6 @@
 
 # Contracts extracted from the route trees (pnpm contract)
 /generated/contracts
+
+# Local development data (filesystem object storage)
+.local
