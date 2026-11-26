@@ -85,7 +85,7 @@ class PostgresSearchProvider implements SearchProvider {
 					normalized_query,
 					product_similarity_threshold,
 					collection_similarity_threshold
-				FROM "ProductSearchDocument", search_input
+				FROM ${productSearchDocumentTable}, search_input
 				WHERE
 					locale = ${locale}
 			),
@@ -183,7 +183,7 @@ class PostgresSearchProvider implements SearchProvider {
 					search_data AS "searchData",
 					(search_data #>> '{ranking,createdAt}')::timestamptz AS created_at,
 					0 AS group_order
-				FROM "ProductSearchDocument"
+				FROM ${productSearchDocumentTable}
 				WHERE
 					locale = ${locale}
 					AND (search_data #>> '{ranking,isFeatured}')::boolean = true
@@ -197,7 +197,7 @@ class PostgresSearchProvider implements SearchProvider {
 					search_data AS "searchData",
 					(search_data #>> '{ranking,createdAt}')::timestamptz AS created_at,
 					1 AS group_order
-				FROM "ProductSearchDocument"
+				FROM ${productSearchDocumentTable}
 				WHERE
 					locale = ${locale}
 					AND (search_data #>> '{product,outOfStock}')::boolean = false
@@ -395,7 +395,7 @@ class PostgresSearchProvider implements SearchProvider {
     );
 
     await db.execute(sql`
-			INSERT INTO "ProductSearchDocument" (
+			INSERT INTO ${productSearchDocumentTable} (
 				product_id,
 				locale,
 				product_search_text,

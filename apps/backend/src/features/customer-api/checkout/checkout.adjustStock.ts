@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 
 import type { Db } from "#src/db/client.ts";
+import { productTable } from "#src/db/schema.ts";
 
 import { InsufficientStock } from "./checkout.errors.ts";
 
@@ -44,7 +45,7 @@ export const reserveStockOrThrow = async ({ items, transaction }: StockAdjustmen
 				VALUES ${values}
 			),
 			updated AS (
-				UPDATE "Product" p
+				UPDATE ${productTable} p
 				SET reserved_stock = p.reserved_stock + r.quantity
 				FROM requested r
 				WHERE p.sku = r.sku
@@ -58,7 +59,7 @@ export const reserveStockOrThrow = async ({ items, transaction }: StockAdjustmen
 				COALESCE(u."availableStock", p.current_stock - p.reserved_stock) AS "availableStock",
 				u.sku IS NOT NULL AS adjusted
 			FROM requested r
-			JOIN "Product" p ON p.sku = r.sku
+			JOIN ${productTable} p ON p.sku = r.sku
 			LEFT JOIN updated u ON u.sku = r.sku
 		`);
   const failedRecords = stockResults
@@ -74,7 +75,7 @@ export const commitReservedStock = async ({ items, transaction }: StockAdjustmen
   if (!items.length) return;
 
   await transaction.execute(sql`
-		UPDATE "Product" p
+		UPDATE ${productTable} p
 		SET current_stock = p.current_stock - s.quantity,
 				reserved_stock = p.reserved_stock - s.quantity
 		FROM (VALUES ${buildValues(items)}) AS s(sku, quantity)
@@ -86,7 +87,7 @@ export const releaseReservedStock = async ({ items, transaction }: StockAdjustme
   if (!items.length) return;
 
   await transaction.execute(sql`
-		UPDATE "Product" p
+		UPDATE ${productTable} p
 		SET reserved_stock = p.reserved_stock - s.quantity
 		FROM (VALUES ${buildValues(items)}) AS s(sku, quantity)
 		WHERE p.sku = s.sku;
@@ -101,7 +102,7 @@ export const restockProductStock = async ({ items, transaction }: ProductStockAd
   if (!restockItems.length) return;
 
   await transaction.execute(sql`
-		UPDATE "Product" p
+		UPDATE ${productTable} p
 		SET current_stock = p.current_stock + s.quantity
 		FROM (
 			VALUES ${sql.join(
@@ -130,12 +131,12 @@ export const commitAsMuchStockAsPossible = async ({
 				p.sku,
 				r.quantity,
 				GREATEST(p.current_stock - p.reserved_stock, 0) AS available_stock
-			FROM "Product" p
+			FROM ${productTable} p
 			JOIN requested r ON r.sku = p.sku
 			FOR UPDATE
 		),
 		updated AS (
-			UPDATE "Product" p
+			UPDATE ${productTable} p
 			SET current_stock = p.current_stock - LEAST(current.available_stock, current.quantity)
 			FROM current
 			WHERE p.id = current.product_id

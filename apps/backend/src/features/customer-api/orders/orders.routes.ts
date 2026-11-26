@@ -145,7 +145,7 @@ export const ordersRoutes = {
     .body(
       z.object({
         orderId: z.number().int().positive().optional(),
-        token: z.string().trim().min(1).optional(),
+        token: z.uuid().optional(),
         scope: z.enum(["order:read", "order:review"]),
       }),
     )

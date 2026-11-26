@@ -165,7 +165,6 @@ export const createOrder = async (
       total_weight_grams: 500,
       payment_provider: "STRIPE",
       status,
-      claim_token: uniqueValue("claim"),
       order_details: {
         customer: {
           name: "Test Customer",

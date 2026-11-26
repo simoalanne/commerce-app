@@ -115,13 +115,13 @@ const updatePendingOrderStatus = async ({
   } = await transaction.execute<PendingOrderState>(sql`
 		WITH current AS (
 			SELECT status, order_details, applied_promo_code
-			FROM "Order"
+			FROM ${orderTable}
 			WHERE id = ${orderId}
 			FOR UPDATE
 		),
 		updated AS (
-			UPDATE "Order"
-			SET status = ${status}::"OrderStatus",
+			UPDATE ${orderTable}
+			SET status = ${status}::order_status,
 				payment_id = ${paymentId}
 			WHERE id = ${orderId}
 				AND status = 'PENDING'

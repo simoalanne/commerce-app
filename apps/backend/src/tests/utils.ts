@@ -1,20 +1,32 @@
 import { sql } from "drizzle-orm";
 
 import { db } from "#src/db/client.ts";
+import {
+  adminAccountTable,
+  categoryTable,
+  customerAccountTable,
+  customerAddressTable,
+  orderTable,
+  productTable,
+  reviewTable,
+  userTable,
+  vendorTable,
+  webhookSubscriptionTable,
+} from "#src/db/schema.ts";
 import { jobQueue } from "#src/jobs/queue.ts";
 
-const truncateAllTablesSql = `
+const truncateAllTablesSql = sql`
 TRUNCATE TABLE
-	"AdminAccount",
-	"Order",
-	"CustomerAddress",
-	"CustomerAccount",
-	"Review",
-	"Product",
-	"Category",
-	"Vendor",
-	"WebhookSubscription",
-	"User"
+	${adminAccountTable},
+	${orderTable},
+	${customerAddressTable},
+	${customerAccountTable},
+	${reviewTable},
+	${productTable},
+	${categoryTable},
+	${vendorTable},
+	${webhookSubscriptionTable},
+	${userTable}
 RESTART IDENTITY CASCADE;
 `;
 
@@ -30,7 +42,7 @@ const isTestDatabaseConnectionFailure = (error: Record<string, unknown>) => {
 
 export const bootstrapTestDatabase = async () => {
   try {
-    await db.execute(sql.raw(truncateAllTablesSql));
+    await db.execute(truncateAllTablesSql);
     // Installs or migrates pg-boss's schema and creates the queues, then
     // clears jobs left by earlier runs.
     await jobQueue.start();

@@ -2,7 +2,15 @@ import { eq, sql } from "drizzle-orm";
 import z from "zod";
 
 import type { Db } from "#src/db/client.ts";
-import { customerAccountTable, type OrderStatus, productTable } from "#src/db/schema.ts";
+import {
+  categoryTable,
+  customerAccountTable,
+  orderTable,
+  type OrderStatus,
+  productTable,
+  tagTable,
+  vendorTable,
+} from "#src/db/schema.ts";
 import { supportedLocales } from "#src/locales.ts";
 import { dashboardRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
@@ -38,7 +46,7 @@ const queryOrderSummaryRows = async (
     await db.execute<OrderQueryRow>(sql`
 		WITH filtered AS (
 			SELECT created_at, charged_total_cents, status
-			FROM "Order"
+			FROM ${orderTable}
 			WHERE created_at >= ${previousStart} AND created_at < ${now}
 		),
 		range_series AS (
@@ -117,21 +125,21 @@ const queryLocalizationCoverageRows = async (db: Db) =>
   (
     await db.execute<LocalizationCoverageRow>(sql`
 		WITH fields AS (
-			SELECT name::jsonb AS content FROM "Category"
+			SELECT name::jsonb AS content FROM ${categoryTable}
 			UNION ALL
-			SELECT name::jsonb FROM "Product"
+			SELECT name::jsonb FROM ${productTable}
 			UNION ALL
-			SELECT headline::jsonb FROM "Product"
+			SELECT headline::jsonb FROM ${productTable}
 			UNION ALL
-			SELECT full_description::jsonb FROM "Product"
+			SELECT full_description::jsonb FROM ${productTable}
 			UNION ALL
-			SELECT name::jsonb FROM "Tag"
+			SELECT name::jsonb FROM ${tagTable}
 			UNION ALL
-			SELECT slogan::jsonb FROM "Vendor"
+			SELECT slogan::jsonb FROM ${vendorTable}
 			UNION ALL
-			SELECT story::jsonb FROM "Vendor"
+			SELECT story::jsonb FROM ${vendorTable}
 			UNION ALL
-			SELECT tags::jsonb FROM "Vendor"
+			SELECT tags::jsonb FROM ${vendorTable}
 		),
 		localizable AS (
 			SELECT row_number() OVER () AS field_id, content FROM fields

@@ -7,10 +7,13 @@ import {
   categoryTable,
   imageTable,
   legalDocumentTable,
+  orderTable,
   productImageTable,
+  productSearchDocumentTable,
   productTable,
   productTagTable,
   promotionCodeTable,
+  reviewTable,
   tagTable,
   vendorImageTable,
   vendorTable,
@@ -56,8 +59,9 @@ const createImage = async (label: string, color: string) => {
 };
 
 await db.execute(sql`
-  TRUNCATE "Order", "Review", "Product", "Category", "Vendor", "Image", "Tag",
-    "PromotionCode", "LegalDocument", "ProductSearchDocument"
+  TRUNCATE ${orderTable}, ${reviewTable}, ${productTable}, ${categoryTable}, ${vendorTable},
+    ${imageTable}, ${tagTable}, ${promotionCodeTable}, ${legalDocumentTable},
+    ${productSearchDocumentTable}
   RESTART IDENTITY CASCADE
 `);
 

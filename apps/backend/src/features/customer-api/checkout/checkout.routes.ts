@@ -4,7 +4,7 @@ import { isValidPhoneNumber } from "@acme/shared/utils/addressValidation";
 import { RouteError } from "@rest-rpc/server";
 import * as Sentry from "@sentry/node";
 import { isAfter, isBefore } from "date-fns";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import z from "zod";
 
 import type { Db } from "#src/db/client.ts";
@@ -91,7 +91,7 @@ const baseCreatepaymentBodySchema = z.object({
   cart: CheckoutCartSchema,
   deliveryAddress: DeliveryAddressSchema,
   recipient: OrderRecipientSchema,
-  promoCode: z.string().trim().min(1).max(1024).optional(),
+  promoCode: z.string().trim().toUpperCase().min(1).max(1024).optional(),
   continueAsGuest: z.boolean().optional(),
 });
 
@@ -310,7 +310,7 @@ const getValidatedPromoCode = async (
   },
 ) => {
   const promo = await db.query.promotionCode.findFirst({
-    where: { RAW: (t) => sql`lower(${t.code}) = lower(${promoCode})` },
+    where: { code: promoCode },
   });
 
   if (!promo) {
@@ -406,7 +406,7 @@ export const checkoutRoutes = {
     .post("/checkout/validate-promo-code")
     .body(
       z.object({
-        promoCode: z.string().trim().min(1).max(1024),
+        promoCode: z.string().trim().toUpperCase().min(1).max(1024),
         itemsSubtotalCents: z.int().nonnegative(),
       }),
     )

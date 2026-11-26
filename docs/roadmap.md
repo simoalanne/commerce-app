@@ -37,7 +37,7 @@ Each is its own commit series on `main`. The job queue and `runAppTransaction` c
 
 ### Prisma → Drizzle (done)
 
-Ported on Drizzle `1.0.0-rc.6` and pg-boss 12, with what was learned recorded in `database.md`: relational `where` throws on `undefined` instead of ignoring it, `uuid(7)` defaults moved to Postgres 18's `uuidv7()`, `numeric` reads as `number`, raw rows need a UTC parser for `timestamp`, and drizzle-kit does not manage the `pg_trgm` extension search needs. The plan as written before the port:
+Ported on Drizzle `1.0.0-rc.6` and pg-boss 12, with what was learned recorded in `database.md`: relational `where` throws on `undefined` instead of ignoring it, `uuid(7)` defaults moved to Postgres 18's `uuidv7()`, `numeric` reads as `number`, and drizzle-kit does not manage the `pg_trgm` extension search needs. The plan as written before the port:
 
 Target Drizzle 1.0 (currently `1.0.0-rc`). Its relational queries (`where`, `with`, `columns`) are close to Prisma's `where`, `include` and `select`, which makes most reads translate directly.
 

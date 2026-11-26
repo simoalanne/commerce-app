@@ -51,24 +51,24 @@ Core queries (`db.select()`, `db.update()`, `db.delete()`) take conditions built
 
 ## Writes
 
-| Prisma                                 | Drizzle                                                                                                                                         |
-| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `create({ data })`                     | `const [row] = await db.insert(t).values({...}).returning()`                                                                                    |
-| `createMany({ data })`                 | `db.insert(t).values([...])`; guard against an empty array, which throws                                                                        |
-| `createMany({ skipDuplicates: true })` | `.onConflictDoNothing()`                                                                                                                        |
-| `update({ where: { id }, data })`      | `orNotFound((await db.update(t).set({...}).where(eq(t.id, id)).returning())[0])`: Prisma threw a 404 for a missing row, Drizzle updates nothing |
-| `updateMany` / `updateManyAndReturn`   | `db.update(t).set(...).where(...)`, with `.returning()` when the rows are needed                                                                |
-| `delete` / `deleteMany`                | `db.delete(t).where(...)`, with `orNotFound` on `.returning()` where Prisma's 404 mattered                                                      |
-| `upsert`                               | `db.insert(t).values(...).onConflictDoUpdate({ target: [...], set: {...} })`, with an explicit conflict target                                  |
-| `{ increment: n }`                     | `sql`${t.col} + ${n}``                                                                                                                          |
-| Nested `create` / `connect`            | Explicit inserts in the same transaction; `connect` is setting the foreign key column                                                           |
-| `select` on a write                    | `.returning({ id: t.id })`                                                                                                                      |
+| Prisma                                 | Drizzle                                                                                                                                                    |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `create({ data })`                     | `const [row] = await db.insert(t).values({...}).returning()`                                                                                               |
+| `createMany({ data })`                 | `db.insert(t).values([...])`; guard against an empty array, which throws                                                                                   |
+| `createMany({ skipDuplicates: true })` | `.onConflictDoNothing()`                                                                                                                                   |
+| `update({ where: { id }, data })`      | `const [row] = await db.update(t).set({...}).where(eq(t.id, id)).returning()`, then the 404 check: Prisma threw for a missing row, Drizzle updates nothing |
+| `updateMany` / `updateManyAndReturn`   | `db.update(t).set(...).where(...)`, with `.returning()` when the rows are needed                                                                           |
+| `delete` / `deleteMany`                | `db.delete(t).where(...)`, with `.returning()` and the 404 check where a missing row matters                                                               |
+| `upsert`                               | `db.insert(t).values(...).onConflictDoUpdate({ target: [...], set: {...} })`, with an explicit conflict target                                             |
+| `{ increment: n }`                     | `sql`${t.col} + ${n}``                                                                                                                                     |
+| Nested `create` / `connect`            | Explicit inserts in the same transaction; `connect` is setting the foreign key column                                                                      |
+| `select` on a write                    | `.returning({ id: t.id })`                                                                                                                                 |
 
 `set()` skips `undefined` values, like Prisma's `data`. An update whose values are all `undefined` throws `No values to set`.
 
 ## Raw SQL
 
-`prisma.$queryRaw<Row[]>`...`` is `(await db.execute<Row>(sql`...`)).rows`. `Prisma.join(values)` is `sql.join(values.map((v) => sql`${v}`), sql`, `)`, and `Prisma.sql` fragments are `sql` fragments. Raw rows are what node-postgres returns: `timestamp` columns are `Date` (read as UTC by a parser set on the pool in `client.ts`), `numeric`, `bigint` and `count(*)` are strings. Arrays interpolated into `sql` are expanded into separate parameters; pass one array parameter with `sql.param(values)`.
+`prisma.$queryRaw<Row[]>`...`` is `(await db.execute<Row>(sql`...`)).rows`. `Prisma.join(values)` is `sql.join(values.map((v) => sql`${v}`), sql`, `)`, and `Prisma.sql` fragments are `sql` fragments. Raw rows are what node-postgres returns: `timestamptz` columns are `Date`, `numeric`, `bigint` and `count(*)` are strings. Arrays interpolated into `sql` are expanded into separate parameters; pass one array parameter with `sql.param(values)`.
 
 ## Transactions and jobs
 

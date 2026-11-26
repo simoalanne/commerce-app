@@ -4,7 +4,7 @@ export const PromotionCodeDiscountTypeSchema = z.enum(["PERCENT", "FIXED"]);
 
 export const PromotionCodeFormSchema = z
   .object({
-    code: z.string().min(1),
+    code: z.string().trim().toUpperCase().min(1),
     is_active: z.boolean(),
     valid_from: z.coerce.date().nullish(),
     valid_until: z.coerce.date().nullish(),
