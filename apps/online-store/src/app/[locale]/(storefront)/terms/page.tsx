@@ -3,5 +3,5 @@ import {
   createLegalDocumentRoute,
 } from "@/features/legal-documents/legalDocumentRoute";
 
-export const generateMetadata = createLegalDocumentMetadata("ORDER_AND_DELIVERY_TERMS");
-export default createLegalDocumentRoute("ORDER_AND_DELIVERY_TERMS");
+export const generateMetadata = createLegalDocumentMetadata("TERMS_OF_SALE");
+export default createLegalDocumentRoute("TERMS_OF_SALE");

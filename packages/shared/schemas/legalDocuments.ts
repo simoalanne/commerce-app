@@ -2,7 +2,7 @@ import z from "zod";
 
 export const LegalDocumentKeySchema = z.enum([
   "PRIVACY_NOTICE",
-  "ORDER_AND_DELIVERY_TERMS",
+  "TERMS_OF_SALE",
   "RETURNS_AND_CANCELLATION",
   "CONTACT_INFORMATION",
 ]);

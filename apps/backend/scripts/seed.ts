@@ -177,7 +177,7 @@ await db
 
 const legalDocuments = {
   PRIVACY_NOTICE: "Privacy notice",
-  ORDER_AND_DELIVERY_TERMS: "Order and delivery terms",
+  TERMS_OF_SALE: "Terms of sale",
   RETURNS_AND_CANCELLATION: "Returns and cancellation",
   CONTACT_INFORMATION: "Contact information",
 };

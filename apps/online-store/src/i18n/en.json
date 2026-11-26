@@ -90,7 +90,7 @@
       "termsAndPolicies": "Terms and policies"
     },
     "legalLinks": {
-      "orderAndDeliveryTerms": "Order and delivery terms",
+      "termsOfSale": "Terms of sale",
       "returnsAndCancellation": "Returns and cancellation",
       "privacyNotice": "Privacy notice",
       "contactInformation": "Contact information"
@@ -269,7 +269,7 @@
         "devRedirectNotice": "You will be redirected to a test payment page. No money moves."
       },
       "termsAcceptance": {
-        "notice": "By clicking {submitLabel}, you accept Acme's <terms>order and delivery terms</terms>."
+        "notice": "By clicking {submitLabel}, you accept Acme's <terms>terms of sale</terms>."
       },
       "errors": {
         "requiredField": "{fieldLabel} is required.",

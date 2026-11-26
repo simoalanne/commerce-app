@@ -52,8 +52,8 @@ type LegalDocumentConfig = {
 
 const legalDocuments: LegalDocumentConfig[] = [
   {
-    key: "ORDER_AND_DELIVERY_TERMS",
-    title: "Order and delivery terms",
+    key: "TERMS_OF_SALE",
+    title: "Terms of sale",
     description: "The main checkout document customers accept when they place an order.",
   },
   {

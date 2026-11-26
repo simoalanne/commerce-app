@@ -25,7 +25,7 @@ export default async function CheckoutPaymentPage({
   const resolvedSearchParams = await searchParams;
   const isPaymentCanceled = resolvedSearchParams.paymentCanceled === "1";
 
-  const [{ cart, cartUpdatedAt, cartItems, products, paymentOptions }, orderAndDeliveryTerms, t] =
+  const [{ cart, cartUpdatedAt, cartItems, products, paymentOptions }, termsOfSale, t] =
     await Promise.all([
       getCheckoutServerState({
         locale,
@@ -33,7 +33,7 @@ export default async function CheckoutPaymentPage({
         adjustCartToAvailability: false,
         params,
       }),
-      getLegalDocumentByKey("ORDER_AND_DELIVERY_TERMS", params),
+      getLegalDocumentByKey("TERMS_OF_SALE", params),
       getServerTranslations(params, "checkout.paymentPage"),
     ]);
   const hasUnexpectedSearchParams = Object.entries(resolvedSearchParams).some(
@@ -48,10 +48,8 @@ export default async function CheckoutPaymentPage({
     redirect(`/${locale}/cart`);
   }
 
-  if (!orderAndDeliveryTerms) {
-    throw new Error(
-      "Checkout payment page requires order and delivery terms to be legally compliant",
-    );
+  if (!termsOfSale) {
+    throw new Error("Checkout payment page requires terms of sale to be legally compliant");
   }
 
   return (
@@ -69,9 +67,9 @@ export default async function CheckoutPaymentPage({
           availableProducts={products}
           paymentOptions={paymentOptions}
           termsDocument={{
-            title: orderAndDeliveryTerms.title,
-            content: orderAndDeliveryTerms.content,
-            updatedAt: new Date(orderAndDeliveryTerms.updatedAt).toISOString(),
+            title: termsOfSale.title,
+            content: termsOfSale.content,
+            updatedAt: new Date(termsOfSale.updatedAt).toISOString(),
           }}
         />
       </main>

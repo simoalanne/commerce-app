@@ -9,15 +9,11 @@ export type LegalDocumentKey = InferClientRequest<
 type LegalDocumentConfig = {
   key: LegalDocumentKey;
   pathname: `/${string}`;
-  footerLabelKey:
-    | "orderAndDeliveryTerms"
-    | "returnsAndCancellation"
-    | "privacyNotice"
-    | "contactInformation";
+  footerLabelKey: "termsOfSale" | "returnsAndCancellation" | "privacyNotice" | "contactInformation";
 };
 
 const legalDocumentPathByKey: Record<LegalDocumentKey, `/${string}`> = {
-  ORDER_AND_DELIVERY_TERMS: "/terms",
+  TERMS_OF_SALE: "/terms",
   RETURNS_AND_CANCELLATION: "/returns",
   PRIVACY_NOTICE: "/privacy",
   CONTACT_INFORMATION: "/company",
@@ -25,9 +21,9 @@ const legalDocumentPathByKey: Record<LegalDocumentKey, `/${string}`> = {
 
 export const legalDocumentConfigs: readonly LegalDocumentConfig[] = [
   {
-    key: "ORDER_AND_DELIVERY_TERMS",
-    pathname: legalDocumentPathByKey.ORDER_AND_DELIVERY_TERMS,
-    footerLabelKey: "orderAndDeliveryTerms",
+    key: "TERMS_OF_SALE",
+    pathname: legalDocumentPathByKey.TERMS_OF_SALE,
+    footerLabelKey: "termsOfSale",
   },
   {
     key: "RETURNS_AND_CANCELLATION",
