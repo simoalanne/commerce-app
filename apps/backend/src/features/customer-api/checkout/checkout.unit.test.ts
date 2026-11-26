@@ -22,7 +22,6 @@ const assertRouteError = (
   expect(error).toBeInstanceOf(Definition);
   expect(error).toHaveProperty("data", data);
 };
-const decimal = (value: number) => ({ toNumber: () => value });
 
 describe("checkout.adjustStock", () => {
   describe("buildValues", () => {
@@ -130,7 +129,7 @@ describe("checkout.adjustStock", () => {
 
 describe("checkout.utils", () => {
   describe("buildOrderItemsFromProducts", () => {
-    it("maps cart quantities and decimal prices into order items", () => {
+    it("maps cart quantities and prices into order items", () => {
       const products = [
         {
           id: 1,
@@ -138,8 +137,8 @@ describe("checkout.utils", () => {
           name: { en: "Product 1" },
           vendor_id: 10,
           vendor: { name: "Vendor 1" },
-          cost_price: decimal(80),
-          sales_price: decimal(100),
+          cost_price_cents: 80,
+          sales_price_cents: 100,
           weight_grams: 250,
         },
         {
@@ -148,15 +147,15 @@ describe("checkout.utils", () => {
           name: { en: "Product 2" },
           vendor_id: 20,
           vendor: { name: "Vendor 2" },
-          cost_price: decimal(150),
-          sales_price: decimal(200),
+          cost_price_cents: 150,
+          sales_price_cents: 200,
           weight_grams: 500,
         },
       ] as any;
 
       const result = buildOrderItemsFromProducts(products, {
-        SKU1: { quantity: 2, unitPrice: 100 },
-        SKU2: { quantity: 1, unitPrice: 200 },
+        SKU1: { quantity: 2, unitPriceCents: 100 },
+        SKU2: { quantity: 1, unitPriceCents: 200 },
       });
 
       expect(result).toStrictEqual([
@@ -167,8 +166,8 @@ describe("checkout.utils", () => {
           vendorId: 10,
           vendorName: "Vendor 1",
           quantity: 2,
-          unitPrice: 100,
-          unitCostPrice: 80,
+          unitPriceCents: 100,
+          unitCostPriceCents: 80,
           weightGrams: 250,
         },
         {
@@ -178,8 +177,8 @@ describe("checkout.utils", () => {
           vendorId: 20,
           vendorName: "Vendor 2",
           quantity: 1,
-          unitPrice: 200,
-          unitCostPrice: 150,
+          unitPriceCents: 200,
+          unitCostPriceCents: 150,
           weightGrams: 500,
         },
       ]);
@@ -189,16 +188,16 @@ describe("checkout.utils", () => {
       const products = [
         {
           sku: "SKU1",
-          cost_price: decimal(80),
-          sales_price: decimal(100),
+          cost_price_cents: 80,
+          sales_price_cents: 100,
           weight_grams: 250,
         },
       ] as any;
 
       try {
         buildOrderItemsFromProducts(products, {
-          SKU1: { quantity: 1, unitPrice: 100 },
-          INVALID: { quantity: 2, unitPrice: 50 },
+          SKU1: { quantity: 1, unitPriceCents: 100 },
+          INVALID: { quantity: 2, unitPriceCents: 50 },
         });
         expect.unreachable("Expected buildOrderItemsFromProducts to throw");
       } catch (error) {
@@ -211,29 +210,29 @@ describe("checkout.utils", () => {
 
   describe("validateCartUnitPrices", () => {
     it("does nothing when client and database prices match", () => {
-      const products = [{ sku: "SKU1", sales_price: decimal(100) }] as any;
+      const products = [{ sku: "SKU1", sales_price_cents: 100 }] as any;
 
       expect(() =>
         validateCartUnitPrices(products, {
-          SKU1: { quantity: 1, unitPrice: 100 },
+          SKU1: { quantity: 1, unitPriceCents: 100 },
         }),
       ).not.toThrow();
     });
 
     it("throws a domain error when a unit price has changed", () => {
       const products = [
-        { sku: "SKU1", sales_price: decimal(125) },
-        { sku: "SKU2", sales_price: decimal(200) },
+        { sku: "SKU1", sales_price_cents: 125 },
+        { sku: "SKU2", sales_price_cents: 200 },
       ] as any;
 
       try {
         validateCartUnitPrices(products, {
-          SKU1: { quantity: 1, unitPrice: 100 },
-          SKU2: { quantity: 2, unitPrice: 200 },
+          SKU1: { quantity: 1, unitPriceCents: 100 },
+          SKU2: { quantity: 2, unitPriceCents: 200 },
         });
         expect.unreachable("Expected validateCartUnitPrices to throw");
       } catch (error) {
-        assertRouteError(error, PriceMismatch, [{ sku: "SKU1", newUnitPrice: 125 }]);
+        assertRouteError(error, PriceMismatch, [{ sku: "SKU1", newUnitPriceCents: 125 }]);
       }
     });
   });
@@ -241,8 +240,8 @@ describe("checkout.utils", () => {
   describe("calculateOrderTotal", () => {
     it("calculates the total from price and quantity", () => {
       const total = calculateOrderTotal([
-        { unitPrice: 100, quantity: 2 },
-        { unitPrice: 50, quantity: 3 },
+        { unitPriceCents: 100, quantity: 2 },
+        { unitPriceCents: 50, quantity: 3 },
       ]);
 
       expect(total).toBe(350);
@@ -252,8 +251,8 @@ describe("checkout.utils", () => {
       expect(calculateOrderTotal([])).toBe(0);
       expect(
         calculateOrderTotal([
-          { unitPrice: 0, quantity: 5 },
-          { unitPrice: 100, quantity: 0 },
+          { unitPriceCents: 0, quantity: 5 },
+          { unitPriceCents: 100, quantity: 0 },
         ]),
       ).toBe(0);
     });
@@ -261,52 +260,64 @@ describe("checkout.utils", () => {
 
   describe("calculateOrderPricing", () => {
     it("returns unchanged pricing when no promo code is applied", () => {
-      expect(calculateOrderPricing({ itemsSubtotal: 25 })).toStrictEqual({
-        itemsSubtotal: 25,
-        itemsDiscountAmount: null,
-        discountedItemsSubtotal: null,
-        chargedTotal: 25,
+      expect(calculateOrderPricing({ itemsSubtotalCents: 2500 })).toStrictEqual({
+        itemsSubtotalCents: 2500,
+        itemsDiscountCents: null,
+        discountedItemsSubtotalCents: null,
+        chargedTotalCents: 2500,
         vatRate: 20,
-        includedVatAmount: 4.17,
+        includedVatCents: 417,
       });
     });
 
     it("applies percent discounts", () => {
       expect(
-        calculateOrderPricing({ itemsSubtotal: 20, discountType: "PERCENT", discountValue: 25 }),
+        calculateOrderPricing({
+          itemsSubtotalCents: 2000,
+          discountType: "PERCENT",
+          discountValue: 25,
+        }),
       ).toStrictEqual({
-        itemsSubtotal: 20,
-        itemsDiscountAmount: 5,
-        discountedItemsSubtotal: 15,
-        chargedTotal: 15,
+        itemsSubtotalCents: 2000,
+        itemsDiscountCents: 500,
+        discountedItemsSubtotalCents: 1500,
+        chargedTotalCents: 1500,
         vatRate: 20,
-        includedVatAmount: 2.5,
+        includedVatCents: 250,
       });
     });
 
     it("caps fixed discounts at the items subtotal", () => {
       expect(
-        calculateOrderPricing({ itemsSubtotal: 7, discountType: "FIXED", discountValue: 20 }),
+        calculateOrderPricing({
+          itemsSubtotalCents: 700,
+          discountType: "FIXED",
+          discountValue: 2000,
+        }),
       ).toStrictEqual({
-        itemsSubtotal: 7,
-        itemsDiscountAmount: 7,
-        discountedItemsSubtotal: 0,
-        chargedTotal: 0,
+        itemsSubtotalCents: 700,
+        itemsDiscountCents: 700,
+        discountedItemsSubtotalCents: 0,
+        chargedTotalCents: 0,
         vatRate: 20,
-        includedVatAmount: 0,
+        includedVatCents: 0,
       });
     });
 
-    it("rounds percent-based discounts through cents", () => {
+    it("rounds percent discounts to whole cents", () => {
       expect(
-        calculateOrderPricing({ itemsSubtotal: 19.99, discountType: "PERCENT", discountValue: 10 }),
+        calculateOrderPricing({
+          itemsSubtotalCents: 1999,
+          discountType: "PERCENT",
+          discountValue: 10,
+        }),
       ).toStrictEqual({
-        itemsSubtotal: 19.99,
-        itemsDiscountAmount: 2,
-        discountedItemsSubtotal: 17.99,
-        chargedTotal: 17.99,
+        itemsSubtotalCents: 1999,
+        itemsDiscountCents: 200,
+        discountedItemsSubtotalCents: 1799,
+        chargedTotalCents: 1799,
         vatRate: 20,
-        includedVatAmount: 3,
+        includedVatCents: 300,
       });
     });
   });

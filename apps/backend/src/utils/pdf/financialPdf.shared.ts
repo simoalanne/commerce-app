@@ -21,16 +21,15 @@ export const companyLogo: Content = {
   alignment: "right",
 };
 
-export const roundToCents = (value: number) => Math.round(value * 100) / 100;
+// Amounts are integer cents.
+export const amountExcludingVat = (amountIncludingVatCents: number, vatRate: number) =>
+  Math.round((amountIncludingVatCents * 100) / (100 + vatRate));
 
-export const amountExcludingVat = (amountIncludingVat: number, vatRate: number) =>
-  roundToCents(amountIncludingVat / (1 + vatRate / 100));
-
-export const formatMoney = (value: number) =>
+export const formatMoney = (cents: number) =>
   new Intl.NumberFormat("en", {
     style: "currency",
     currency: "EUR",
-  }).format(roundToCents(value));
+  }).format(cents / 100);
 
 export const formatDateTime = (value: Date) =>
   new Intl.DateTimeFormat("en", {

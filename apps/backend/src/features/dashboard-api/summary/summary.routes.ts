@@ -31,7 +31,7 @@ const queryOrderSummaryRows = async (
 ) =>
   await db.$queryRaw<OrderQueryRow[]>(sqltag`
 		WITH filtered AS (
-			SELECT created_at, charged_total, status
+			SELECT created_at, charged_total_cents, status
 			FROM "Order"
 			WHERE created_at >= ${previousStart} AND created_at < ${now}
 		),
@@ -45,7 +45,7 @@ const queryOrderSummaryRows = async (
 				COALESCE(SUM(
 					CASE
 						WHEN f.status IN (${join(PAID_REVENUE_STATUSES)})
-						THEN f.charged_total
+						THEN f.charged_total_cents
 						ELSE 0
 					END
 				), 0)::numeric AS revenue,
@@ -64,7 +64,7 @@ const queryOrderSummaryRows = async (
 					WHEN f.created_at >= ${currentStart}
 						AND f.created_at < ${now}
 						AND f.status IN (${join(PAID_REVENUE_STATUSES)})
-					THEN f.charged_total
+					THEN f.charged_total_cents
 					ELSE 0
 				END
 			), 0)::numeric AS current_revenue,
@@ -73,7 +73,7 @@ const queryOrderSummaryRows = async (
 					WHEN f.created_at >= ${previousStart}
 						AND f.created_at < ${currentStart}
 						AND f.status IN (${join(PAID_REVENUE_STATUSES)})
-					THEN f.charged_total
+					THEN f.charged_total_cents
 					ELSE 0
 				END
 			), 0)::numeric AS previous_revenue,
@@ -91,7 +91,7 @@ const queryOrderSummaryRows = async (
 				SELECT json_agg(
 					json_build_object(
 						'date', to_char(day, 'YYYY-MM-DD'),
-						'revenue', revenue,
+						'revenueCents', revenue,
 						'orders', orders
 					)
 					ORDER BY day

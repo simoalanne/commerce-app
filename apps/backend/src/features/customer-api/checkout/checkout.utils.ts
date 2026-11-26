@@ -88,8 +88,8 @@ export const buildOrderItemsFromProducts = (
     vendorId: p.vendor_id,
     vendorName: p.vendor.name,
     quantity: cart[p.sku].quantity,
-    unitPrice: p.sales_price.toNumber(),
-    unitCostPrice: p.cost_price.toNumber(),
+    unitPriceCents: p.sales_price_cents,
+    unitCostPriceCents: p.cost_price_cents,
     weightGrams: p.weight_grams,
   }));
 };
@@ -134,15 +134,15 @@ export const validateCartUnitPrices = (
       return [];
     }
 
-    const currentUnitPrice = product.sales_price.toNumber();
-    if (cartItem.unitPrice === currentUnitPrice) {
+    const currentUnitPriceCents = product.sales_price_cents;
+    if (cartItem.unitPriceCents === currentUnitPriceCents) {
       return [];
     }
 
     return [
       {
         sku: product.sku,
-        newUnitPrice: currentUnitPrice,
+        newUnitPriceCents: currentUnitPriceCents,
       },
     ];
   });
@@ -152,5 +152,5 @@ export const validateCartUnitPrices = (
   }
 };
 
-export const calculateOrderTotal = (orderItems: { unitPrice: number; quantity: number }[]) =>
-  orderItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+export const calculateOrderTotal = (orderItems: { unitPriceCents: number; quantity: number }[]) =>
+  orderItems.reduce((sum, item) => sum + item.unitPriceCents * item.quantity, 0);

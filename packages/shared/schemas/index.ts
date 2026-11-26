@@ -22,13 +22,13 @@ export const PURCHASABLE_PRODUCT_STATUSES = CUSTOMER_VISIBLE_PRODUCT_STATUSES;
 export const ACTIVE_PRODUCT_STATUSES = CUSTOMER_VISIBLE_PRODUCT_STATUSES;
 
 export const OrderPricingSummarySchema = z.object({
-  itemsSubtotal: z.number(),
-  itemsDiscountAmount: z.number().nullable(),
-  discountedItemsSubtotal: z.number().nullable(),
-  chargedTotal: z.number(),
-  vatRate: z.number(),
-  includedVatAmount: z.number(),
-  refundedAmount: z.number().nullable().optional(),
+  itemsSubtotalCents: z.int(),
+  itemsDiscountCents: z.int().nullable(),
+  discountedItemsSubtotalCents: z.int().nullable(),
+  chargedTotalCents: z.int(),
+  vatRate: z.int(),
+  includedVatCents: z.int(),
+  refundedCents: z.int().nullable().optional(),
 });
 
 export type OrderPricingSummary = z.infer<typeof OrderPricingSummarySchema>;

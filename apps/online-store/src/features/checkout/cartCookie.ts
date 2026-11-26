@@ -17,7 +17,7 @@ const cartCookieSchema: z.ZodType<CartCookie> = z.object({
     z.string(),
     z.object({
       quantity: z.number().int().positive(),
-      unitPrice: z.number().nonnegative(),
+      unitPriceCents: z.int().nonnegative(),
     }),
   ),
   updatedAt: z.number().optional(),

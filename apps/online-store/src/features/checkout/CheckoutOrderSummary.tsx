@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import Image from "next/image";
 
 import { Link } from "@/i18n/navigation";
-import { formatPrice } from "@/utils/formatPrice";
+import { formatCents } from "@/utils/formatPrice";
 
 import { type CheckoutCartProductItem, getCheckoutSubtotal } from "./cartState";
 import { CheckoutPromoCodeSection } from "./CheckoutPromoCodeSection";
@@ -33,7 +33,7 @@ export function CheckoutOrderSummary({
   const t = useTranslations("checkout");
   const subtotal = getCheckoutSubtotal(cartItems);
   const pricingSnapshot = calculateOrderPricing({
-    itemsSubtotal: subtotal,
+    itemsSubtotalCents: subtotal,
     discountType: validatedPromoCode?.discountType,
     discountValue: validatedPromoCode?.discountValue,
   });
@@ -99,7 +99,7 @@ export function CheckoutOrderSummary({
                       <p className={styles.summaryItemName}>{item.product.name}</p>
                     )}
                     <strong className={styles.summaryItemPrice}>
-                      {formatPrice(item.product.price * item.quantity)}
+                      {formatCents(item.product.priceCents * item.quantity)}
                     </strong>
                   </div>
                 </article>
@@ -117,19 +117,20 @@ export function CheckoutOrderSummary({
           <div className={styles.summaryTotals}>
             <div className={styles.summaryRow}>
               <span>{t("orderSummary.itemsSubtotal")}</span>
-              <strong>{formatPrice(pricingSnapshot.itemsSubtotal)}</strong>
+              <strong>{formatCents(pricingSnapshot.itemsSubtotalCents)}</strong>
             </div>
-            {pricingSnapshot.itemsDiscountAmount !== null ? (
+            {pricingSnapshot.itemsDiscountCents !== null ? (
               <>
                 <div className={styles.summaryRow}>
                   <span>{t("orderSummary.itemDiscount")}</span>
-                  <span>-{formatPrice(pricingSnapshot.itemsDiscountAmount)}</span>
+                  <span>-{formatCents(pricingSnapshot.itemsDiscountCents)}</span>
                 </div>
                 <div className={styles.summaryRow}>
                   <span>{t("orderSummary.discountedItemsSubtotal")}</span>
                   <span>
-                    {formatPrice(
-                      pricingSnapshot.discountedItemsSubtotal ?? pricingSnapshot.itemsSubtotal,
+                    {formatCents(
+                      pricingSnapshot.discountedItemsSubtotalCents ??
+                        pricingSnapshot.itemsSubtotalCents,
                     )}
                   </span>
                 </div>
@@ -137,7 +138,7 @@ export function CheckoutOrderSummary({
             ) : null}
             <div className={styles.summaryRowTotal}>
               <span>{t("orderSummary.total")}</span>
-              <strong>{formatPrice(pricingSnapshot.chargedTotal)}</strong>
+              <strong>{formatCents(pricingSnapshot.chargedTotalCents)}</strong>
             </div>
             <div className={styles.summaryRowTax}>
               <span>
@@ -145,7 +146,7 @@ export function CheckoutOrderSummary({
                   rate: pricingSnapshot.vatRate,
                 })}
               </span>
-              <span>{formatPrice(pricingSnapshot.includedVatAmount)}</span>
+              <span>{formatCents(pricingSnapshot.includedVatCents)}</span>
             </div>
           </div>
         </div>

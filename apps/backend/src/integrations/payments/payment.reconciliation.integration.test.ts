@@ -80,15 +80,15 @@ const createReconciliationScenario = async ({
     vendor_id: vendor.id,
     current_stock: currentStock,
     reserved_stock: reservedStock,
-    cost_price: 9.9,
-    sales_price: 9.9,
+    cost_price_cents: 990,
+    sales_price_cents: 990,
   });
   createdProductSkus.add(product.sku);
 
   const order = await createOrder({
     customer_id: customer.id,
-    items_subtotal: 19.8,
-    charged_total: 19.8,
+    items_subtotal_cents: 1980,
+    charged_total_cents: 1980,
     status: orderStatus,
     payment_id: null,
     payment_provider: provider,
@@ -111,8 +111,8 @@ const createReconciliationScenario = async ({
           sku: product.sku,
           name: product.name.en,
           quantity,
-          unit_cost_price: product.cost_price,
-          unit_sales_price: 9.9,
+          unit_cost_price_cents: product.cost_price_cents,
+          unit_sales_price_cents: 990,
           product_id: product.id,
           vendor_id: vendor.id,
           vendor_name: vendor.name,

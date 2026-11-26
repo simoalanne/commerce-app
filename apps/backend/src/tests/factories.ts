@@ -198,8 +198,8 @@ export const createProduct = async (overrides: any = {}) => {
           : {
               connect: { id: resolvedCategoryId },
             },
-      cost_price: 9.9,
-      sales_price: 9.9,
+      cost_price_cents: 990,
+      sales_price_cents: 990,
       current_stock: 10,
       storefront_visibility: "ACTIVE",
       vendor: {
@@ -217,11 +217,11 @@ export const createOrder = async (overrides: any = {}, status: OrderStatus = "PE
 
   return prismaClient.order.create({
     data: {
-      items_subtotal: 19.9,
-      items_discount_amount: 0,
-      charged_total: 26.8,
+      items_subtotal_cents: 1990,
+      items_discount_cents: 0,
+      charged_total_cents: 1990,
       vat_rate: 20,
-      included_vat_amount: 3.19,
+      included_vat_cents: 332,
       total_weight_grams: 500,
       payment_provider: "STRIPE",
       status,

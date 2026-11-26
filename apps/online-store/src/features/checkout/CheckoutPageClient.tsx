@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import Collapsible from "@/components/collapsible/Collapsible";
 import { useCart } from "@/hooks/useCart";
 import { Link } from "@/i18n/navigation";
-import { formatPrice } from "@/utils/formatPrice";
+import { formatCents } from "@/utils/formatPrice";
 
 import {
   buildCheckoutCartItems,
@@ -96,11 +96,11 @@ export function CheckoutPageClient({
             </div>
 
             <div className={styles.adjustmentDetails}>
-              {item.oldUnitPrice != null ? (
+              {item.oldUnitPriceCents != null ? (
                 <p className={styles.adjustmentValue}>
-                  <span>{formatPrice(item.oldUnitPrice)}</span>
+                  <span>{formatCents(item.oldUnitPriceCents)}</span>
                   <span className={styles.adjustmentArrow}>{"->"}</span>
-                  <span>{formatPrice(item.newUnitPrice)}</span>
+                  <span>{formatCents(item.newUnitPriceCents)}</span>
                 </p>
               ) : null}
 
@@ -159,7 +159,7 @@ export function CheckoutPageClient({
             estimatedSubtotalLabel={t("summary.estimatedSubtotal")}
             note={t("summary.note")}
             continueLabel={t("summary.payAtCheckout")}
-            formattedSubtotal={formatPrice(subtotal)}
+            formattedSubtotal={formatCents(subtotal)}
             checkoutHref="/checkout"
           />
         </div>

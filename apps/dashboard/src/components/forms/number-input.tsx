@@ -16,6 +16,8 @@ interface NumberInputProps<TFieldValues extends FieldValues> {
   disabled?: boolean;
   className?: string;
   emptyValue?: number | null;
+  /** The field holds integer cents; the input shows and accepts euros. */
+  cents?: boolean;
   onValueChange?: (value: number | null) => void;
 }
 
@@ -31,6 +33,7 @@ export function NumberInput<TFieldValues extends FieldValues>({
   disabled,
   className,
   emptyValue,
+  cents = false,
   onValueChange,
 }: NumberInputProps<TFieldValues>) {
   return (
@@ -47,7 +50,7 @@ export function NumberInput<TFieldValues extends FieldValues>({
           <Input
             type="number"
             inputMode="decimal"
-            value={field.value ?? ""}
+            value={field.value == null ? "" : cents ? field.value / 100 : field.value}
             onChange={(e) => {
               let raw = e.target.value;
 
@@ -68,7 +71,7 @@ export function NumberInput<TFieldValues extends FieldValues>({
 
               raw = raw.replace(/^0+(?=\d)/, "");
 
-              const parsed = Number(raw);
+              const parsed = cents ? Math.round(Number(raw) * 100) : Number(raw);
 
               if (!Number.isNaN(parsed)) {
                 // force UI sync because browser refuses to sync "01" -> "1" on its own

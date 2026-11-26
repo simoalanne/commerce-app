@@ -1,11 +1,7 @@
 import EntityPage from "@/components/ui/entity-page";
 import { queryUtils } from "@/context/ApiClientContext";
 import PromotionCodeForm from "@/features/admin/promotion-codes/PromotionCodeForm";
-
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
+import { formatCents } from "@/lib/money";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
@@ -14,7 +10,7 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
 const formatDiscount = (promotionCode: { discount_type: string; discount_value: number }) =>
   promotionCode.discount_type.endsWith("PERCENT")
     ? `${promotionCode.discount_value}%`
-    : currencyFormatter.format(promotionCode.discount_value);
+    : formatCents(promotionCode.discount_value);
 
 export default function PromotionCodesPage() {
   return (
@@ -65,12 +61,12 @@ export default function PromotionCodesPage() {
             `${formatDiscount(row.original)} ${row.original.discount_type.startsWith("ITEMS") ? "items" : "delivery"}`,
         },
         {
-          accessorKey: "minimum_items_value",
+          accessorKey: "minimum_items_value_cents",
           header: "Minimum",
           cell: ({ row }) =>
-            row.original.minimum_items_value == null
+            row.original.minimum_items_value_cents == null
               ? "-"
-              : currencyFormatter.format(row.original.minimum_items_value),
+              : formatCents(row.original.minimum_items_value_cents),
         },
         {
           accessorKey: "usage_limit",

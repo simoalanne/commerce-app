@@ -35,13 +35,13 @@ const relevantOrderInclude = {
     select: {
       id: true,
       status: true,
-      total_amount: true,
+      total_amount_cents: true,
       created_at: true,
       refund_items: {
         select: {
           order_item_id: true,
           quantity: true,
-          amount: true,
+          amount_cents: true,
         },
       },
     },
@@ -69,27 +69,22 @@ const parseRelevantOrder = (order: RelevantOrderRow) => {
     }
   }
 
-  const refundedAmount = succeededRefunds.reduce(
-    (total, refund) => total + refund.total_amount.toNumber(),
+  const refundedCents = succeededRefunds.reduce(
+    (total, refund) => total + refund.total_amount_cents,
     0,
   );
   const refundReceipts = succeededRefunds.map((refund) => ({
     refundId: refund.id,
     number: `RR-${refund.id}`,
     createdAt: refund.created_at,
-    total: refund.total_amount.toNumber(),
+    totalCents: refund.total_amount_cents,
   }));
 
   return {
     ...order,
     status: order.status as RelevantOrderStatus,
-    items_subtotal: order.items_subtotal.toNumber(),
-    items_discount_amount: order.items_discount_amount.toNumber(),
-    charged_total: order.charged_total.toNumber(),
-    vat_rate: order.vat_rate.toNumber(),
-    included_vat_amount: order.included_vat_amount.toNumber(),
     refundSummary: {
-      refundedAmount: refundedAmount > 0 ? refundedAmount : null,
+      refundedCents: refundedCents > 0 ? refundedCents : null,
       refundedQuantityByOrderItemId,
     },
     refundReceipts,
@@ -97,8 +92,6 @@ const parseRelevantOrder = (order: RelevantOrderRow) => {
     invoice_details: order.invoice_details as PrismaJson.OrderInvoiceDetails,
     orderItems: order.order_items.map((item) => ({
       ...item,
-      unit_cost_price: item.unit_cost_price.toNumber(),
-      unit_sales_price: item.unit_sales_price.toNumber(),
       product: item.product
         ? {
             ...item.product,
@@ -113,14 +106,14 @@ const parseRelevantOrder = (order: RelevantOrderRow) => {
 export type RelevantOrder = ReturnType<typeof parseRelevantOrder>;
 
 export const buildOrderPricing = (order: RelevantOrder) => ({
-  itemsSubtotal: order.items_subtotal,
-  itemsDiscountAmount: order.items_discount_amount > 0 ? order.items_discount_amount : null,
-  discountedItemsSubtotal:
-    order.items_discount_amount > 0 ? order.items_subtotal - order.items_discount_amount : null,
-  chargedTotal: order.charged_total,
+  itemsSubtotalCents: order.items_subtotal_cents,
+  itemsDiscountCents: order.items_discount_cents > 0 ? order.items_discount_cents : null,
+  discountedItemsSubtotalCents:
+    order.items_discount_cents > 0 ? order.items_subtotal_cents - order.items_discount_cents : null,
+  chargedTotalCents: order.charged_total_cents,
   vatRate: order.vat_rate,
-  includedVatAmount: order.included_vat_amount,
-  refundedAmount: order.refundSummary.refundedAmount,
+  includedVatCents: order.included_vat_cents,
+  refundedCents: order.refundSummary.refundedCents,
 });
 
 export const findRelevantOrders = async (

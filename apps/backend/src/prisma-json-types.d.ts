@@ -63,7 +63,7 @@ declare global {
         name: string;
         slug: string;
         imageUrl: string;
-        price: number;
+        priceCents: number;
         outOfStock: boolean;
       };
       vendor: {

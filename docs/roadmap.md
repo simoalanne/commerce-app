@@ -15,7 +15,8 @@ The project is a general commerce core: catalog, cart, checkout, orders, refunds
 3. **Scripts and tests on Bun and Vitest.**
 4. **MJML → React Email.**
 5. **Payment provider registry.**
-6. **Drizzle**, with integer cents, pg-boss and removing `runAppTransaction`.
+6. **Integer cents**, on Prisma, so the Drizzle port only translates queries.
+7. **Drizzle**, with pg-boss and removing `runAppTransaction`.
 
 Deferred, not scheduled: Clerk → Better Auth, the TanStack Start store, the search documents review.
 
@@ -23,7 +24,7 @@ The sections below are input for these steps.
 
 ## Decisions
 
-- **Money:** integer cents (minor units). Amount columns become `integer`, and `toResponse` and the pricing helpers work in cents.
+- **Money:** integer cents (minor units), done on Prisma before the port. Columns and API fields carry a `_cents` / `Cents` suffix; percentages (`vat_rate`, `markup_percent`) are not money.
 - **Localized content:** stays in JSON columns, resolved by `toResponse`. Query-level localization may replace that later, not now.
 - **Job queue:** pg-boss.
 - **Test runner:** Vitest with its default setup.
@@ -43,7 +44,6 @@ Footprint: 27 models, about 140 query calls, 20 raw SQL queries, 34 `runAppTrans
 
 - The Drizzle schema and relations, written from `schema.prisma` (or `drizzle-kit pull` from a pushed database).
 - Re-add the behavior Prisma implements in its client: `@updatedAt` fields (`.$onUpdate(() => new Date())`), client-side `cuid()`/`uuid()` defaults (`$defaultFn`), and Prisma's implicit many-to-many join tables if any exist.
-- Money as integer cents: amount columns become `integer`, and `toResponse` and the pricing helpers change to match.
 - Replace the JSON types generator with `.$type<T>()`.
 - Helpers: a not-found "or throw" replacing `findUniqueOrThrow`, and unique-violation mapping (Postgres `23505`) replacing the Prisma error codes in `isNotFoundError`/`tryDeleteEntity`.
 - A conversion guide covering: `undefined` in `where` (Prisma ignores an undefined filter; check whether Drizzle's relational queries do the same), `_count`, case-insensitive filters (`ilike`), upserts (`onConflictDoUpdate` with an explicit target), and nested writes (explicit inserts in a transaction).

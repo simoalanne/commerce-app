@@ -57,7 +57,7 @@ export function CheckoutEmptySavedCartAction() {
 
     items[product.sku] = {
       quantity: Math.min(savedItem.quantity, maxQuantity),
-      unitPrice: product.price,
+      unitPriceCents: product.priceCents,
     };
     return items;
   }, {} as CartItems);

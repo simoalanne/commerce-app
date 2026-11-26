@@ -26,12 +26,7 @@ const OrderItemRefundSchema = z.object({
 
 const REFUNDABLE_STATUSES = ["PAID", "DELIVERED"] as const;
 
-const toCents = (amount: number) => Math.round(amount * 100);
-
-const sumCents = (amounts: number[]) =>
-  amounts.reduce((total, amount) => total + toCents(amount), 0);
-
-const fromCents = (amountCents: number) => amountCents / 100;
+const sum = (amounts: number[]) => amounts.reduce((total, amount) => total + amount, 0);
 
 const buildAmountSummary = ({
   originalAmountCents,
@@ -52,13 +47,9 @@ const buildOrderRefundSummary = (order: RelevantOrder) => {
   const pendingRefunds = order.refunds.filter((refund) =>
     pendingRefundStatuses.includes(refund.status as (typeof pendingRefundStatuses)[number]),
   );
-  const originalAmountCents = toCents(order.charged_total);
-  const refundedAmountCents = sumCents(
-    succeededRefunds.map((refund) => refund.total_amount.toNumber()),
-  );
-  const pendingAmountCents = sumCents(
-    pendingRefunds.map((refund) => refund.total_amount.toNumber()),
-  );
+  const originalAmountCents = order.charged_total_cents;
+  const refundedAmountCents = sum(succeededRefunds.map((refund) => refund.total_amount_cents));
+  const pendingAmountCents = sum(pendingRefunds.map((refund) => refund.total_amount_cents));
   const requiresManualReview = order.refunds.some(
     (refund) => refund.status === "REQUIRES_MANUAL_REVIEW",
   );
@@ -116,13 +107,13 @@ const buildOrderRefundability = (order: RelevantOrder) => {
       refundedAmountCentsByOrderItemId.set(
         refundItem.order_item_id,
         (refundedAmountCentsByOrderItemId.get(refundItem.order_item_id) ?? 0) +
-          toCents(refundItem.amount.toNumber()),
+          refundItem.amount_cents,
       );
     }
   }
 
   const items = order.orderItems.map((item) => {
-    const originalAmountCents = toCents(item.unit_sales_price * item.quantity);
+    const originalAmountCents = item.unit_sales_price_cents * item.quantity;
     const refundedAmountCents = refundedAmountCentsByOrderItemId.get(item.id) ?? 0;
     const refundedQuantity = refundedQuantityByOrderItemId.get(item.id) ?? 0;
 
@@ -162,7 +153,7 @@ const buildOrderRefundability = (order: RelevantOrder) => {
     pendingRefund: pendingRefund
       ? {
           id: pendingRefund.id,
-          totalAmountCents: toCents(pendingRefund.total_amount.toNumber()),
+          totalAmountCents: pendingRefund.total_amount_cents,
           createdAt: pendingRefund.created_at,
         }
       : undefined,
@@ -189,7 +180,7 @@ export const ordersRoutes = {
 
           return {
             id: order.id,
-            total: order.charged_total,
+            totalCents: order.charged_total_cents,
             status: order.status,
             created_at: order.created_at,
             customer_id: order.customer_id,
@@ -252,7 +243,7 @@ export const ordersRoutes = {
             quantity: item.quantity,
             uncommittedQuantity: item.uncommitted_quantity,
             refundedQuantity: refundableItemById.get(item.id)?.refundedQuantity ?? 0,
-            unitPrice: item.unit_sales_price,
+            unitPriceCents: item.unit_sales_price_cents,
             productId: item.product_id,
             productName: item.name,
             productImageUrl: item.product?.images[0]?.image.storage_key
@@ -404,7 +395,7 @@ export const ordersRoutes = {
           data: {
             order_id: id,
             status: "PENDING",
-            total_amount: fromCents(totalAmountCents),
+            total_amount_cents: totalAmountCents,
             reason,
             internal_notes: internalNotes,
             refund_items: {
@@ -412,7 +403,7 @@ export const ordersRoutes = {
                 order_item_id: item.orderItemId,
                 quantity: item.quantity,
                 restock_quantity: item.restockQuantity,
-                amount: fromCents(item.amountCents),
+                amount_cents: item.amountCents,
               })),
             },
           },

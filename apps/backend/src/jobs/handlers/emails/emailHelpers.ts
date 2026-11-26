@@ -1,13 +1,11 @@
 export const formatLine = (template: string, values: Record<string, string | number>): string =>
   template.replaceAll(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? ""));
 
-export const roundToCents = (value: number): number => Math.round(value * 100) / 100;
-
-export const formatCurrency = (value: number, locale = "en"): string =>
+export const formatCents = (cents: number, locale = "en"): string =>
   new Intl.NumberFormat(locale, {
     style: "currency",
     currency: "EUR",
-  }).format(roundToCents(value));
+  }).format(cents / 100);
 
 export const getInitials = (name: string): string =>
   name

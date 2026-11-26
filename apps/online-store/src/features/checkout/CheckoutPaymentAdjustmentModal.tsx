@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import Image from "next/image";
 
 import { Modal } from "@/components/Modal";
-import { formatPrice } from "@/utils/formatPrice";
+import { formatCents } from "@/utils/formatPrice";
 
 import type { CheckoutCartProductItem } from "./cartState";
 import type { CreatePaymentError, ValidatedPromoCode } from "./checkoutTypes";
@@ -53,7 +53,7 @@ function getAdjustedCartItems(
           ...item,
           product: {
             ...item.product,
-            price: entry.newUnitPrice,
+            priceCents: entry.newUnitPriceCents,
           },
         };
       });
@@ -109,18 +109,18 @@ export function CheckoutPaymentAdjustmentModal({
   const t = useTranslations("checkout.paymentPage.adjustments");
 
   const shouldClearPromoCodeOnAccept = (() => {
-    if (!error || !promoCode || promoTerms?.minimumItemsValue == null) {
+    if (!error || !promoCode || promoTerms?.minimumItemsValueCents == null) {
       return false;
     }
 
     const adjustedCartItems = getAdjustedCartItems(cartItems, error);
 
     const adjustedSubtotal = adjustedCartItems.reduce(
-      (total, item) => total + item.product.price * item.quantity,
+      (total, item) => total + item.product.priceCents * item.quantity,
       0,
     );
 
-    return adjustedSubtotal < promoTerms.minimumItemsValue;
+    return adjustedSubtotal < promoTerms.minimumItemsValueCents;
   })();
 
   if (!error) {
@@ -198,9 +198,9 @@ export function CheckoutPaymentAdjustmentModal({
                     <div className={styles.details}>
                       <p className={styles.productName}>{item.product.name}</p>
                       <p className={styles.valueRow}>
-                        <span>{formatPrice(item.product.price)}</span>
+                        <span>{formatCents(item.product.priceCents)}</span>
                         <span className={styles.arrow}>{"->"}</span>
-                        <span>{formatPrice(entry.newUnitPrice)}</span>
+                        <span>{formatCents(entry.newUnitPriceCents)}</span>
                       </p>
                     </div>
                   </article>

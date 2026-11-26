@@ -19,7 +19,6 @@ import {
   type PdfDocumentDefinition,
   pdfMake,
   rightCell,
-  roundToCents,
 } from "./financialPdf.shared.ts";
 
 type PdfDependencies = {
@@ -72,10 +71,10 @@ const renderOrderInvoicePdf = async (config: EnvConfig, order: RelevantOrder, lo
 
   const t = getTranslation(locale);
   const vatRate = order.vat_rate;
-  const taxableAmount = roundToCents(order.charged_total - order.included_vat_amount);
+  const taxableAmount = order.charged_total_cents - order.included_vat_cents;
   const lineRows = order.orderItems.map((item) => {
-    const unitPrice = item.unit_sales_price;
-    const lineInclVat = roundToCents(unitPrice * item.quantity);
+    const unitPrice = item.unit_sales_price_cents;
+    const lineInclVat = unitPrice * item.quantity;
     const unitExclVat = amountExcludingVat(unitPrice, vatRate);
     const lineExclVat = amountExcludingVat(lineInclVat, vatRate);
 
@@ -97,11 +96,15 @@ const renderOrderInvoicePdf = async (config: EnvConfig, order: RelevantOrder, lo
     rightCell(formatMoney(row.lineInclVat)),
   ]);
   const totalRows = [
-    [t.itemsSubtotal, amountExcludingVat(order.items_subtotal, vatRate), order.items_subtotal],
+    [
+      t.itemsSubtotal,
+      amountExcludingVat(order.items_subtotal_cents, vatRate),
+      order.items_subtotal_cents,
+    ],
     [
       t.itemsDiscount,
-      amountExcludingVat(-order.items_discount_amount, vatRate),
-      -order.items_discount_amount,
+      amountExcludingVat(-order.items_discount_cents, vatRate),
+      -order.items_discount_cents,
     ],
   ] as const satisfies readonly InvoiceTotalRow[];
 
@@ -195,12 +198,12 @@ const renderOrderInvoicePdf = async (config: EnvConfig, order: RelevantOrder, lo
                 bold: true,
               },
               {
-                text: formatMoney(order.charged_total),
+                text: formatMoney(order.charged_total_cents),
                 alignment: "right",
                 bold: true,
               },
             ],
-            ["", t.includedVat, rightCell(formatMoney(order.included_vat_amount))],
+            ["", t.includedVat, rightCell(formatMoney(order.included_vat_cents))],
           ],
         },
         layout: "lightHorizontalLines",

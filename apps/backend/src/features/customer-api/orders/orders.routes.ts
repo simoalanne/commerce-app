@@ -34,13 +34,13 @@ function buildOrderDetail(storage: ObjectStorageProvider, order: RelevantOrder) 
       : IMAGE_PLACEHOLDER_URL,
     quantity: item.quantity,
     refundedQuantity: order.refundSummary.refundedQuantityByOrderItemId.get(item.id) ?? 0,
-    unitPrice: item.unit_sales_price,
+    unitPriceCents: item.unit_sales_price_cents,
   }));
 
   return {
     id: order.id,
     status: order.status,
-    total: order.charged_total,
+    totalCents: order.charged_total_cents,
     pricing,
     refundReceipts: order.refundReceipts,
     createdAt: order.created_at,
@@ -203,7 +203,7 @@ export const ordersRoutes = {
           return {
             id: detail.id,
             status: detail.status,
-            total: detail.total,
+            totalCents: detail.totalCents,
             createdAt: detail.createdAt,
             vendorName: detail.vendorName,
             vendorImage: detail.vendorImage,

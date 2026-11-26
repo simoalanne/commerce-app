@@ -99,16 +99,16 @@ model ContactSubmission {
 }
 
 model CustomerAccount {
-  id                        Int                        @id @default(autoincrement())
-  user_id                   String                     @unique
-  user                      User                       @relation(fields: [user_id], references: [clerk_id], onDelete: Cascade)
-  preferred_locale          String                     @default("en")
-  addresses                 CustomerAddress[]
-  orders                    Order[]
-  reviews                   Review[]
-  customerFavoriteProducts  CustomerFavoriteProduct[]
-  customerFavoriteVendors CustomerFavoriteVendor[]
-  customerSavedCartItems    CustomerSavedCartItem[]
+  id                       Int                       @id @default(autoincrement())
+  user_id                  String                    @unique
+  user                     User                      @relation(fields: [user_id], references: [clerk_id], onDelete: Cascade)
+  preferred_locale         String                    @default("en")
+  addresses                CustomerAddress[]
+  orders                   Order[]
+  reviews                  Review[]
+  customerFavoriteProducts CustomerFavoriteProduct[]
+  customerFavoriteVendors  CustomerFavoriteVendor[]
+  customerSavedCartItems   CustomerSavedCartItem[]
 }
 
 model CustomerFavoriteProduct {
@@ -124,8 +124,8 @@ model CustomerFavoriteProduct {
 model CustomerFavoriteVendor {
   customer_account_id Int
   customer_account    CustomerAccount @relation(fields: [customer_account_id], references: [id], onDelete: Cascade)
-  vendor_id         Int
-  vendor            Vendor        @relation(fields: [vendor_id], references: [id], onDelete: Cascade)
+  vendor_id           Int
+  vendor              Vendor          @relation(fields: [vendor_id], references: [id], onDelete: Cascade)
   added_at            DateTime        @default(now())
 
   @@id([customer_account_id, vendor_id])
@@ -150,27 +150,29 @@ model AdminAccount {
 }
 
 model PromotionCode {
-  id                  Int                       @id @default(autoincrement())
-  code                String                    @unique
-  is_active           Boolean                   @default(true)
-  valid_from          DateTime?
-  valid_until         DateTime?
-  minimum_items_value Decimal?                  @db.Decimal(10, 2)
-  discount_type       PromotionCodeDiscountType
-  discount_value      Decimal                   @db.Decimal(10, 2)
-  usage_limit         Int?
-  times_used          Int                       @default(0)
-  created_at          DateTime                  @default(now())
-  updated_at          DateTime                  @updatedAt
+  id                        Int                       @id @default(autoincrement())
+  code                      String                    @unique
+  is_active                 Boolean                   @default(true)
+  valid_from                DateTime?
+  valid_until               DateTime?
+  minimum_items_value_cents Int?
+  discount_type             PromotionCodeDiscountType
+  /// Percent for PERCENT codes, cents for FIXED codes.
+  discount_value            Int
+  usage_limit               Int?
+  times_used                Int                       @default(0)
+  created_at                DateTime                  @default(now())
+  updated_at                DateTime                  @updatedAt
 }
 
 model Order {
   id                                  Int             @id @default(autoincrement())
-  items_subtotal                      Decimal         @db.Decimal(10, 2)
-  items_discount_amount               Decimal         @default(0) @db.Decimal(10, 2)
-  charged_total                       Decimal         @db.Decimal(10, 2)
-  vat_rate                            Decimal         @db.Decimal(5, 2)
-  included_vat_amount                 Decimal         @db.Decimal(10, 2)
+  items_subtotal_cents                Int
+  items_discount_cents                Int             @default(0)
+  charged_total_cents                 Int
+  /// Whole percent.
+  vat_rate                            Int
+  included_vat_cents                  Int
   total_weight_grams                  Int             @default(0)
   status                              OrderStatus     @default(PENDING)
   payment_id                          String?         @unique
@@ -197,18 +199,18 @@ model Order {
 }
 
 model OrderItem {
-  id                   Int     @id @default(autoincrement())
-  sku                  String
-  name                 String
-  quantity             Int
-  uncommitted_quantity Int     @default(0)
-  unit_cost_price      Decimal @db.Decimal(10, 2)
-  unit_sales_price     Decimal @db.Decimal(10, 2)
+  id                     Int    @id @default(autoincrement())
+  sku                    String
+  name                   String
+  quantity               Int
+  uncommitted_quantity   Int    @default(0)
+  unit_cost_price_cents  Int
+  unit_sales_price_cents Int
 
-  product_id    Int?
-  product       Product?  @relation(fields: [product_id], references: [id], onDelete: SetNull)
+  product_id  Int?
+  product     Product? @relation(fields: [product_id], references: [id], onDelete: SetNull)
   vendor_id   Int?
-  vendor      Vendor? @relation(fields: [vendor_id], references: [id], onDelete: SetNull)
+  vendor      Vendor?  @relation(fields: [vendor_id], references: [id], onDelete: SetNull)
   vendor_name String
 
   order_id    Int
@@ -226,7 +228,7 @@ model Refund {
   order              Order        @relation(fields: [order_id], references: [id], onDelete: Cascade)
   provider_refund_id String?
   status             RefundStatus @default(PENDING)
-  total_amount       Decimal      @db.Decimal(10, 2)
+  total_amount_cents Int
   reason             String
   internal_notes     String?
   failure_reason     String?
@@ -247,7 +249,7 @@ model RefundItem {
   order_item       OrderItem @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
   quantity         Int
   restock_quantity Int?
-  amount           Decimal   @db.Decimal(10, 2)
+  amount_cents     Int
 
   @@index([refund_id])
   @@index([order_item_id])
@@ -303,12 +305,12 @@ model Product {
   images                   ProductImage[]
   category_id              Int?
   category                 Category?                 @relation(fields: [category_id], references: [id], onDelete: SetNull)
-  cost_price               Decimal                   @db.Decimal(10, 2)
-  sales_price              Decimal                   @db.Decimal(10, 2)
+  cost_price_cents         Int
+  sales_price_cents        Int
   current_stock            Int
   reserved_stock           Int                       @default(0)
-  vendor_id              Int
-  vendor                 Vendor                  @relation(fields: [vendor_id], references: [id], onDelete: Cascade)
+  vendor_id                Int
+  vendor                   Vendor                    @relation(fields: [vendor_id], references: [id], onDelete: Cascade)
   created_at               DateTime                  @default(now())
   updated_at               DateTime                  @updatedAt
   reviews                  Review[]
@@ -336,26 +338,26 @@ model Vendor {
   products              Product[]
   reviews               Review[]
 
-  created_at                DateTime                   @default(now())
-  updated_at                DateTime                   @updatedAt
-  order_items               OrderItem[]
+  created_at              DateTime                 @default(now())
+  updated_at              DateTime                 @updatedAt
+  order_items             OrderItem[]
   customerFavoriteVendors CustomerFavoriteVendor[]
 }
 
 model Image {
-  id          Int             @id @default(autoincrement())
+  id          Int            @id @default(autoincrement())
   name        String?
-  kind        ImageKind       @default(CMS)
+  kind        ImageKind      @default(CMS)
   /// [LocalizedString]
   alt         Json?
-  storage_key String          @unique
-  created_at  DateTime        @default(now())
-  vendor_id Int?
+  storage_key String         @unique
+  created_at  DateTime       @default(now())
+  vendor_id   Int?
   products    ProductImage[]
   categories  Category[]
-  vendors   VendorImage[]
+  vendors     VendorImage[]
   review_id   Int?
-  review      Review?         @relation(fields: [review_id], references: [id], onDelete: SetNull)
+  review      Review?        @relation(fields: [review_id], references: [id], onDelete: SetNull)
 }
 
 model LegalDocument {
@@ -403,10 +405,10 @@ model ProductTag {
 
 model VendorImage {
   vendor_id Int
-  image_id    Int
+  image_id  Int
 
   vendor Vendor @relation(fields: [vendor_id], references: [id], onDelete: Cascade)
-  image    Image    @relation(fields: [image_id], references: [id], onDelete: Cascade)
+  image  Image  @relation(fields: [image_id], references: [id], onDelete: Cascade)
 
   @@id([vendor_id, image_id])
   @@index([image_id])
@@ -430,8 +432,8 @@ model Review {
   customer           CustomerAccount? @relation(fields: [customer_id], references: [id], onDelete: SetNull)
   order_id           Int?
   order              Order?           @relation(fields: [order_id], references: [id], onDelete: SetNull)
-  vendor_id        Int?
-  vendor           Vendor?        @relation(fields: [vendor_id], references: [id], onDelete: Cascade)
+  vendor_id          Int?
+  vendor             Vendor?          @relation(fields: [vendor_id], references: [id], onDelete: Cascade)
   product_id         Int?
   product            Product?         @relation(fields: [product_id], references: [id], onDelete: Cascade)
   images             Image[]
@@ -452,7 +454,7 @@ model ProductSearchDocument {
   product_id           Int
   locale               String
   product_search_text  String
-  vendor_search_text String
+  vendor_search_text   String
   category_search_text String
   /// [ProductSearchDocumentData]
   search_data          Json

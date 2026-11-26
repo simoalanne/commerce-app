@@ -24,9 +24,9 @@ export type CheckoutCartAdjustmentNotice = {
     productName: string;
     productImageUrl: string;
     newQuantity: number;
-    newUnitPrice: number;
+    newUnitPriceCents: number;
     oldQuantity?: number | null;
-    oldUnitPrice?: number | null;
+    oldUnitPriceCents?: number | null;
   }>;
   removedItemCount: number;
 };
@@ -69,7 +69,7 @@ export async function getCheckoutServerState({
         }
         entries[sku] = {
           quantity: Math.min(item.quantity, maxQuantity),
-          unitPrice: product.price,
+          unitPriceCents: product.priceCents,
         };
         return entries;
       }, {} as CartItems)
@@ -84,7 +84,7 @@ export async function getCheckoutServerState({
     }
 
     const quantityChanged = previousItem.quantity !== item.quantity;
-    const priceChanged = previousItem.unitPrice !== item.unitPrice;
+    const priceChanged = previousItem.unitPriceCents !== item.unitPriceCents;
     if (!quantityChanged && !priceChanged) {
       return [];
     }
@@ -100,9 +100,9 @@ export async function getCheckoutServerState({
         productName: product.name,
         productImageUrl: product.imageUrl,
         newQuantity: item.quantity,
-        newUnitPrice: item.unitPrice,
+        newUnitPriceCents: item.unitPriceCents,
         oldQuantity: quantityChanged ? previousItem.quantity : null,
-        oldUnitPrice: priceChanged ? previousItem.unitPrice : null,
+        oldUnitPriceCents: priceChanged ? previousItem.unitPriceCents : null,
       },
     ];
   });

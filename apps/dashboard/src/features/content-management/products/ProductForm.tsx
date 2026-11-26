@@ -30,12 +30,12 @@ type ProductFormProps = EntityDialogContentProps<
 >;
 
 const DEFAULT_MARKUP_PERCENT = 0;
-const roundMoney = (value: number) => Math.round(value * 100) / 100;
 const roundPercent = (value: number) => Math.round(value * 10) / 10;
+// Prices are integer cents.
 const getSalesPriceFromMarkup = (costPrice: number, markupPercent: number) =>
-  roundMoney(costPrice * (1 + markupPercent / 100));
+  Math.round(costPrice * (1 + markupPercent / 100));
 const getCostPriceFromMarkup = (salesPrice: number, markupPercent: number) =>
-  roundMoney(salesPrice / (1 + markupPercent / 100));
+  Math.round(salesPrice / (1 + markupPercent / 100));
 const getMarkupPercent = (costPrice: number, salesPrice: number) => {
   if (costPrice <= 0) {
     return DEFAULT_MARKUP_PERCENT;
@@ -78,8 +78,8 @@ export function ProductFormContent({ entityData, onSuccess }: ProductFormProps) 
     category_id: null,
     tags: [],
     images: [],
-    cost_price: 0,
-    sales_price: 0,
+    cost_price_cents: 0,
+    sales_price_cents: 0,
     current_stock: 0,
     purchase_limit_per_order: 0,
     vendor_id: 0,
@@ -96,8 +96,8 @@ export function ProductFormContent({ entityData, onSuccess }: ProductFormProps) 
   });
   const [markupPercent, setMarkupPercent] = useState(() =>
     getMarkupPercent(
-      entityData?.cost_price ?? fallbackDefaults.cost_price,
-      entityData?.sales_price ?? fallbackDefaults.sales_price,
+      entityData?.cost_price_cents ?? fallbackDefaults.cost_price_cents,
+      entityData?.sales_price_cents ?? fallbackDefaults.sales_price_cents,
     ),
   );
   const isPending = createMutation.isPending || updateMutation.isPending;
@@ -105,8 +105,8 @@ export function ProductFormContent({ entityData, onSuccess }: ProductFormProps) 
     control: form.control,
     name: "category_id",
   });
-  const costPrice = useWatch({ control: form.control, name: "cost_price" }) ?? 0;
-  const salesPrice = useWatch({ control: form.control, name: "sales_price" }) ?? 0;
+  const costPrice = useWatch({ control: form.control, name: "cost_price_cents" }) ?? 0;
+  const salesPrice = useWatch({ control: form.control, name: "sales_price_cents" }) ?? 0;
   const categoryMarkupPercent = productMarkupDefaults?.categories.find(
     (category) => category.id === categoryId,
   )?.markupPercent;
@@ -127,7 +127,7 @@ export function ProductFormContent({ entityData, onSuccess }: ProductFormProps) 
   }, [costPrice, expectedMarkupPercent, salesPrice]);
 
   const updateSalesPriceFromMarkup = (nextMarkupPercent: number) => {
-    form.setValue("sales_price", getSalesPriceFromMarkup(costPrice, nextMarkupPercent), {
+    form.setValue("sales_price_cents", getSalesPriceFromMarkup(costPrice, nextMarkupPercent), {
       shouldDirty: true,
       shouldValidate: true,
     });
@@ -308,15 +308,16 @@ export function ProductFormContent({ entityData, onSuccess }: ProductFormProps) 
         <Field>
           <FieldLabel>Cost Price</FieldLabel>
           <NumberInput
-            name="cost_price"
+            name="cost_price_cents"
             control={form.control}
-            startSymbol="$"
+            startSymbol="€"
+            cents
             min={0}
             step={0.01}
             onValueChange={(nextCostPrice) => {
               if (canBootstrapPriceFromMarkup && nextCostPrice != null && nextCostPrice > 0) {
                 form.setValue(
-                  "sales_price",
+                  "sales_price_cents",
                   getSalesPriceFromMarkup(nextCostPrice, markupPercent),
                   {
                     shouldDirty: true,
@@ -329,8 +330,8 @@ export function ProductFormContent({ entityData, onSuccess }: ProductFormProps) 
               setMarkupPercent(getMarkupPercent(nextCostPrice ?? 0, salesPrice));
             }}
           />
-          {form.formState.errors.cost_price ? (
-            <FieldError errors={[form.formState.errors.cost_price]} />
+          {form.formState.errors.cost_price_cents ? (
+            <FieldError errors={[form.formState.errors.cost_price_cents]} />
           ) : null}
         </Field>
 
@@ -364,25 +365,30 @@ export function ProductFormContent({ entityData, onSuccess }: ProductFormProps) 
         <Field>
           <FieldLabel>Sales Price</FieldLabel>
           <NumberInput
-            name="sales_price"
+            name="sales_price_cents"
             control={form.control}
-            startSymbol="$"
+            startSymbol="€"
+            cents
             min={0}
             step={0.01}
             onValueChange={(nextSalesPrice) => {
               if (canBootstrapPriceFromMarkup && nextSalesPrice != null && nextSalesPrice > 0) {
-                form.setValue("cost_price", getCostPriceFromMarkup(nextSalesPrice, markupPercent), {
-                  shouldDirty: true,
-                  shouldValidate: true,
-                });
+                form.setValue(
+                  "cost_price_cents",
+                  getCostPriceFromMarkup(nextSalesPrice, markupPercent),
+                  {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  },
+                );
                 return;
               }
 
               setMarkupPercent(getMarkupPercent(costPrice, nextSalesPrice ?? 0));
             }}
           />
-          {form.formState.errors.sales_price ? (
-            <FieldError errors={[form.formState.errors.sales_price]} />
+          {form.formState.errors.sales_price_cents ? (
+            <FieldError errors={[form.formState.errors.sales_price_cents]} />
           ) : null}
         </Field>
 

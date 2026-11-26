@@ -9,7 +9,7 @@ import {
   MailLink,
   TotalsTable,
 } from "./emailComponents.tsx";
-import { formatCurrency, formatLine, getInitials } from "./emailHelpers.ts";
+import { formatCents, formatLine, getInitials } from "./emailHelpers.ts";
 
 export type NewOrderNotificationEmailPayload = {
   orderId: number;
@@ -25,11 +25,11 @@ export type NewOrderNotificationEmailPayload = {
     vendorName: string | null;
     imageUrl: string;
     quantity: number;
-    unitPrice: number;
-    lineTotal: number;
+    unitPriceCents: number;
+    lineTotalCents: number;
   }[];
-  subtotal: number;
-  total: number;
+  subtotalCents: number;
+  totalCents: number;
   dashboardOrderUrl: string;
 };
 
@@ -80,10 +80,10 @@ export async function renderNewOrderNotificationEmail(
     imageAlt: formatLine(copy.productImageAlt, { name: item.name }),
     lineItem: formatLine(copy.lineItem, {
       quantity: item.quantity,
-      unitPrice: formatCurrency(item.unitPrice),
+      unitPrice: formatCents(item.unitPriceCents),
     }),
     vendor: item.vendorName,
-    total: formatCurrency(item.lineTotal),
+    total: formatCents(item.lineTotalCents),
   }));
 
   const html = await render(
@@ -120,8 +120,8 @@ export async function renderNewOrderNotificationEmail(
       <EmailSection label={copy.itemsTitle}>
         <ItemRows items={items} />
         <TotalsTable
-          rows={[{ label: copy.subtotal, value: formatCurrency(payload.subtotal) }]}
-          total={{ label: copy.total, value: formatCurrency(payload.total) }}
+          rows={[{ label: copy.subtotal, value: formatCents(payload.subtotalCents) }]}
+          total={{ label: copy.total, value: formatCents(payload.totalCents) }}
         />
       </EmailSection>
     </EmailLayout>,
@@ -132,9 +132,9 @@ export async function renderNewOrderNotificationEmail(
       `- ${item.name}`,
       `  ${formatLine(copy.lineItem, {
         quantity: item.quantity,
-        unitPrice: formatCurrency(item.unitPrice),
+        unitPrice: formatCents(item.unitPriceCents),
       })}`,
-      `  ${copy.total}: ${formatCurrency(item.lineTotal)}`,
+      `  ${copy.total}: ${formatCents(item.lineTotalCents)}`,
     ];
 
     if (item.vendorName) {
@@ -164,8 +164,8 @@ export async function renderNewOrderNotificationEmail(
     copy.itemsTitle,
     ...itemLines,
     "",
-    `${copy.subtotal}: ${formatCurrency(payload.subtotal)}`,
-    `${copy.total}: ${formatCurrency(payload.total)}`,
+    `${copy.subtotal}: ${formatCents(payload.subtotalCents)}`,
+    `${copy.total}: ${formatCents(payload.totalCents)}`,
     "",
     copy.openDashboard,
     payload.dashboardOrderUrl,

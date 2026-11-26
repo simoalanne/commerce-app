@@ -11,19 +11,17 @@ export type OrderRefundedPayload = {
   recipientEmail: string;
   recipientName: string;
   recipientFirstName: string;
-  total: number;
+  totalCents: number;
   items: {
     sku: string;
     name: string;
     vendorName: string | null;
     imageUrl: string;
     quantity: number;
-    unitPrice: number;
-    lineTotal: number;
+    unitPriceCents: number;
+    lineTotalCents: number;
   }[];
 };
-
-const roundToCents = (value: number) => Math.round(value * 100) / 100;
 
 export const buildOrderRefundedPayload = async (
   refundId: number,
@@ -31,7 +29,7 @@ export const buildOrderRefundedPayload = async (
   const refund = await prismaClient.refund.findUniqueOrThrow({
     where: { id: refundId },
     select: {
-      total_amount: true,
+      total_amount_cents: true,
       order: {
         select: {
           id: true,
@@ -43,7 +41,7 @@ export const buildOrderRefundedPayload = async (
         orderBy: { id: "asc" },
         select: {
           quantity: true,
-          amount: true,
+          amount_cents: true,
           order_item: {
             include: {
               product: {
@@ -68,8 +66,6 @@ export const buildOrderRefundedPayload = async (
     if (refundItem.quantity == null) return [];
 
     const orderedItem = refundItem.order_item;
-    const unitPrice = roundToCents(orderedItem.unit_sales_price.toNumber());
-
     return {
       sku: orderedItem.sku,
       name:
@@ -79,8 +75,8 @@ export const buildOrderRefundedPayload = async (
       vendorName: orderedItem.vendor_name ?? null,
       imageUrl: getFirstLinkedImageUrl(ObjectStorage, orderedItem.product?.images),
       quantity: refundItem.quantity,
-      unitPrice,
-      lineTotal: roundToCents(refundItem.amount.toNumber()),
+      unitPriceCents: orderedItem.unit_sales_price_cents,
+      lineTotalCents: refundItem.amount_cents,
     };
   });
 
@@ -91,6 +87,6 @@ export const buildOrderRefundedPayload = async (
     recipientName,
     recipientFirstName: recipientName.split(/\s+/)[0] ?? recipientName,
     items,
-    total: refund.total_amount.toNumber(),
+    totalCents: refund.total_amount_cents,
   };
 };

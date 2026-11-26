@@ -11,7 +11,7 @@ import { useCart } from "@/hooks/useCart";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { getValidLocale } from "@/i18n/routing";
 import { useApiClient } from "@/providers/ApiClientProvider";
-import { formatPrice } from "@/utils/formatPrice";
+import { formatCents } from "@/utils/formatPrice";
 
 import styles from "./OrderListItem.module.css";
 
@@ -118,7 +118,7 @@ export function OrderListItem({ order, locale }: OrderListItemProps) {
       const items = orderDetail.orderDetails.items.reduce((cartItems, item) => {
         cartItems[item.sku] = {
           quantity: item.quantity,
-          unitPrice: item.unitPrice,
+          unitPriceCents: item.unitPriceCents,
         };
         return cartItems;
       }, {} as CartItems);
@@ -156,7 +156,7 @@ export function OrderListItem({ order, locale }: OrderListItemProps) {
         </div>
 
         <div className={styles.priceBlock}>
-          <strong>{formatPrice(order.total)}</strong>
+          <strong>{formatCents(order.totalCents)}</strong>
           <span>{t("itemCount", { count: itemCount })}</span>
         </div>
       </Link>

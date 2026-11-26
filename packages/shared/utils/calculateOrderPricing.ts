@@ -1,40 +1,41 @@
 import type { OrderPricingSummary } from "../schemas/index.ts";
 
-// One flat placeholder rate; tax rules per product or region are out of scope.
+// One flat placeholder rate in whole percent; tax rules per product or region
+// are out of scope.
 export const ORDER_VAT_RATE = 20;
 
-const roundPrice = (value: number) => Math.round(value * 100) / 100;
-
-const getIncludedVatAmount = (grossAmount: number, vatRate: number) =>
-  roundPrice((grossAmount * vatRate) / (100 + vatRate));
+/** VAT included in a gross amount, in cents. */
+export const getIncludedVatCents = (grossCents: number, vatRate: number) =>
+  Math.round((grossCents * vatRate) / (100 + vatRate));
 
 type OrderPricingInput = {
-  itemsSubtotal: number;
+  itemsSubtotalCents: number;
   discountType?: "PERCENT" | "FIXED";
+  /** Percent for PERCENT, cents for FIXED. */
   discountValue?: number;
 };
 
 export const calculateOrderPricing = ({
-  itemsSubtotal,
+  itemsSubtotalCents,
   discountType,
   discountValue = 0,
 }: OrderPricingInput): OrderPricingSummary => {
-  const itemsDiscountAmount =
+  const itemsDiscountCents =
     !discountType || !discountValue
       ? null
       : discountType === "PERCENT"
-        ? roundPrice(itemsSubtotal * (discountValue / 100))
-        : Math.min(itemsSubtotal, discountValue);
-  const discountedItemsSubtotal =
-    itemsDiscountAmount === null ? null : roundPrice(itemsSubtotal - itemsDiscountAmount);
-  const chargedTotal = roundPrice(discountedItemsSubtotal ?? itemsSubtotal);
+        ? Math.round((itemsSubtotalCents * discountValue) / 100)
+        : Math.min(itemsSubtotalCents, discountValue);
+  const discountedItemsSubtotalCents =
+    itemsDiscountCents === null ? null : itemsSubtotalCents - itemsDiscountCents;
+  const chargedTotalCents = discountedItemsSubtotalCents ?? itemsSubtotalCents;
 
   return {
-    itemsSubtotal,
-    itemsDiscountAmount,
-    discountedItemsSubtotal,
-    chargedTotal,
+    itemsSubtotalCents,
+    itemsDiscountCents,
+    discountedItemsSubtotalCents,
+    chargedTotalCents,
     vatRate: ORDER_VAT_RATE,
-    includedVatAmount: getIncludedVatAmount(chargedTotal, ORDER_VAT_RATE),
+    includedVatCents: getIncludedVatCents(chargedTotalCents, ORDER_VAT_RATE),
   };
 };

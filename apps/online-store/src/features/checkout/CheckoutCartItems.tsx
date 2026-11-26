@@ -1,5 +1,5 @@
 import type { CheckoutCartProductItem } from "@/features/checkout/cartState";
-import { formatPrice } from "@/utils/formatPrice";
+import { formatCents } from "@/utils/formatPrice";
 
 import { CheckoutCartItemRow } from "./CheckoutCartItemRow";
 
@@ -17,8 +17,8 @@ export function CheckoutCartItems({ items }: CheckoutCartItemsProps) {
           key={item.product.sku}
           product={item.product}
           quantity={item.quantity}
-          formattedUnitPrice={formatPrice(item.product.price)}
-          formattedLineTotal={formatPrice(item.product.price * item.quantity)}
+          formattedUnitPrice={formatCents(item.product.priceCents)}
+          formattedLineTotal={formatCents(item.product.priceCents * item.quantity)}
         />
       ))}
     </section>

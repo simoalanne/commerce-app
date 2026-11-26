@@ -58,7 +58,7 @@ const toProductSummary = (storage: ObjectStorageProvider, product: ProductWithRe
   vendorName: product.vendor?.name || "Tuntematon",
   tags: product.tags.map((productTag) => productTag.tag),
   imageUrl: getFirstLinkedImageUrl(storage, product.images),
-  price: Number(product.sales_price),
+  priceCents: product.sales_price_cents,
   availableStock: product.current_stock - product.reserved_stock,
   purchaseLimitPerOrder: product.purchase_limit_per_order,
   isOutOfStock: product.current_stock - product.reserved_stock <= 0,

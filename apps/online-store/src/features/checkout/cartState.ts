@@ -2,7 +2,7 @@ import type { ProductSummary } from "@/types/api";
 
 export type CartItem = {
   quantity: number;
-  unitPrice: number;
+  unitPriceCents: number;
 };
 
 export type CartItems = Record<string, CartItem>;
@@ -67,12 +67,12 @@ export function buildCartItemsFromCheckoutItems(items: CheckoutCartProductItem[]
       item.product.sku,
       {
         quantity: item.quantity,
-        unitPrice: item.product.price,
+        unitPriceCents: item.product.priceCents,
       } satisfies CartItem,
     ]),
   ) satisfies CartItems;
 }
 
 export function getCheckoutSubtotal(items: CheckoutCartProductItem[]) {
-  return items.reduce((total, item) => total + item.product.price * item.quantity, 0);
+  return items.reduce((total, item) => total + item.product.priceCents * item.quantity, 0);
 }

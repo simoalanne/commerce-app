@@ -10,6 +10,7 @@ import type { DataTableColumn } from "@/components/ui/data-table";
 import EntityPage from "@/components/ui/entity-page";
 import { queryUtils } from "@/context/ApiClientContext";
 import OrderDetails from "@/features/operations/orders/OrderDetails";
+import { formatCents } from "@/lib/money";
 
 import OrderRowActions from "./OrderActions";
 import RefundOrderDialog from "./RefundOrderDialog";
@@ -18,11 +19,6 @@ import RefundStatusBadge from "./RefundStatusBadge";
 export type OrderTableRow = InferClientResponse<
   typeof queryUtils.orders.getAll.fetch
 >["body"][number];
-
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
 
 const statusVariant: Record<OrderTableRow["status"], "default" | "outline" | "secondary"> = {
   PAID: "default",
@@ -135,7 +131,7 @@ export default function OrdersPage() {
     {
       accessorKey: "total",
       header: "Total",
-      cell: ({ row }) => currencyFormatter.format(row.original.total),
+      cell: ({ row }) => formatCents(row.original.totalCents),
     },
     // status
     {

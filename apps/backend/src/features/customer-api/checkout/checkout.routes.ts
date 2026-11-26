@@ -76,7 +76,7 @@ export const CheckoutCartSchema = z
     z.string(),
     z.object({
       quantity: z.int().min(1, "Quantity must be at least 1").max(99, "Quantity cannot exceed 99"),
-      unitPrice: z.number().nonnegative(),
+      unitPriceCents: z.int().nonnegative(),
     }),
   )
   .refine((obj) => Object.keys(obj).length > 0, {
@@ -134,13 +134,13 @@ const createPaymentInternal = async (
   validateCartUnitPrices(products, cart);
 
   const orderItems = buildOrderItemsFromProducts(products, cart, context.locale);
-  const itemsSubtotal = calculateOrderTotal(orderItems);
+  const itemsSubtotalCents = calculateOrderTotal(orderItems);
 
   const validatedPromoCode = !promoCode
     ? null
     : await getValidatedPromoCodeForPayment(db, {
         promoCode,
-        itemsSubtotal,
+        itemsSubtotalCents,
       }).catch((error) => {
         if (isPromoCodeError(error)) {
           throw new InvalidPromoCode();
@@ -149,7 +149,7 @@ const createPaymentInternal = async (
       });
 
   const pricingSnapshot = calculateOrderPricing({
-    itemsSubtotal,
+    itemsSubtotalCents,
     discountType: validatedPromoCode?.discountType,
     discountValue: validatedPromoCode?.discountValue,
   });
@@ -168,11 +168,11 @@ const createPaymentInternal = async (
       data: {
         customer_id: customerId,
         has_been_linked_to_customer_account: customerId != null,
-        items_subtotal: pricingSnapshot.itemsSubtotal,
-        items_discount_amount: pricingSnapshot.itemsDiscountAmount ?? 0,
-        charged_total: pricingSnapshot.chargedTotal,
+        items_subtotal_cents: pricingSnapshot.itemsSubtotalCents,
+        items_discount_cents: pricingSnapshot.itemsDiscountCents ?? 0,
+        charged_total_cents: pricingSnapshot.chargedTotalCents,
         vat_rate: pricingSnapshot.vatRate,
-        included_vat_amount: pricingSnapshot.includedVatAmount,
+        included_vat_cents: pricingSnapshot.includedVatCents,
         payment_provider: provider,
         order_details: orderDetails,
         invoice_details: getCompanyDetails(config),
@@ -187,8 +187,8 @@ const createPaymentInternal = async (
             sku: item.sku,
             name: item.productName,
             quantity: item.quantity,
-            unit_cost_price: item.unitCostPrice,
-            unit_sales_price: item.unitPrice,
+            unit_cost_price_cents: item.unitCostPriceCents,
+            unit_sales_price_cents: item.unitPriceCents,
             product_id: item.productId,
             vendor_id: item.vendorId,
             vendor_name: item.vendorName,
@@ -208,7 +208,7 @@ const createPaymentInternal = async (
 
   Sentry.getCurrentScope().setContext("order", { orderId: order.id });
 
-  const amountCents = Math.round(pricingSnapshot.chargedTotal * 100);
+  const amountCents = pricingSnapshot.chargedTotalCents;
 
   try {
     const payment = await paymentProvider.createPayment({
@@ -277,14 +277,14 @@ const getValidatedPromoCodeForPayment = async (
   db: PrismaClient,
   {
     promoCode,
-    itemsSubtotal,
+    itemsSubtotalCents,
   }: {
     promoCode: string;
-    itemsSubtotal: number;
+    itemsSubtotalCents: number;
   },
 ) => {
   try {
-    return await getValidatedPromoCode(db, { promoCode, itemsSubtotal });
+    return await getValidatedPromoCode(db, { promoCode, itemsSubtotalCents });
   } catch (error) {
     if (isPromoCodeError(error)) {
       throw new InvalidPromoCode();
@@ -298,10 +298,10 @@ const getValidatedPromoCode = async (
   db: PrismaClient,
   {
     promoCode,
-    itemsSubtotal,
+    itemsSubtotalCents,
   }: {
     promoCode: string;
-    itemsSubtotal: number;
+    itemsSubtotalCents: number;
   },
 ) => {
   const promo = await db.promotionCode.findFirst({
@@ -330,18 +330,18 @@ const getValidatedPromoCode = async (
     throw new PromoCodeUsageLimitReached();
   }
 
-  const minimumItemsValue = promo.minimum_items_value?.toNumber();
+  const minimumItemsValueCents = promo.minimum_items_value_cents;
 
-  if (minimumItemsValue && itemsSubtotal < minimumItemsValue) {
+  if (minimumItemsValueCents && itemsSubtotalCents < minimumItemsValueCents) {
     throw new PromoCodeMinimumItemsValueNotMet({
-      data: { minimumItemsValue },
+      data: { minimumItemsValueCents },
     });
   }
 
   return {
     discountType: promo.discount_type,
-    discountValue: promo.discount_value.toNumber(),
-    minimumItemsValue: minimumItemsValue ?? null,
+    discountValue: promo.discount_value,
+    minimumItemsValueCents: minimumItemsValueCents ?? null,
   };
 };
 
@@ -400,7 +400,7 @@ export const checkoutRoutes = {
     .body(
       z.object({
         promoCode: z.string().trim().min(1).max(1024),
-        itemsSubtotal: z.number().nonnegative(),
+        itemsSubtotalCents: z.int().nonnegative(),
       }),
     )
     .error(PromoCodeNotFound)

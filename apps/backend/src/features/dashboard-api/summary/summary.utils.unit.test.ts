@@ -79,13 +79,13 @@ describe("summary.utils", () => {
   describe("normalizeRevenueByDay", () => {
     it("normalizes revenue and order counts into numbers", () => {
       const result = normalizeRevenueByDay([
-        { date: "2026-04-12", revenue: "12.5", orders: "3" },
-        { date: "2026-04-13", revenue: 0, orders: 0 },
+        { date: "2026-04-12", revenueCents: "1250", orders: "3" },
+        { date: "2026-04-13", revenueCents: 0, orders: 0 },
       ]);
 
       expect(result).toStrictEqual([
-        { date: "2026-04-12", revenue: 12.5, orders: 3 },
-        { date: "2026-04-13", revenue: 0, orders: 0 },
+        { date: "2026-04-12", revenueCents: 1250, orders: 3 },
+        { date: "2026-04-13", revenueCents: 0, orders: 0 },
       ]);
     });
 
@@ -102,11 +102,11 @@ describe("summary.utils", () => {
         now,
         days: 30,
         orderRow: {
-          current_revenue: new Decimal("125.5"),
-          previous_revenue: new Decimal("100"),
+          current_revenue: new Decimal("12550"),
+          previous_revenue: new Decimal("10000"),
           current_paid_orders: 5,
           previous_paid_orders: 4,
-          chart: [{ date: "2026-04-13", revenue: "125.5", orders: "5" }],
+          chart: [{ date: "2026-04-13", revenueCents: "12550", orders: "5" }],
         },
         activeProducts: 8,
         customers: 12,
@@ -121,7 +121,7 @@ describe("summary.utils", () => {
         generatedAt: now,
         windowDays: 30,
         kpis: {
-          totalRevenue: new Decimal("125.5"),
+          totalRevenueCents: new Decimal("12550"),
           revenueDeltaPct: 25.5,
           paidOrders: 5,
           paidOrdersDeltaPct: 25,
@@ -129,7 +129,7 @@ describe("summary.utils", () => {
           customers: 12,
         },
         chart: {
-          revenueByDay: [{ date: "2026-04-13", revenue: 125.5, orders: 5 }],
+          revenueByDay: [{ date: "2026-04-13", revenueCents: 12550, orders: 5 }],
         },
         localizationCoverage: {
           overall: { percentage: 40, completed: 4, outOf: 10 },
@@ -161,7 +161,7 @@ describe("summary.utils", () => {
       });
 
       expect(result.kpis).toStrictEqual({
-        totalRevenue: new Decimal("0"),
+        totalRevenueCents: new Decimal("0"),
         revenueDeltaPct: 0,
         paidOrders: 0,
         paidOrdersDeltaPct: 0,

@@ -416,7 +416,7 @@ export const reconcileRefund = async ({
       select: {
         id: true,
         status: true,
-        total_amount: true,
+        total_amount_cents: true,
         provider_refund_id: true,
       },
     });
@@ -432,7 +432,7 @@ export const reconcileRefund = async ({
       return null;
     }
 
-    const refundAmountCents = Math.round(refund.total_amount.toNumber() * 100);
+    const refundAmountCents = refund.total_amount_cents;
     if (refundAmountCents !== amountCents) {
       logger.error("Refund callback amount does not match stored refund", {
         refundId: refund.id,

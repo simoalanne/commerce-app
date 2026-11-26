@@ -40,14 +40,14 @@ export const toCoverage = (completed: number, outOf: number) => ({
 
 export type ChartItem = {
   date: string;
-  revenue: number | string;
+  revenueCents: number | string;
   orders: number | string;
 };
 
 export const normalizeRevenueByDay = (chart: ChartItem[]) =>
   chart.map((item) => ({
     date: item.date,
-    revenue: Number(item.revenue),
+    revenueCents: Number(item.revenueCents),
     orders: Number(item.orders),
   }));
 
@@ -89,7 +89,7 @@ export const buildSummaryResponse = ({
     generatedAt: now,
     windowDays: days,
     kpis: {
-      totalRevenue: currentRevenue,
+      totalRevenueCents: currentRevenue,
       revenueDeltaPct: getDeltaPercent(orderRow.current_revenue, orderRow.previous_revenue),
       paidOrders: currentPaidOrders,
       paidOrdersDeltaPct: getDeltaPercent(currentPaidOrders, previousPaidOrders),

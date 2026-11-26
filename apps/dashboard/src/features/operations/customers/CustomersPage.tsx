@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { NavigateDownAction } from "@/components/navigate-down-action";
 import EntityPage from "@/components/ui/entity-page";
 import { queryUtils } from "@/context/ApiClientContext";
+import { formatCents } from "@/lib/money";
 
 export function CustomersPage() {
   const [searchParams] = useSearchParams();
@@ -43,13 +44,9 @@ export function CustomersPage() {
           header: "Orders",
         },
         {
-          accessorKey: "lifetime_value",
+          accessorKey: "lifetime_value_cents",
           header: "Lifetime value",
-          cell: ({ row }) =>
-            new Intl.NumberFormat("en-US", {
-              style: "currency",
-              currency: "USD",
-            }).format(row.original.lifetime_value),
+          cell: ({ row }) => formatCents(row.original.lifetime_value_cents),
         },
       ]}
       extraRowActions={(customer) => (

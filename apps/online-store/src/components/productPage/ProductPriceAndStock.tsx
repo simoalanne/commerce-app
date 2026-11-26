@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
-import { formatPrice } from "@/utils/formatPrice";
+import { formatCents } from "@/utils/formatPrice";
 
 type ProductPriceAndStockProps = {
   initialPrice: number;
@@ -21,7 +21,7 @@ export default function ProductPriceAndStock({
 
   return (
     <>
-      <p className={styles.productPrice}>{formatPrice(initialPrice)}</p>
+      <p className={styles.productPrice}>{formatCents(initialPrice)}</p>
       <p className={styles.productStock}>
         {t("availability", {
           count: initialStock,

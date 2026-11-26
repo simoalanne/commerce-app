@@ -25,7 +25,9 @@ export default async function ProductListingPage({ params }: RouteParams) {
 
   const title = currentCategory?.name ?? t("header.products");
 
-  const dynamicMaxPrice = products.length > 0 ? Math.max(...products.map((p) => p.price)) : 200;
+  // The price filter works in whole euros.
+  const dynamicMaxPrice =
+    products.length > 0 ? Math.ceil(Math.max(...products.map((p) => p.priceCents)) / 100) : 200;
 
   const uniqueVendors = Array.from(new Set(products.map((product) => product.vendorName)))
     .filter((name) => name !== undefined && name !== null)

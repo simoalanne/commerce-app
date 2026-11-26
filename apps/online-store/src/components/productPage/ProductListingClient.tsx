@@ -49,22 +49,23 @@ function getDynamicMinPrice(products: ProductSummary[]) {
   if (products.length === 0) return 0;
 
   const minPrice = products.reduce(
-    (min, product) => (product.price < min ? product.price : min),
-    products[0].price,
+    (min, product) => (product.priceCents < min ? product.priceCents : min),
+    products[0].priceCents,
   );
 
-  return Math.floor(minPrice);
+  // The price filter works in whole euros.
+  return Math.floor(minPrice / 100);
 }
 
 function getDynamicMaxPrice(products: ProductSummary[]) {
   if (products.length === 0) return 0;
 
   const maxPrice = products.reduce(
-    (max, product) => (product.price > max ? product.price : max),
-    products[0].price,
+    (max, product) => (product.priceCents > max ? product.priceCents : max),
+    products[0].priceCents,
   );
 
-  return Math.ceil(maxPrice);
+  return Math.ceil(maxPrice / 100);
 }
 
 function ProductListingContent({
@@ -96,7 +97,8 @@ function ProductListingContent({
     const fullyFiltered = products.filter((product) => {
       if (normalizedQuery && !product.name.toLowerCase().includes(normalizedQuery)) return false;
 
-      if (product.price < activeMinPrice || product.price > activeMaxPrice) return false;
+      if (product.priceCents < activeMinPrice * 100 || product.priceCents > activeMaxPrice * 100)
+        return false;
 
       if (
         activeCategories.length > 0 &&
@@ -132,10 +134,10 @@ function ProductListingContent({
       });
     }
     if (sort === "price-asc") {
-      return [...fullyFiltered].sort((a, b) => a.price - b.price);
+      return [...fullyFiltered].sort((a, b) => a.priceCents - b.priceCents);
     }
     if (sort === "price-desc") {
-      return [...fullyFiltered].sort((a, b) => b.price - a.price);
+      return [...fullyFiltered].sort((a, b) => b.priceCents - a.priceCents);
     }
     if (sort === "category") {
       return [...fullyFiltered].sort((a, b) => {

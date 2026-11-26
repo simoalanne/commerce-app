@@ -185,7 +185,7 @@ export function CartProvider({ children }: CartProviderProps) {
           ...current.items,
           [product.sku]: {
             quantity: currentQuantity + 1,
-            unitPrice: product.price,
+            unitPriceCents: product.priceCents,
           },
         },
         updatedAt: Date.now(),

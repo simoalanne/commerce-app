@@ -33,7 +33,7 @@ export const PriceMismatch = routeError("PRICE_MISMATCH", {
   data: z.array(
     z.object({
       sku: z.string(),
-      newUnitPrice: z.number(),
+      newUnitPriceCents: z.int(),
     }),
   ),
 });
@@ -71,7 +71,7 @@ export const PromoCodeMinimumItemsValueNotMet = routeError(
   {
     status: 400,
     data: z.object({
-      minimumItemsValue: z.number(),
+      minimumItemsValueCents: z.int(),
     }),
   },
 );

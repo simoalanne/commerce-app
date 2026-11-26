@@ -19,7 +19,6 @@ import {
   type PdfDocumentDefinition,
   pdfMake,
   rightCell,
-  roundToCents,
 } from "./financialPdf.shared.ts";
 
 type PdfDependencies = {
@@ -42,14 +41,14 @@ const refundReceiptSelect = {
   id: true,
   order_id: true,
   provider_refund_id: true,
-  total_amount: true,
+  total_amount_cents: true,
   reason: true,
   created_at: true,
   refund_items: {
     orderBy: { id: "asc" },
     select: {
       quantity: true,
-      amount: true,
+      amount_cents: true,
       order_item: {
         select: {
           name: true,
@@ -100,9 +99,7 @@ type RefundReceiptLineRow = {
 };
 
 const includedVatFor = (amountIncludingVat: number, vatRate: number) =>
-  vatRate === 0
-    ? 0
-    : roundToCents(amountIncludingVat - amountExcludingVat(amountIncludingVat, vatRate));
+  vatRate === 0 ? 0 : amountIncludingVat - amountExcludingVat(amountIncludingVat, vatRate);
 
 const renderRefundReceiptPdf = async ({
   config,
@@ -119,7 +116,7 @@ const renderRefundReceiptPdf = async ({
   const vatRate = order.vat_rate;
   const receiptNumber = `RR-${refund.id}`;
   const lineRows: RefundReceiptLineRow[] = refund.refund_items.map((refundItem) => {
-    const amount = roundToCents(refundItem.amount.toNumber());
+    const amount = refundItem.amount_cents;
 
     return {
       description: refundItem.order_item.name,
@@ -129,10 +126,8 @@ const renderRefundReceiptPdf = async ({
       includedVat: includedVatFor(amount, vatRate),
     };
   });
-  const totalAmount = roundToCents(refund.total_amount.toNumber());
-  const includedVatAmount = roundToCents(
-    lineRows.reduce((total, row) => total + row.includedVat, 0),
-  );
+  const totalAmount = refund.total_amount_cents;
+  const includedVatAmount = lineRows.reduce((total, row) => total + row.includedVat, 0);
   const tableRows: TableCell[][] = lineRows.map((row) => [
     { text: row.description, bold: true },
     rightCell(row.quantity),

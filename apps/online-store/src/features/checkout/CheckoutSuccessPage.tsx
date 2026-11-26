@@ -8,7 +8,7 @@ import { Link } from "@/i18n/navigation";
 import { getServerTranslations } from "@/i18n/serverTranslations";
 import createServerSideApiClient from "@/server/serverApiClient";
 import type { DestructuredRouteParams, RouteParams } from "@/types";
-import { formatPrice } from "@/utils/formatPrice";
+import { formatCents } from "@/utils/formatPrice";
 
 import CheckoutSuccessClientSync from "./CheckoutSuccessClientSync";
 
@@ -191,7 +191,9 @@ export default async function CheckoutSuccessPage({
                     <p className={styles.itemMeta}>{t("quantity", { quantity: item.quantity })}</p>
                   </div>
 
-                  <p className={styles.itemPrice}>{formatPrice(item.unitPrice * item.quantity)}</p>
+                  <p className={styles.itemPrice}>
+                    {formatCents(item.unitPriceCents * item.quantity)}
+                  </p>
                 </article>
               ))}
             </div>
@@ -199,21 +201,21 @@ export default async function CheckoutSuccessPage({
             <div className={styles.totals}>
               <div className={styles.totalRow}>
                 <span>{t("itemsSubtotal")}</span>
-                <span>{formatPrice(pricing.itemsSubtotal)}</span>
+                <span>{formatCents(pricing.itemsSubtotalCents)}</span>
               </div>
-              {pricing.itemsDiscountAmount !== null ? (
+              {pricing.itemsDiscountCents !== null ? (
                 <div className={styles.totalRow}>
                   <span>{t("itemDiscount")}</span>
-                  <span>-{formatPrice(pricing.itemsDiscountAmount)}</span>
+                  <span>-{formatCents(pricing.itemsDiscountCents)}</span>
                 </div>
               ) : null}
               <div className={styles.totalRowStrong}>
                 <span>{t("total")}</span>
-                <span>{formatPrice(pricing.chargedTotal)}</span>
+                <span>{formatCents(pricing.chargedTotalCents)}</span>
               </div>
               <div className={styles.totalRow}>
                 <span>{t("includedVat", { rate: pricing.vatRate })}</span>
-                <span>{formatPrice(pricing.includedVatAmount)}</span>
+                <span>{formatCents(pricing.includedVatCents)}</span>
               </div>
             </div>
           </section>

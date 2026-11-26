@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { queryUtils } from "@/context/ApiClientContext";
+import { formatCents } from "@/lib/money";
 
 import type { OrderTableRow } from "./OrdersPage";
 import RefundStatusBadge from "./RefundStatusBadge";
@@ -22,11 +23,6 @@ const statusVariant: Record<OrderTableRow["status"], "default" | "outline" | "se
   PAID: "default",
   DELIVERED: "secondary",
 };
-
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "EUR",
-});
 
 const dateTimeFormatter = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
@@ -42,7 +38,7 @@ export default function OrderDetails({ entityData: order }: OrderDetailsProps) {
     return <div className="py-8 text-sm text-muted-foreground">Loading order details...</div>;
   }
 
-  const total = order.pricing.chargedTotal;
+  const total = order.pricing.chargedTotalCents;
 
   return (
     <div className="space-y-6">
@@ -66,7 +62,7 @@ export default function OrderDetails({ entityData: order }: OrderDetailsProps) {
           </div>
           <div>
             <div className="text-muted-foreground">Total</div>
-            <div className="font-medium">{currencyFormatter.format(total)}</div>
+            <div className="font-medium">{formatCents(total)}</div>
           </div>
         </div>
       </div>
@@ -193,10 +189,10 @@ export default function OrderDetails({ entityData: order }: OrderDetailsProps) {
                   </div>
                   <div className="text-right">
                     <span className="mr-1 text-muted-foreground">
-                      {currencyFormatter.format(item.unitPrice)} ea =
+                      {formatCents(item.unitPriceCents)} ea =
                     </span>
                     <span className="text-sm font-semibold">
-                      {currencyFormatter.format(item.unitPrice * item.quantity)}
+                      {formatCents(item.unitPriceCents * item.quantity)}
                     </span>
                   </div>
                 </div>
@@ -259,11 +255,9 @@ export default function OrderDetails({ entityData: order }: OrderDetailsProps) {
                         </div>
                       ) : null}
                     </TableCell>
+                    <TableCell className="text-right">{formatCents(item.unitPriceCents)}</TableCell>
                     <TableCell className="text-right">
-                      {currencyFormatter.format(item.unitPrice)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {currencyFormatter.format(item.unitPrice * item.quantity)}
+                      {formatCents(item.unitPriceCents * item.quantity)}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -282,34 +276,34 @@ export default function OrderDetails({ entityData: order }: OrderDetailsProps) {
           <CardContent className="space-y-3 text-sm">
             <PricingRow
               label="Items subtotal"
-              value={currencyFormatter.format(order.pricing.itemsSubtotal)}
+              value={formatCents(order.pricing.itemsSubtotalCents)}
             />
-            {order.pricing.itemsDiscountAmount !== null ? (
+            {order.pricing.itemsDiscountCents !== null ? (
               <>
                 <PricingRow
                   label="Item discount"
-                  value={`-${currencyFormatter.format(order.pricing.itemsDiscountAmount)}`}
+                  value={`-${formatCents(order.pricing.itemsDiscountCents)}`}
                 />
                 <PricingRow
                   label="Discounted items subtotal"
-                  value={currencyFormatter.format(
-                    order.pricing.discountedItemsSubtotal ?? order.pricing.itemsSubtotal,
+                  value={formatCents(
+                    order.pricing.discountedItemsSubtotalCents ?? order.pricing.itemsSubtotalCents,
                   )}
                 />
               </>
             ) : null}
             <Separator />
-            <PricingRow label="Total" value={currencyFormatter.format(total)} emphasis />
+            <PricingRow label="Total" value={formatCents(total)} emphasis />
             <PricingRow
               label={`Includes VAT ${order.pricing.vatRate}%`}
-              value={currencyFormatter.format(order.pricing.includedVatAmount)}
+              value={formatCents(order.pricing.includedVatCents)}
             />
-            {order.pricing.refundedAmount ? (
+            {order.pricing.refundedCents ? (
               <>
                 <Separator />
                 <PricingRow
                   label="Total refunded"
-                  value={`-${currencyFormatter.format(order.pricing.refundedAmount)}`}
+                  value={`-${formatCents(order.pricing.refundedCents)}`}
                   emphasis
                 />
               </>

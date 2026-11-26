@@ -107,7 +107,7 @@ export default async function ProductPage({ params }: RouteParams) {
       "@type": "Offer",
       priceCurrency: "EUR",
       url: `/${SITE_URL}/${locale}/products/${product.slug}`,
-      price: product.price,
+      priceCents: product.priceCents,
       availability: product.isOutOfStock
         ? "https://schema.org/OutOfStock"
         : "https://schema.org/InStock",
@@ -184,7 +184,7 @@ export default async function ProductPage({ params }: RouteParams) {
               ) : null}
 
               <ProductPriceAndStock
-                initialPrice={product.price}
+                initialPrice={product.priceCents}
                 initialStock={product.availableStock}
                 initialPurchaseLimitPerOrder={product.purchaseLimitPerOrder}
                 styles={styles}

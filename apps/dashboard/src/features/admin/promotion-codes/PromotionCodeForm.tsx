@@ -88,6 +88,8 @@ type NumberFieldProps<TFieldValues extends FieldValues> = {
   min?: number;
   nullable?: boolean;
   disabled?: boolean;
+  /** The field holds integer cents; the input shows and accepts euros. */
+  cents?: boolean;
 };
 
 function NumberField<TFieldValues extends FieldValues>({
@@ -102,6 +104,7 @@ function NumberField<TFieldValues extends FieldValues>({
   min,
   nullable = false,
   disabled = false,
+  cents = false,
 }: NumberFieldProps<TFieldValues>) {
   return (
     <Controller
@@ -119,7 +122,7 @@ function NumberField<TFieldValues extends FieldValues>({
             <InputGroupInput
               type="number"
               inputMode="decimal"
-              value={field.value == null ? "" : String(field.value)}
+              value={field.value == null ? "" : String(cents ? field.value / 100 : field.value)}
               onChange={(event) => {
                 const rawValue = event.target.value.replace(",", ".");
 
@@ -128,7 +131,7 @@ function NumberField<TFieldValues extends FieldValues>({
                   return;
                 }
 
-                const parsed = Number(rawValue);
+                const parsed = cents ? Math.round(Number(rawValue) * 100) : Number(rawValue);
 
                 if (!Number.isNaN(parsed)) {
                   field.onChange(parsed);
@@ -240,7 +243,7 @@ export default function PromotionCodeForm({ entityData, onSuccess }: PromotionCo
     is_active: true,
     valid_from: null,
     valid_until: null,
-    minimum_items_value: null,
+    minimum_items_value_cents: null,
     discount_type: "PERCENT",
     discount_value: 0,
     usage_limit: null,
@@ -392,19 +395,21 @@ export default function PromotionCodeForm({ entityData, onSuccess }: PromotionCo
             label="Discount value"
             placeholder={isPercentDiscount ? "10" : "5.00"}
             endSymbol={isPercentDiscount ? "%" : undefined}
-            startSymbol={isPercentDiscount ? undefined : "$"}
+            startSymbol={isPercentDiscount ? undefined : "€"}
             step={isPercentDiscount ? 1 : 0.01}
+            cents={!isPercentDiscount}
             min={0}
             disabled={isPending}
           />
 
           <NumberField
             control={form.control}
-            name="minimum_items_value"
+            name="minimum_items_value_cents"
             label="Minimum items subtotal"
             placeholder="50.00"
-            startSymbol="$"
+            startSymbol="€"
             step={0.01}
+            cents
             min={0}
             nullable={true}
             disabled={isPending}

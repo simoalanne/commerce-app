@@ -10,7 +10,7 @@ import {
   TotalsTable,
   UrlLink,
 } from "./emailComponents.tsx";
-import { formatCurrency, formatLine, getInitials } from "./emailHelpers.ts";
+import { formatCents, formatLine, getInitials } from "./emailHelpers.ts";
 
 type OrderConfirmationEmailPayload = {
   orderId: number;
@@ -23,13 +23,13 @@ type OrderConfirmationEmailPayload = {
     vendorName: string | null;
     imageUrl: string;
     quantity: number;
-    unitPrice: number;
-    lineTotal: number;
+    unitPriceCents: number;
+    lineTotalCents: number;
   }[];
-  subtotal: number;
-  total: number;
+  subtotalCents: number;
+  totalCents: number;
   vatRate: number;
-  includedVatAmount: number;
+  includedVatCents: number;
   viewOrderUrl: string;
   locale: string;
 };
@@ -103,18 +103,18 @@ export async function renderOrderConfirmationEmail(
             imageAlt: formatLine(t.productImageAlt, { name: item.name }),
             lineItem: formatLine(t.lineItem, {
               quantity: item.quantity,
-              unitPrice: formatCurrency(item.unitPrice, locale),
+              unitPrice: formatCents(item.unitPriceCents, locale),
             }),
             vendor: item.vendorName,
-            total: formatCurrency(item.lineTotal, locale),
+            total: formatCents(item.lineTotalCents, locale),
           }))}
         />
         <TotalsTable
-          rows={[{ label: t.subtotal, value: formatCurrency(payload.subtotal, locale) }]}
-          total={{ label: t.total, value: formatCurrency(payload.total, locale) }}
+          rows={[{ label: t.subtotal, value: formatCents(payload.subtotalCents, locale) }]}
+          total={{ label: t.total, value: formatCents(payload.totalCents, locale) }}
           footnote={{
             label: formatLine(t.includedVat, { rate: payload.vatRate }),
-            value: formatCurrency(payload.includedVatAmount, locale),
+            value: formatCents(payload.includedVatCents, locale),
           }}
         />
       </EmailSection>
@@ -136,9 +136,9 @@ export async function renderOrderConfirmationEmail(
       `- ${item.name}`,
       `  ${formatLine(t.lineItem, {
         quantity: item.quantity,
-        unitPrice: formatCurrency(item.unitPrice, locale),
+        unitPrice: formatCents(item.unitPriceCents, locale),
       })}`,
-      `  ${t.total}: ${formatCurrency(item.lineTotal, locale)}`,
+      `  ${t.total}: ${formatCents(item.lineTotalCents, locale)}`,
     ];
 
     if (item.vendorName) {
@@ -161,9 +161,9 @@ export async function renderOrderConfirmationEmail(
     t.yourOrder,
     ...itemLines,
     "",
-    `${t.subtotal}: ${formatCurrency(payload.subtotal, locale)}`,
-    `${t.total}: ${formatCurrency(payload.total, locale)}`,
-    `${formatLine(t.includedVat, { rate: payload.vatRate })}: ${formatCurrency(payload.includedVatAmount, locale)}`,
+    `${t.subtotal}: ${formatCents(payload.subtotalCents, locale)}`,
+    `${t.total}: ${formatCents(payload.totalCents, locale)}`,
+    `${formatLine(t.includedVat, { rate: payload.vatRate })}: ${formatCents(payload.includedVatCents, locale)}`,
     "",
     t.viewOrder,
     payload.viewOrderUrl,

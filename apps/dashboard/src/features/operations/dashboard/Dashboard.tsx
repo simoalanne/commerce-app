@@ -45,7 +45,11 @@ function DashboardSummary() {
       />
       <div className="px-4 lg:px-6">
         <ChartAreaInteractive
-          data={summaryData.chart.revenueByDay}
+          // The chart plots euros.
+          data={summaryData.chart.revenueByDay.map(({ revenueCents, ...point }) => ({
+            ...point,
+            revenue: revenueCents / 100,
+          }))}
           windowDays={summaryData.windowDays}
           onWindowDaysChange={setSummaryDays}
         />

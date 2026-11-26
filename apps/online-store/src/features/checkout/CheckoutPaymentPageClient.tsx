@@ -8,7 +8,7 @@ import { match, P } from "ts-pattern";
 import { useCart } from "@/hooks/useCart";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { useApiClient } from "@/providers/ApiClientProvider";
-import { formatPrice } from "@/utils/formatPrice";
+import { formatCents } from "@/utils/formatPrice";
 
 import {
   buildCheckoutCartItems,
@@ -150,7 +150,7 @@ export function CheckoutPaymentPageClient({
         queryUtils.checkout.validatePromoCode.fetch({
           body: {
             promoCode,
-            itemsSubtotal: subtotal,
+            itemsSubtotalCents: subtotal,
           },
         }),
       ),
@@ -172,9 +172,9 @@ export function CheckoutPaymentPageClient({
             )
             .with(
               { code: "PROMO_CODE_MINIMUM_ITEMS_VALUE_NOT_MET" },
-              ({ data: { minimumItemsValue } }) =>
+              ({ data: { minimumItemsValueCents } }) =>
                 t("form.promoCode.errors.minimumItemsValueNotMet", {
-                  minimumItemsValue: formatPrice(minimumItemsValue),
+                  minimumItemsValueCents: formatCents(minimumItemsValueCents),
                 }),
             )
             .with(
@@ -220,14 +220,14 @@ export function CheckoutPaymentPageClient({
         });
         break;
       case "PRICE_MISMATCH":
-        adjustmentError.data.forEach(({ sku, newUnitPrice }) => {
+        adjustmentError.data.forEach(({ sku, newUnitPriceCents }) => {
           const existing = nextItems[sku];
           if (!existing) {
             return;
           }
           nextItems[sku] = {
             ...existing,
-            unitPrice: newUnitPrice,
+            unitPriceCents: newUnitPriceCents,
           };
         });
         break;

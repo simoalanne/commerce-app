@@ -5,11 +5,7 @@ import EntityPage from "@/components/ui/entity-page";
 import { queryUtils } from "@/context/ApiClientContext";
 import { useDashboardLocalization } from "@/context/LocalizationContext";
 import ProductForm from "@/features/content-management/products/ProductForm";
-
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
+import { formatCents } from "@/lib/money";
 
 export default function ProductsPage() {
   const [searchParams] = useSearchParams();
@@ -70,7 +66,7 @@ export default function ProductsPage() {
         {
           accessorKey: "sales_price",
           header: "Sales Price",
-          cell: ({ row }) => currencyFormatter.format(row.original.sales_price),
+          cell: ({ row }) => formatCents(row.original.sales_price_cents),
         },
         {
           accessorKey: "current_stock",

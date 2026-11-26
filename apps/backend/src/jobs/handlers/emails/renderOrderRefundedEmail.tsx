@@ -9,7 +9,7 @@ import {
   ItemRows,
   TotalsTable,
 } from "./emailComponents.tsx";
-import { formatCurrency, formatLine, getInitials } from "./emailHelpers.ts";
+import { formatCents, formatLine, getInitials } from "./emailHelpers.ts";
 
 type OrderRefundedEmailContent = {
   subject: string;
@@ -46,7 +46,7 @@ export async function renderOrderRefundedEmail(
     name: payload.recipientFirstName,
     orderId: payload.orderId,
   });
-  const totalFormatted = formatCurrency(payload.total, locale);
+  const totalFormatted = formatCents(payload.totalCents, locale);
 
   const refundLines = payload.items.map((item) => ({
     name: item.name,
@@ -55,10 +55,10 @@ export async function renderOrderRefundedEmail(
     imageAlt: formatLine(t.productImageAlt, { name: item.name }),
     lineItem: formatLine(t.lineItem, {
       quantity: item.quantity,
-      unitPrice: formatCurrency(item.unitPrice, locale),
+      unitPrice: formatCents(item.unitPriceCents, locale),
     }),
     vendor: item.vendorName,
-    total: formatCurrency(item.lineTotal, locale),
+    total: formatCents(item.lineTotalCents, locale),
   }));
 
   const itemLines = payload.items.flatMap((item) => {
@@ -66,9 +66,9 @@ export async function renderOrderRefundedEmail(
       `- ${item.name}`,
       `  ${formatLine(t.lineItem, {
         quantity: item.quantity,
-        unitPrice: formatCurrency(item.unitPrice, locale),
+        unitPrice: formatCents(item.unitPriceCents, locale),
       })}`,
-      `  ${formatCurrency(item.lineTotal, locale)}`,
+      `  ${formatCents(item.lineTotalCents, locale)}`,
     ];
 
     if (item.vendorName) {

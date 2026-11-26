@@ -2,7 +2,7 @@ import { useTranslations } from "next-intl";
 import Image from "next/image";
 
 import { Link } from "@/i18n/navigation";
-import { formatPrice } from "@/utils/formatPrice";
+import { formatCents } from "@/utils/formatPrice";
 
 import styles from "./SearchModalProductsList.module.css";
 
@@ -16,7 +16,7 @@ type BaseSearchCardItem = {
 export type SearchCardItem =
   | (BaseSearchCardItem & {
       type: "product";
-      price: number;
+      priceCents: number;
       outOfStock: boolean;
     })
   | (BaseSearchCardItem & {
@@ -65,7 +65,7 @@ function SearchCard({ item, onClose }: { item: SearchCardItem; onClose?: () => v
           {item.type === "product" && (
             <div className={styles.productMetaRow}>
               <div className={styles.priceBlock}>
-                <p className={styles.price}>{formatPrice(item.price)}</p>
+                <p className={styles.price}>{formatCents(item.priceCents)}</p>
               </div>
             </div>
           )}

@@ -9,7 +9,7 @@ import { AsyncBoundary } from "@/components/async-boundary";
 import { Link, useRouter } from "@/i18n/navigation";
 import { getValidLocale } from "@/i18n/routing";
 import { useApiClient } from "@/providers/ApiClientProvider";
-import { formatPrice } from "@/utils/formatPrice";
+import { formatCents } from "@/utils/formatPrice";
 
 import styles from "./AccountOrderDetailsPage.module.css";
 import actionStyles from "./OrderListItem.module.css";
@@ -209,7 +209,7 @@ function AccountOrderDetailsContent({ orderId }: AccountOrderDetailsContentProps
             </button>
           ) : null}
 
-          <div className={styles.totalChip}>{formatPrice(pricing.chargedTotal)}</div>
+          <div className={styles.totalChip}>{formatCents(pricing.chargedTotalCents)}</div>
           {invoiceError ? <p className={actionStyles.errorText}>{invoiceError}</p> : null}
         </div>
       </div>
@@ -235,7 +235,9 @@ function AccountOrderDetailsContent({ orderId }: AccountOrderDetailsContentProps
                     </span>
                   ) : null}
                 </div>
-                <p className={styles.itemPrice}>{formatPrice(item.unitPrice * item.quantity)}</p>
+                <p className={styles.itemPrice}>
+                  {formatCents(item.unitPriceCents * item.quantity)}
+                </p>
               </article>
             ))}
           </div>
@@ -284,35 +286,37 @@ function AccountOrderDetailsContent({ orderId }: AccountOrderDetailsContentProps
             <h3 className={styles.sectionTitle}>{tPricing("orderSummaryTitle")}</h3>
             <PricingRow
               label={tPricing("itemsSubtotal")}
-              value={formatPrice(pricing.itemsSubtotal)}
+              value={formatCents(pricing.itemsSubtotalCents)}
             />
-            {pricing.itemsDiscountAmount !== null ? (
+            {pricing.itemsDiscountCents !== null ? (
               <>
                 <PricingRow
                   label={tPricing("itemDiscount")}
-                  value={`-${formatPrice(pricing.itemsDiscountAmount)}`}
+                  value={`-${formatCents(pricing.itemsDiscountCents)}`}
                 />
                 <PricingRow
                   label={tPricing("discountedItemsSubtotal")}
-                  value={formatPrice(pricing.discountedItemsSubtotal ?? pricing.itemsSubtotal)}
+                  value={formatCents(
+                    pricing.discountedItemsSubtotalCents ?? pricing.itemsSubtotalCents,
+                  )}
                 />
               </>
             ) : null}
             <PricingRow
               label={tPricing("total")}
-              value={formatPrice(pricing.chargedTotal)}
+              value={formatCents(pricing.chargedTotalCents)}
               strong
             />
             <PricingRow
               label={tPricing("includedVat", { rate: pricing.vatRate })}
-              value={formatPrice(pricing.includedVatAmount)}
+              value={formatCents(pricing.includedVatCents)}
             />
-            {pricing.refundedAmount ? (
+            {pricing.refundedCents ? (
               <>
                 <div className={styles.divider} />
                 <PricingRow
                   label={t("refundedTotal")}
-                  value={`-${formatPrice(pricing.refundedAmount)}`}
+                  value={`-${formatCents(pricing.refundedCents)}`}
                   strong
                 />
               </>

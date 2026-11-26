@@ -1,4 +1,3 @@
-import { Decimal } from "@prisma/client/runtime/client";
 import z from "zod";
 
 import logger from "#src/logger.ts";
@@ -26,7 +25,7 @@ export const customersRoutes = {
           },
           orders: {
             select: {
-              charged_total: true,
+              charged_total_cents: true,
               order_details: true,
               created_at: true,
             },
@@ -65,9 +64,9 @@ export const customersRoutes = {
             const latestOrder = customer.orders[0];
             const clerkUser = clerkUserById.get(customer.user.clerk_id)!;
             const latest_order_city = latestOrder?.order_details.delivery.city ?? null;
-            const lifetime_value = customer.orders.reduce(
-              (sum, order) => sum.plus(order.charged_total),
-              new Decimal(0),
+            const lifetime_value_cents = customer.orders.reduce(
+              (sum, order) => sum + order.charged_total_cents,
+              0,
             );
 
             return {
@@ -76,7 +75,7 @@ export const customersRoutes = {
               full_name: clerkUser.fullName ?? clerkUser.email,
               latest_order_city,
               order_count: customer.orders.length,
-              lifetime_value,
+              lifetime_value_cents,
             };
           }),
         context.locale,

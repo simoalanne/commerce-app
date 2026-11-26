@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/table.tsx";
 import { Textarea } from "@/components/ui/textarea";
 import { queryUtils } from "@/context/ApiClientContext";
+import { formatCents } from "@/lib/money";
 
 import type { OrderDetail } from "./OrderDetails";
 import type { OrderTableRow } from "./OrdersPage";
@@ -42,14 +43,7 @@ type ItemRefundState = {
   amountCents: number;
 };
 
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "EUR",
-});
-
-const formatCents = (amountCents: number) => currencyFormatter.format(amountCents / 100);
-
-const toCents = (amount: number) => Math.round(amount * 100);
+const eurosToCents = (amount: number) => Math.round(amount * 100);
 
 const clampCents = (amountCents: number, maxAmountCents: number) =>
   Math.max(0, Math.min(maxAmountCents, amountCents));
@@ -162,7 +156,7 @@ export default function RefundOrderDialog({
     orderItemId: number,
     refundQuantity: number,
     maxQuantity: number,
-    unitPrice: number,
+    unitPriceCents: number,
     maxAmountCents: number,
   ) => {
     const clamped = Math.max(0, Math.min(maxQuantity, refundQuantity));
@@ -176,9 +170,7 @@ export default function RefundOrderDialog({
       }
 
       const amountCents =
-        clamped > 0
-          ? clampCents(toCents(unitPrice * clamped), maxAmountCents)
-          : previousAmountCents;
+        clamped > 0 ? clampCents(unitPriceCents * clamped, maxAmountCents) : previousAmountCents;
 
       return {
         ...prevState,
@@ -344,7 +336,7 @@ export default function RefundOrderDialog({
             <AlertDialogTitle className="break-all">Refund Order #{order.id}</AlertDialogTitle>
             <AlertDialogDescription>
               Create a refund request for specific order items or fees. Total:{" "}
-              {currencyFormatter.format(order.total)}
+              {formatCents(order.totalCents)}
             </AlertDialogDescription>
           </AlertDialogHeader>
         )}
@@ -437,7 +429,7 @@ export default function RefundOrderDialog({
                               {item.productName ?? item.sku}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              SKU: {item.sku} • {currencyFormatter.format(item.unitPrice)} ea
+                              SKU: {item.sku} • {formatCents(item.unitPriceCents)} ea
                             </div>
                           </label>
                         </div>
@@ -460,7 +452,7 @@ export default function RefundOrderDialog({
                                   item.id,
                                   Number.isNaN(raw) ? 0 : raw,
                                   refundableItem.refundableQuantity,
-                                  item.unitPrice,
+                                  item.unitPriceCents,
                                   refundableItem.refundableAmountCents,
                                 );
                               }}
@@ -486,7 +478,7 @@ export default function RefundOrderDialog({
                                 const raw = Number(event.target.value);
                                 setRefundItemAmount(
                                   item.id,
-                                  Number.isNaN(raw) ? 0 : toCents(raw),
+                                  Number.isNaN(raw) ? 0 : eurosToCents(raw),
                                   refundableItem.refundableAmountCents,
                                 );
                               }}
@@ -621,7 +613,7 @@ export default function RefundOrderDialog({
                                     item.id,
                                     Number.isNaN(raw) ? 0 : raw,
                                     refundableItem.refundableQuantity,
-                                    item.unitPrice,
+                                    item.unitPriceCents,
                                     refundableItem.refundableAmountCents,
                                   );
                                 }}
@@ -649,7 +641,7 @@ export default function RefundOrderDialog({
                               />
                             </TableCell>
                             <TableCell className="text-right">
-                              {currencyFormatter.format(item.unitPrice)}
+                              {formatCents(item.unitPriceCents)}
                             </TableCell>
                             <TableCell>
                               <Input
@@ -663,7 +655,7 @@ export default function RefundOrderDialog({
                                   const raw = Number(event.target.value);
                                   setRefundItemAmount(
                                     item.id,
-                                    Number.isNaN(raw) ? 0 : toCents(raw),
+                                    Number.isNaN(raw) ? 0 : eurosToCents(raw),
                                     refundableItem.refundableAmountCents,
                                   );
                                 }}

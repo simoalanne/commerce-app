@@ -10,7 +10,7 @@ import { getProductMaxOrderQuantity } from "@/features/checkout/cartState";
 import { useCart } from "@/hooks/useCart";
 import { Link } from "@/i18n/navigation";
 import type { ProductSummary } from "@/types/api";
-import { formatPrice } from "@/utils/formatPrice";
+import { formatCents } from "@/utils/formatPrice";
 import { readableTextColor } from "@/utils/tagColor";
 
 import AddToCartBtn from "../productPage/AddToCartBtn";
@@ -126,7 +126,7 @@ export default function ProductCard({
           )}
           <div className={styles.productMetaRow}>
             <div className={styles.priceBlock}>
-              <p className={styles.price}>{formatPrice(product.price)}</p>
+              <p className={styles.price}>{formatCents(product.priceCents)}</p>
             </div>
           </div>
         </div>

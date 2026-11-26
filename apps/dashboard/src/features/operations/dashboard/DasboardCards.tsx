@@ -9,9 +9,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { formatCents } from "@/lib/money";
 
 type SummaryKpis = {
-  totalRevenue: number;
+  totalRevenueCents: number;
   revenueDeltaPct: number;
   paidOrders: number;
   paidOrdersDeltaPct: number;
@@ -28,11 +29,6 @@ type SectionCardsProps = {
   };
 };
 
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
-
 const numberFormatter = new Intl.NumberFormat("en-US");
 
 export function SectionCards({ kpis, windowDays, localizationCoverage }: SectionCardsProps) {
@@ -47,7 +43,7 @@ export function SectionCards({ kpis, windowDays, localizationCoverage }: Section
         <CardHeader>
           <CardDescription>Total Revenue</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {currencyFormatter.format(kpis.totalRevenue)}
+            {formatCents(kpis.totalRevenueCents)}
           </CardTitle>
           <CardAction>
             <Badge variant="outline" className={revenueTrendUp ? "border-green-500" : ""}>

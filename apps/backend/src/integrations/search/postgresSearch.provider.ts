@@ -274,7 +274,7 @@ class PostgresSearchProvider implements SearchProvider {
         id: true,
         name: true,
         slug: true,
-        sales_price: true,
+        sales_price_cents: true,
         current_stock: true,
         reserved_stock: true,
         is_featured: true,
@@ -335,7 +335,7 @@ class PostgresSearchProvider implements SearchProvider {
               name: buildSearchText(locale, [product.name]),
               slug: buildSearchText(locale, [product.slug]),
               imageUrl: getFirstLinkedImageUrl(ObjectStorage, product.images),
-              price: product.sales_price.toNumber(),
+              priceCents: product.sales_price_cents,
               outOfStock: product.current_stock - product.reserved_stock <= 0,
             },
             vendor: {

@@ -85,9 +85,9 @@ export const buildCustomerDataExport = async (
       orders: {
         select: {
           id: true,
-          items_subtotal: true,
-          items_discount_amount: true,
-          charged_total: true,
+          items_subtotal_cents: true,
+          items_discount_cents: true,
+          charged_total_cents: true,
           status: true,
           created_at: true,
           order_details: true,
@@ -118,7 +118,7 @@ export const buildCustomerDataExport = async (
             select: {
               name: true,
               quantity: true,
-              unit_sales_price: true,
+              unit_sales_price_cents: true,
               vendor_name: true,
             },
           },
@@ -177,13 +177,13 @@ export const buildCustomerDataExport = async (
         deliveryAddress: details.delivery.addressLabel,
         city: details.delivery.city,
         deliveryInstructions: toNullableInstructions(details.delivery.instructions ?? undefined),
-        subtotal: order.items_subtotal.minus(order.items_discount_amount),
-        total: order.charged_total,
+        subtotalCents: order.items_subtotal_cents - order.items_discount_cents,
+        totalCents: order.charged_total_cents,
         items: order.order_items.map((item) => ({
           productName: item.name,
           vendorName: item.vendor_name,
           quantity: item.quantity,
-          unitPrice: item.unit_sales_price,
+          unitPriceCents: item.unit_sales_price_cents,
         })),
         reviews: order.reviews.map((review) => ({
           kind: review.kind,

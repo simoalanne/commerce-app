@@ -27,7 +27,7 @@ export async function processRefund(
     select: {
       id: true,
       idempotency_key: true,
-      total_amount: true,
+      total_amount_cents: true,
       order: {
         select: {
           id: true,
@@ -54,7 +54,7 @@ export async function processRefund(
   const orderDetails = refund.order.order_details as PrismaJson.OrderDetails;
   const refundedPayment = await getPaymentProvider(refund.order.payment_provider).refundPayment({
     paymentId: refund.order.payment_id,
-    amountCents: Math.round(refund.total_amount.toNumber() * 100),
+    amountCents: refund.total_amount_cents,
     receiptEmail: orderDetails.customer.email,
     orderId: refund.order.id,
     refundId: refund.id,
