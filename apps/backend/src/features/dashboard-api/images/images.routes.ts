@@ -3,9 +3,8 @@ import { RouteError } from "@rest-rpc/server";
 import { and, eq } from "drizzle-orm";
 import z from "zod";
 
-import type { LocalizedString } from "#src/db/json.ts";
 import { imageTable } from "#src/db/schema.ts";
-import { type AppContext, dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
+import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { ImageUploadInvalidContentType, ImageUploadTooLarge } from "#src/routing/errors.ts";
 import { resolveLocalizedFields } from "#src/routing/localizedFields.ts";
 import { logAdminAction } from "#src/utils/adminActionLog.ts";
@@ -18,20 +17,6 @@ const idParams = z.object({ id: z.coerce.number<number>().int().positive() });
 
 const acceptedImageContentTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
 const maxUploadBytes = 10 * 1024 * 1024;
-
-const toImageResponse = (
-  storage: AppContext["storage"],
-  image: {
-    id: number;
-    storageKey: string;
-    name?: string | null;
-    alt?: LocalizedString | null;
-    createdAt: string;
-  },
-) => ({
-  ...image,
-  url: storage.getPublicUrl(image.storageKey),
-});
 
 export const imagesRoutes = {
   getAll: imageRoute.get("/images").handler(async ({ context }) => {
@@ -63,7 +48,10 @@ export const imagesRoutes = {
         where: { id: params.id, kind: "CMS" },
       });
       if (!image) throw new RouteError("NOT_FOUND", { status: 404 });
-      return resolveLocalizedFields(toImageResponse(context.storage, image), context.locale);
+      return resolveLocalizedFields(
+        { ...image, url: context.storage.getPublicUrl(image.storageKey) },
+        context.locale,
+      );
     }),
 
   update: imageTxRoute
@@ -94,7 +82,10 @@ export const imagesRoutes = {
         after: updated,
       });
 
-      return resolveLocalizedFields(toImageResponse(context.storage, updated), context.locale);
+      return resolveLocalizedFields(
+        { ...updated, url: context.storage.getPublicUrl(updated.storageKey) },
+        context.locale,
+      );
     }),
 
   delete: imageTxRoute
@@ -123,7 +114,10 @@ export const imagesRoutes = {
       // rolls the row back.
       await context.storage.deleteObject(image.storageKey);
 
-      return resolveLocalizedFields(toImageResponse(context.storage, deleted), context.locale);
+      return resolveLocalizedFields(
+        { ...deleted, url: context.storage.getPublicUrl(deleted.storageKey) },
+        context.locale,
+      );
     }),
 
   getPresignedUrl: imageRoute
@@ -179,6 +173,9 @@ export const imagesRoutes = {
         after: image,
       });
 
-      return resolveLocalizedFields(toImageResponse(context.storage, image), context.locale);
+      return resolveLocalizedFields(
+        { ...image, url: context.storage.getPublicUrl(image.storageKey) },
+        context.locale,
+      );
     }),
 };

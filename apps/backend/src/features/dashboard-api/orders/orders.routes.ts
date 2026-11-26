@@ -29,18 +29,6 @@ const REFUNDABLE_STATUSES = ["PAID", "DELIVERED"] as const;
 
 const sum = (amounts: number[]) => amounts.reduce((total, amount) => total + amount, 0);
 
-const buildAmountSummary = ({
-  originalAmountCents,
-  refundedAmountCents,
-}: {
-  originalAmountCents: number;
-  refundedAmountCents: number;
-}) => ({
-  originalAmountCents,
-  refundedAmountCents,
-  refundableAmountCents: Math.max(0, originalAmountCents - refundedAmountCents),
-});
-
 const pendingRefundStatuses = ["PENDING", "PROCESSING"] as const;
 
 const buildOrderRefundSummary = (order: RelevantOrder) => {
@@ -120,10 +108,9 @@ const buildOrderRefundability = (order: RelevantOrder) => {
 
     return {
       orderItemId: item.id,
-      ...buildAmountSummary({
-        originalAmountCents,
-        refundedAmountCents,
-      }),
+      originalAmountCents,
+      refundedAmountCents,
+      refundableAmountCents: Math.max(0, originalAmountCents - refundedAmountCents),
       refundedQuantity,
       refundableQuantity: Math.max(0, item.quantity - refundedQuantity),
     };

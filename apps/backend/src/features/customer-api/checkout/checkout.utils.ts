@@ -31,8 +31,6 @@ type Product = typeof productTable.$inferSelect;
 
 type PurchasableProduct = Awaited<ReturnType<typeof fetchPurchasableProducts>>[number];
 
-const formatRecipientName = ({ firstName, lastName }: RecipientInput) => `${firstName} ${lastName}`;
-
 const formatAddressLabel = (address: DeliveryAddressInput) => {
   const streetLine = [address.street, address.streetNumber].filter(Boolean).join(" ").trim();
   const detailLine = [
@@ -55,7 +53,7 @@ export const buildOrderDetails = ({
   recipient: RecipientInput;
 }): OrderDetails => ({
   customer: {
-    name: formatRecipientName(recipient),
+    name: `${recipient.firstName} ${recipient.lastName}`,
     email: recipient.email.trim().toLowerCase(),
     phone: recipient.phone,
   },

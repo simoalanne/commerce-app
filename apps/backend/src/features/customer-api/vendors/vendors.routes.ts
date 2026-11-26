@@ -2,19 +2,10 @@ import { RouteError } from "@rest-rpc/server";
 import z from "zod";
 
 import { activeStorefrontVendorWhere } from "#src/domain/storefrontVisibility.ts";
-import {
-  getReviewSummaryMap,
-  type ReviewSummary,
-} from "#src/features/customer-api/reviews/reviews.utils.ts";
+import { getReviewSummaryMap } from "#src/features/customer-api/reviews/reviews.utils.ts";
 import { customerRoute } from "#src/routing/base.ts";
 import { resolveLocalizedFields } from "#src/routing/localizedFields.ts";
 import { FIRST_LINKED_IMAGE_SELECT, getFirstLinkedImageUrl } from "#src/utils/imageUrl.ts";
-
-// Vendors without approved reviews have no rating rather than a zero.
-const toRating = (summary: ReviewSummary | undefined) => ({
-  avgRating: summary?.avgRating ?? null,
-  totalRatings: summary?.reviewCount ?? null,
-});
 
 export const vendorsRoutes = {
   getById: customerRoute
@@ -45,7 +36,8 @@ export const vendorsRoutes = {
           isFeatured: vendor.isFeatured,
           imageUrl: getFirstLinkedImageUrl(context.storage, vendor.images),
           tags: vendor.tags,
-          ...toRating(ratings.get(vendor.id)),
+          avgRating: ratings.get(vendor.id)?.avgRating ?? null,
+          totalRatings: ratings.get(vendor.id)?.reviewCount ?? null,
           story: vendor.story,
           slogan: vendor.slogan,
         },
@@ -77,7 +69,8 @@ export const vendorsRoutes = {
         isFeatured: vendor.isFeatured,
         imageUrl: getFirstLinkedImageUrl(context.storage, vendor.images),
         tags: vendor.tags,
-        ...toRating(ratings.get(vendor.id)),
+        avgRating: ratings.get(vendor.id)?.avgRating ?? null,
+        totalRatings: ratings.get(vendor.id)?.reviewCount ?? null,
       })),
       context.locale,
     );
