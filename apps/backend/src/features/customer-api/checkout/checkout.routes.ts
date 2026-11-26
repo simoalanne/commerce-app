@@ -8,6 +8,7 @@ import z from "zod";
 
 import { getCompanyDetails } from "#src/domain/getCompanyDetails.ts";
 import { verifyOrderCapabilityJwt } from "#src/features/customer-api/orders/orderCapabilities.ts";
+import type { PaymentProviderName } from "#src/integrations/payments/payment.provider.ts";
 import { getCachedPaytrailPaymentMethods } from "#src/integrations/payments/paytrail.paymentMethods.ts";
 import { enqueueProductStockInvalidationJobs } from "#src/jobs/handlers/jobAggregrates.ts";
 import type { SupportedLocale } from "#src/locales.ts";
@@ -25,6 +26,7 @@ import {
   InsufficientStock,
   InvalidPromoCode,
   isPromoCodeError,
+  PaymentProviderUnavailable,
   PriceMismatch,
   ProductsNotPurchasable,
   PromoCodeExpired,
@@ -102,6 +104,9 @@ const createPaymentBodySchema = z.discriminatedUnion("provider", [
   baseCreatepaymentBodySchema.extend({
     provider: z.literal("PAYTRAIL"),
   }),
+  baseCreatepaymentBodySchema.extend({
+    provider: z.literal("DEV"),
+  }),
 ]);
 
 type CreatePaymentBody = z.output<typeof createPaymentBodySchema>;
@@ -127,6 +132,11 @@ const createPaymentInternal = async (
   }: CreatePaymentBody,
 ) => {
   const { authContext, db, config, payments } = context;
+  const paymentProvider = payments[provider];
+  if (!paymentProvider) {
+    throw new PaymentProviderUnavailable();
+  }
+
   const customerId = authContext.isAuthenticated
     ? authContext.customerId
     : await findCustomerIdByEmail({ db, auth: context.auth }, recipient.email);
@@ -229,7 +239,7 @@ const createPaymentInternal = async (
   const amountCents = Math.round(pricingSnapshot.chargedTotal * 100);
 
   try {
-    const payment = await payments[provider].createPayment({
+    const payment = await paymentProvider.createPayment({
       amountCents,
       currency: "eur",
       receiptEmail: recipient.email,
@@ -271,7 +281,7 @@ const createPaymentInternal = async (
     }
 
     return {
-      provider: "PAYTRAIL" as const,
+      provider: payment.provider,
       orderId: order.id,
       redirectUrl: payment.redirectUrl,
       amountCents: payment.amountCents,
@@ -403,6 +413,7 @@ export const checkoutRoutes = {
     .error(PriceMismatch)
     .error(InvalidPromoCode)
     .error(AccountExistsForEmail)
+    .error(PaymentProviderUnavailable)
     .handler(async ({ body, context }) => {
       await consumeCheckoutCreatePaymentRateLimit({
         authContext: context.authContext,
@@ -419,11 +430,18 @@ export const checkoutRoutes = {
         throw error;
       }
     }),
-  getPaymentMethods: customerRoute
-    .get("/checkout/payment-methods")
-    .handler(async ({ context }) =>
-      toResponse(await getCachedPaytrailPaymentMethods(context.config), context.locale),
+  getPaymentMethods: customerRoute.get("/checkout/payment-methods").handler(async ({ context }) =>
+    toResponse(
+      {
+        // The registry's keys are provider names; Object.keys only knows string.
+        providers: Object.keys(context.payments) as PaymentProviderName[],
+        paytrailMethods: context.payments.PAYTRAIL
+          ? await getCachedPaytrailPaymentMethods(context.config)
+          : [],
+      },
+      context.locale,
     ),
+  ),
   estimateDeliveryFee: customerRoute
     .post("/checkout/estimate-delivery-fee")
     .body(z.object({ itemsSubtotal: z.number().min(0) }))

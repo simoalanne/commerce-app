@@ -286,7 +286,9 @@
         "title": "Payment method",
         "secureDescription": "All transactions are safe and encrypted.",
         "methodLabel": "Online banking, MobilePay, card, Klarna (Paytrail)",
-        "redirectNotice": "You will be redirected to Online banking, MobilePay, card, Klarna (Paytrail) to finalize your order."
+        "redirectNotice": "You will be redirected to Online banking, MobilePay, card, Klarna (Paytrail) to finalize your order.",
+        "devMethodLabel": "Test payment (development)",
+        "devRedirectNotice": "You will be redirected to a test payment page. No money moves."
       },
       "termsAcceptance": {
         "notice": "By clicking {submitLabel}, you accept Acme's <terms>order and delivery terms</terms>."

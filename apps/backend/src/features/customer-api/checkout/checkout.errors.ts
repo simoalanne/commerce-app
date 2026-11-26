@@ -87,3 +87,9 @@ const promoCodeErrors = [
 
 export const isPromoCodeError = (error: unknown) =>
   promoCodeErrors.some((PromoCodeError) => error instanceof PromoCodeError);
+
+// A provider the store offered but the backend no longer has enabled, e.g.
+// after a configuration change while the checkout page was open.
+export const PaymentProviderUnavailable = routeError("PAYMENT_PROVIDER_UNAVAILABLE", {
+  status: 409,
+});

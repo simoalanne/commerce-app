@@ -26,7 +26,7 @@ export default async function CheckoutPaymentPage({
   const isPaymentCanceled = resolvedSearchParams.paymentCanceled === "1";
 
   const [
-    { cart, cartUpdatedAt, cartItems, products, initialDeliveryFee, paymentMethods },
+    { cart, cartUpdatedAt, cartItems, products, initialDeliveryFee, paymentOptions },
     orderAndDeliveryTerms,
     t,
   ] = await Promise.all([
@@ -72,7 +72,7 @@ export default async function CheckoutPaymentPage({
           cartItems={cartItems}
           availableProducts={products}
           initialDeliveryFee={initialDeliveryFee}
-          paymentMethods={paymentMethods}
+          paymentOptions={paymentOptions}
           termsDocument={{
             title: orderAndDeliveryTerms.title,
             content: orderAndDeliveryTerms.content,

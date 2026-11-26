@@ -25,7 +25,7 @@ import {
   CheckoutPaymentAdjustmentModal,
 } from "./CheckoutPaymentAdjustmentModal";
 import type { CheckoutTermsDocument } from "./CheckoutTermsAcceptance";
-import type { DeliveryFeeEstimate, PaymentMethod } from "./checkoutTypes";
+import type { DeliveryFeeEstimate, PaymentOptions } from "./checkoutTypes";
 import {
   type CheckoutFormState,
   type CheckoutPromoCodeState,
@@ -46,7 +46,7 @@ type CheckoutPaymentPageClientProps = {
   cartItems: CheckoutCartProductItem[];
   availableProducts: CheckoutCartProductItem["product"][];
   initialDeliveryFee: DeliveryFeeEstimate | undefined;
-  paymentMethods: PaymentMethod[];
+  paymentOptions: PaymentOptions;
   termsDocument: CheckoutTermsDocument;
 };
 
@@ -57,7 +57,7 @@ export function CheckoutPaymentPageClient({
   cartItems,
   availableProducts,
   initialDeliveryFee,
-  paymentMethods,
+  paymentOptions,
   termsDocument,
 }: CheckoutPaymentPageClientProps) {
   const t = useTranslations("checkout");
@@ -329,7 +329,7 @@ export function CheckoutPaymentPageClient({
             }
             cartItems={displayedCartItems}
             effectiveItemsSubtotal={effectiveItemsSubtotal}
-            paymentMethods={paymentMethods}
+            paymentOptions={paymentOptions}
             onAdjustmentRequired={setAdjustmentError}
             persistRecoveryDraft={(nextFormState, nextPromoCodeState) => {
               window.localStorage.setItem(

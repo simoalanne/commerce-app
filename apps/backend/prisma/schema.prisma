@@ -31,6 +31,8 @@ enum ContactSubmissionStatus {
 enum PaymentProvider {
   STRIPE
   PAYTRAIL
+  // Local development only: payments settled from a backend page.
+  DEV
 }
 
 enum PromotionCodeDiscountType {

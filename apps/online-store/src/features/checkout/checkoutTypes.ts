@@ -3,9 +3,9 @@ import type { InferClientError, InferClientRequest, InferClientResponse } from "
 import type { Api } from "@/api/client";
 import type { AddressFormValue } from "@/components/address-form";
 
-export type PaymentMethod = InferClientResponse<
-  Api["checkout"]["getPaymentMethods"]
->["body"][number];
+export type PaymentOptions = InferClientResponse<Api["checkout"]["getPaymentMethods"]>["body"];
+
+export type PaymentMethod = PaymentOptions["paytrailMethods"][number];
 
 export type DeliveryFeeEstimate = InferClientResponse<
   Api["checkout"]["estimateDeliveryFee"]
@@ -108,7 +108,8 @@ export function reviveCheckoutRecoveryDraft(rawDraft: string): RevivedCheckoutRe
           typeof parsedFormState?.tipPercentage === "number" ? parsedFormState.tipPercentage : 0,
         paymentProvider:
           parsedFormState?.paymentProvider === "PAYTRAIL" ||
-          parsedFormState?.paymentProvider === "STRIPE"
+          parsedFormState?.paymentProvider === "STRIPE" ||
+          parsedFormState?.paymentProvider === "DEV"
             ? parsedFormState.paymentProvider
             : null,
       },

@@ -22,7 +22,7 @@ import type { CheckoutPaymentAdjustmentError } from "./CheckoutPaymentAdjustment
 import { CheckoutPaymentMethodSection } from "./CheckoutPaymentMethodSection";
 import { CheckoutTermsAcceptance, type CheckoutTermsDocument } from "./CheckoutTermsAcceptance";
 import { CheckoutTipSection } from "./CheckoutTipSection";
-import type { PaymentMethod } from "./checkoutTypes";
+import type { PaymentOptions } from "./checkoutTypes";
 import type { CheckoutFormState, CheckoutPromoCodeState } from "./checkoutTypes";
 import FormSection from "./FormSection";
 import {
@@ -66,7 +66,7 @@ interface CheckoutFormDetailsProps {
   submitError: string | null;
   setSubmitError: (err: string | null) => void;
   invalidatePromoCode: () => void;
-  paymentMethods: PaymentMethod[];
+  paymentOptions: PaymentOptions;
   effectiveItemsSubtotal: number;
   onAdjustmentRequired: (error: CheckoutPaymentAdjustmentError) => void;
   persistRecoveryDraft: (
@@ -85,7 +85,7 @@ export default function CheckoutFormDetails({
   submitError,
   setSubmitError,
   invalidatePromoCode,
-  paymentMethods,
+  paymentOptions,
   effectiveItemsSubtotal,
   onAdjustmentRequired,
   persistRecoveryDraft,
@@ -347,18 +347,20 @@ export default function CheckoutFormDetails({
         return;
       }
 
-      if (response.provider !== "PAYTRAIL") {
+      if (response.provider === "STRIPE") {
         setSubmitError(
           `Unsupported payment provider for online-store checkout: ${response.provider}`,
         );
         return;
       }
 
-      await saveActivePaytrailPayment({
-        authEmail,
-        requestBody: paymentRequest,
-        redirectUrl: response.redirectUrl,
-      });
+      if (response.provider === "PAYTRAIL") {
+        await saveActivePaytrailPayment({
+          authEmail,
+          requestBody: paymentRequest,
+          redirectUrl: response.redirectUrl,
+        });
+      }
 
       window.location.href = response.redirectUrl;
     } catch (error) {
@@ -443,7 +445,7 @@ export default function CheckoutFormDetails({
       </FormSection>
       <CheckoutPaymentMethodSection
         id={paymentMethodFieldId}
-        paymentMethods={paymentMethods}
+        paymentOptions={paymentOptions}
         selectedProvider={formState.paymentProvider}
         errorMessage={fieldErrors.paymentProvider}
         onSelect={(paymentProvider) =>

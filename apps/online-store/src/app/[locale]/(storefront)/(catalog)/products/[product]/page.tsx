@@ -40,7 +40,7 @@ export default async function ProductPage({ params }: RouteParams) {
   const api = await createServerSideApiClient(params);
   const paymentMethods = await api.checkout
     .getPaymentMethods()
-    .then((r) => r.body)
+    .then((r) => r.body.paytrailMethods)
     .catch(() => []);
 
   const vendor = storefrontContext.vendors.find((p) => p.id === productSummary.vendorId);

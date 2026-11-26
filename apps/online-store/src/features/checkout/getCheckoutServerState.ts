@@ -9,7 +9,7 @@ import {
   getCheckoutSubtotal,
   getProductMaxOrderQuantity,
 } from "./cartState";
-import type { DeliveryFeeEstimate, PaymentMethod } from "./checkoutTypes";
+import type { DeliveryFeeEstimate, PaymentOptions } from "./checkoutTypes";
 import { readServerCartCookie } from "./readServerCartCookie";
 
 type GetCheckoutServerStateOptions = {
@@ -41,7 +41,7 @@ type CheckoutServerState = {
   cartAdjustmentNotice: CheckoutCartAdjustmentNotice | null;
   products: ProductSummary[];
   initialDeliveryFee?: DeliveryFeeEstimate;
-  paymentMethods: PaymentMethod[];
+  paymentOptions: PaymentOptions;
 };
 
 export async function getCheckoutServerState({
@@ -55,11 +55,11 @@ export async function getCheckoutServerState({
   const hasCartItems = Object.keys(cartCookie?.items ?? {}).length > 0;
   const client = await createServerSideApiClient(params ?? Promise.resolve({ locale }));
 
-  const [{ body: products }, paymentMethods] = await Promise.all([
+  const [{ body: products }, paymentOptions] = await Promise.all([
     client.products.getAll({}),
     includePaymentMethods
       ? client.checkout.getPaymentMethods().then(({ body }) => body)
-      : Promise.resolve([]),
+      : Promise.resolve({ providers: [], paytrailMethods: [] }),
   ]);
 
   const productsBySku = new Map(products.map((product) => [product.sku, product]));
@@ -136,6 +136,6 @@ export async function getCheckoutServerState({
     cartAdjustmentNotice,
     products,
     initialDeliveryFee,
-    paymentMethods,
+    paymentOptions,
   };
 }

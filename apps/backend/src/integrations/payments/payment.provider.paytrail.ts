@@ -4,6 +4,7 @@ import logger from "#src/logger.ts";
 
 import { calculateHmac } from "./payment.provider.paytrail.signature.ts";
 import type { PaymentMetadata, PaymentProvider, RefundedPayment } from "./payment.provider.ts";
+import { buildCheckoutUrl } from "./payment.redirectUrls.ts";
 
 type PaytrailCreatePaymentRequest = {
   stamp: string;
@@ -53,36 +54,6 @@ const getSupportedLocale = (locale?: string) => {
   if (locale === "fi") return "FI";
   if (locale === "sv") return "SV";
   return "EN";
-};
-
-const buildCheckoutUrl = ({
-  redirectBaseUrl,
-  locale,
-  orderId,
-  claimToken,
-  type,
-}: {
-  redirectBaseUrl: string;
-  locale?: string;
-  orderId: number;
-  claimToken: string;
-  type: "success" | "cancel";
-}) => {
-  const url = new URL(
-    type === "success"
-      ? `/${locale ?? "en"}/checkout/success/access-token`
-      : `/${locale ?? "en"}/checkout/`,
-    redirectBaseUrl,
-  );
-
-  if (type === "success") {
-    url.searchParams.set("orderId", String(orderId));
-    url.searchParams.set("token", claimToken);
-  } else {
-    url.searchParams.set("paymentCanceled", "1");
-  }
-
-  return url.toString();
 };
 
 export class PaytrailPaymentProvider implements PaymentProvider {

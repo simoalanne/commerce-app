@@ -34,6 +34,7 @@ const RuntimeEnvSchema = z.object({
   LOG_LEVEL: z.enum(["none", "minimal", "all"]).default("minimal"),
   NODE_ENV: z.enum(["development", "staging", "production", "test", "cron"]).default("development"),
   TRUST_PROXY_HOPS: z.coerce.number().int().min(0).optional(),
+  PORT: z.coerce.number<number>().int().min(1).default(3001),
   NEW_ORDER_NOTIFICATION_EMAIL_ENABLED: z
     .enum(["true", "false"])
     .default("false")

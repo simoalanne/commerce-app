@@ -41,7 +41,7 @@ export default async function Footer({ params }: RouteParams) {
   const t = await getServerTranslations(params, "footer");
   const year = new Date().getFullYear();
   const tagline = t("tagline").trim();
-  const paymentMethods = (await client.checkout.getPaymentMethods()).body;
+  const paymentMethods = (await client.checkout.getPaymentMethods()).body.paytrailMethods;
   const legalLinks = legalDocumentConfigs.map((document) => ({
     label: t(`legalLinks.${document.footerLabelKey}`).trim(),
     href: document.pathname,

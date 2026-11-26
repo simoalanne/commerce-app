@@ -96,7 +96,7 @@ const server = Bun.serve({
     ...(await getWebhookRoutes()),
     ...(filesystemObjectStorage ? filesystemObjectStorage.routes() : {}),
   },
-  port: process.env.PORT ? Number(process.env.PORT) : 3000,
+  port: envConfig.PORT,
   // Request bodies here are small JSON; uploads go through presigned URLs,
   // which hit this server only with local filesystem storage.
   maxRequestBodySize: (filesystemObjectStorage ? 10 : 1) * 1024 * 1024,

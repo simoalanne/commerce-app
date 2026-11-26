@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 
-import type { CheckoutPaymentProvider, PaymentMethod } from "./checkoutTypes";
+import type { CheckoutPaymentProvider, PaymentMethod, PaymentOptions } from "./checkoutTypes";
 import FormSection from "./FormSection";
 
 import styles from "./CheckoutPaymentMethodSection.module.css";
@@ -58,74 +58,86 @@ function getRepresentativePaymentLogos(paymentMethods: PaymentMethod[]) {
   });
 }
 
+// The redirect-based providers this store implements, in display order.
+const storeProviders = ["PAYTRAIL", "DEV"] as const;
+
 export function CheckoutPaymentMethodSection({
-  paymentMethods,
+  paymentOptions,
   selectedProvider,
   onSelect,
   errorMessage,
   id,
 }: {
-  paymentMethods: PaymentMethod[];
+  paymentOptions: PaymentOptions;
   selectedProvider: CheckoutPaymentProvider | null;
   onSelect: (provider: CheckoutPaymentProvider) => void;
   errorMessage?: string | null;
   id?: string;
 }) {
   const t = useTranslations("checkout.form.payment");
-  const logos = getRepresentativePaymentLogos(paymentMethods);
-  const isSelected = selectedProvider === "PAYTRAIL";
+  const logos = getRepresentativePaymentLogos(paymentOptions.paytrailMethods);
+  const providers = storeProviders.filter((provider) =>
+    paymentOptions.providers.includes(provider),
+  );
 
   return (
     <FormSection title={t("title")}>
       <div className={styles.paymentSection}>
         <p className={styles.secureText}>{t("secureDescription")}</p>
-        <div className={styles.methodCard}>
-          <button
-            id={id}
-            type="button"
-            className={`${styles.methodRow} ${
-              isSelected ? styles.methodRowSelected : ""
-            } ${errorMessage ? styles.methodRowError : ""}`}
-            aria-pressed={isSelected}
-            onClick={() => onSelect("PAYTRAIL")}
-          >
-            <span
-              className={`${styles.selectionIndicator} ${
-                isSelected ? styles.selectionIndicatorSelected : ""
-              }`}
-              aria-hidden="true"
-            />
-            <strong className={styles.methodLabel}>{t("methodLabel")}</strong>
-            {logos.length > 0 ? (
-              <div className={styles.logoRow} aria-hidden="true">
-                {logos.map((method) => (
-                  <div
-                    key={`${method.key}-${method.id}-${method.imageUrl}`}
-                    className={styles.methodLogoWrapper}
-                  >
-                    <Image
-                      src={method.imageUrl}
-                      alt=""
-                      fill
-                      sizes="80px"
-                      className={styles.methodLogo}
-                    />
+        {providers.map((provider, index) => {
+          const isSelected = selectedProvider === provider;
+          return (
+            <div key={provider} className={styles.methodCard}>
+              <button
+                id={index === 0 ? id : undefined}
+                type="button"
+                className={`${styles.methodRow} ${
+                  isSelected ? styles.methodRowSelected : ""
+                } ${errorMessage ? styles.methodRowError : ""}`}
+                aria-pressed={isSelected}
+                onClick={() => onSelect(provider)}
+              >
+                <span
+                  className={`${styles.selectionIndicator} ${
+                    isSelected ? styles.selectionIndicatorSelected : ""
+                  }`}
+                  aria-hidden="true"
+                />
+                <strong className={styles.methodLabel}>
+                  {provider === "PAYTRAIL" ? t("methodLabel") : t("devMethodLabel")}
+                </strong>
+                {provider === "PAYTRAIL" && logos.length > 0 ? (
+                  <div className={styles.logoRow} aria-hidden="true">
+                    {logos.map((method) => (
+                      <div
+                        key={`${method.key}-${method.id}-${method.imageUrl}`}
+                        className={styles.methodLogoWrapper}
+                      >
+                        <Image
+                          src={method.imageUrl}
+                          alt=""
+                          fill
+                          sizes="80px"
+                          className={styles.methodLogo}
+                        />
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : null}
+              </button>
+              <div
+                className={`${styles.redirectNoticeFrame} ${
+                  isSelected ? styles.redirectNoticeFrameOpen : ""
+                }`}
+                aria-hidden={!isSelected}
+              >
+                <div className={styles.redirectNotice}>
+                  <p>{provider === "PAYTRAIL" ? t("redirectNotice") : t("devRedirectNotice")}</p>
+                </div>
               </div>
-            ) : null}
-          </button>
-          <div
-            className={`${styles.redirectNoticeFrame} ${
-              isSelected ? styles.redirectNoticeFrameOpen : ""
-            }`}
-            aria-hidden={!isSelected}
-          >
-            <div className={styles.redirectNotice}>
-              <p>{t("redirectNotice")}</p>
             </div>
-          </div>
-        </div>
+          );
+        })}
         {errorMessage ? <p className={styles.errorText}>{errorMessage}</p> : null}
       </div>
     </FormSection>
