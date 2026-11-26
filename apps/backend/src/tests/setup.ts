@@ -1,7 +1,7 @@
-import { after } from "node:test";
+import { afterAll } from "vitest";
 
 import prismaClient from "#src/prisma.ts";
 
-after(async () => {
+afterAll(async () => {
   await prismaClient.$disconnect();
 });

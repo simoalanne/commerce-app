@@ -2,10 +2,10 @@ import prismaClient from "#src/prisma.ts";
 
 import { bootstrapTestDatabase } from "./utils.ts";
 
-export const globalSetup = async () => {
+export const setup = async () => {
   await bootstrapTestDatabase();
 };
 
-export const globalTeardown = async () => {
+export const teardown = async () => {
   await prismaClient.$disconnect();
 };

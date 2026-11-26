@@ -1,7 +1,7 @@
 import assert from "node:assert";
-import { describe, it } from "node:test";
 
 import { call, RouteError } from "@rest-rpc/server";
+import { describe, it } from "vitest";
 
 import { customerRouter } from "#src/routes.ts";
 import { createTestContext } from "#src/tests/createTestContext.ts";

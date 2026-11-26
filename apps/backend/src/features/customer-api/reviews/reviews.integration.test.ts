@@ -1,5 +1,6 @@
 import assert from "node:assert";
-import { afterEach, describe, it } from "node:test";
+
+import { afterEach, describe, it } from "vitest";
 
 import prismaClient from "#src/prisma.ts";
 import { customerRouter } from "#src/routes.ts";

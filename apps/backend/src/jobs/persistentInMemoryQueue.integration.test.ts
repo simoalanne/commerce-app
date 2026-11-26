@@ -1,8 +1,7 @@
 import assert from "node:assert";
 import { AsyncLocalStorage } from "node:async_hooks";
-import { afterEach, describe, it } from "node:test";
 
-import esmock from "esmock";
+import { afterEach, describe, it, vi } from "vitest";
 import z from "zod";
 
 import prismaClient from "#src/prisma.ts";
@@ -83,21 +82,22 @@ const createTrackedOrder = async (overrides: Parameters<typeof createOrder>[0]) 
   return order;
 };
 
-const loadQueueWithThrowingHandler = async () =>
-  esmock<typeof import("./persistentInMemoryQueue.ts")>("./persistentInMemoryQueue.ts", {
-    "./jobDefinitions.ts": {
-      jobDefinitions: {
-        throwingJob: {
-          schema: z.object({
-            id: z.number(),
-          }),
-          handler: async () => {
-            throw new Error("handler failed");
-          },
+const loadQueueWithThrowingHandler = async () => {
+  vi.resetModules();
+  vi.doMock("./jobDefinitions.ts", () => ({
+    jobDefinitions: {
+      throwingJob: {
+        schema: z.object({
+          id: z.number(),
+        }),
+        handler: async () => {
+          throw new Error("handler failed");
         },
       },
     },
-  });
+  }));
+  return import("./persistentInMemoryQueue.ts");
+};
 
 afterEach(async () => {
   if (createdJobIds.size > 0) {
@@ -295,25 +295,24 @@ describe("PersistentInMemoryJobQueue", () => {
       await bothJobsArrived;
     };
 
-    const { PersistentInMemoryJobQueue: QueueWithContextHandler } = await esmock<
-      typeof import("./persistentInMemoryQueue.ts")
-    >("./persistentInMemoryQueue.ts", {
-      "@sentry/node": sentry,
-      "./jobDefinitions.ts": {
-        jobDefinitions: {
-          contextJob: {
-            schema: z.object({
-              orderId: z.number(),
-            }),
-            handler: async ({ orderId }: { orderId: number }) => {
-              sentry.getCurrentScope().setContext("order", { orderId });
-              await waitForBothJobs();
-              throw new Error(`Order ${orderId} failed`);
-            },
+    vi.resetModules();
+    vi.doMock("@sentry/node", () => sentry);
+    vi.doMock("./jobDefinitions.ts", () => ({
+      jobDefinitions: {
+        contextJob: {
+          schema: z.object({
+            orderId: z.number(),
+          }),
+          handler: async ({ orderId }: { orderId: number }) => {
+            sentry.getCurrentScope().setContext("order", { orderId });
+            await waitForBothJobs();
+            throw new Error(`Order ${orderId} failed`);
           },
         },
       },
-    });
+    }));
+    const { PersistentInMemoryJobQueue: QueueWithContextHandler } =
+      await import("./persistentInMemoryQueue.ts");
     const queue = new QueueWithContextHandler();
 
     await Promise.all(

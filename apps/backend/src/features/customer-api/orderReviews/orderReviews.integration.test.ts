@@ -1,8 +1,8 @@
 import assert from "node:assert";
 import { randomUUID } from "node:crypto";
-import { afterEach, describe, it } from "node:test";
 
 import { RouteError } from "@rest-rpc/server";
+import { afterEach, describe, it } from "vitest";
 
 import envConfig from "#src/config.ts";
 import { createOrderCapabilityJwt } from "#src/features/customer-api/orders/orderCapabilities.ts";

@@ -1,7 +1,7 @@
 import assert from "node:assert";
-import { describe, it } from "node:test";
 
 import { Decimal } from "@prisma/client/runtime/client";
+import { describe, it } from "vitest";
 
 import {
   buildSummaryResponse,

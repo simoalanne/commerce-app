@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+
+import { describe, it } from "vitest";
 
 import { isNotFoundError } from "./isNotFoundError.ts";
 import { NotFoundError } from "./notFoundError.ts";

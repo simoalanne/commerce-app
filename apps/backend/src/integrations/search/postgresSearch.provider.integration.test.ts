@@ -1,31 +1,17 @@
 import assert from "node:assert";
-import { afterEach, before, describe, it } from "node:test";
 
-import esmock from "esmock";
+import { afterEach, beforeAll, describe, it } from "vitest";
 
 import prismaClient from "#src/prisma.ts";
 import { createCategory, createVendor, createProduct } from "#src/tests/factories.ts";
 
-// we don't care about image urls but objectstorage throws if not configured.
-const { default: postgresSearchProvider } = await esmock<
-  typeof import("./postgresSearch.provider.ts")
->(
-  "./postgresSearch.provider.ts",
-  {},
-  {
-    "../object-storage/objectStorage.provider.ts": {
-      ObjectStorage: {
-        getPublicUrl: () => "https://images.example.com/image.jpg",
-      },
-    },
-  },
-);
+import postgresSearchProvider from "./postgresSearch.provider.ts";
 
 const createdCategoryIds = new Set<number>();
 const createdVendorIds = new Set<number>();
 const createdProductIds = new Set<number>();
 
-before(async () => {
+beforeAll(async () => {
   await prismaClient.$executeRaw`CREATE EXTENSION IF NOT EXISTS pg_trgm`;
 });
 

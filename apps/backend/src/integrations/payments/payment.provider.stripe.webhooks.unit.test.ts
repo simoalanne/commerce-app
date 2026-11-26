@@ -1,7 +1,7 @@
 import assert from "node:assert";
-import { describe, it } from "node:test";
 
 import type Stripe from "stripe";
+import { describe, it } from "vitest";
 
 import { createStripeWebhookRoutes } from "./payment.provider.stripe.webhooks.ts";
 

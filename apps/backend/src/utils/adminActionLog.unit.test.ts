@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
 
 import { Prisma } from "@prisma/client";
+import { describe, it } from "vitest";
 
 import { getChangedFields, toSafeJsonValue } from "./adminActionLog.ts";
 

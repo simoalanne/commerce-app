@@ -64,4 +64,4 @@ The backend uses PostgreSQL through Prisma, selected with `DATABASE_URL`. There 
 - development: `postgresql://postgres:postgres@localhost:5432/acme_dev`
 - test, used by the backend integration tests: `postgresql://postgres:postgres@localhost:5433/acme_test`
 
-Integration tests need the test database running with the current schema (`pnpm --filter backend test:db:init`). In sandboxed agent environments they may need elevated permissions.
+Backend tests run on Vitest (`pnpm --filter backend test:unit` / `test:integration`); scripts run on Bun. Integration tests need the test database running with the current schema (`pnpm --filter backend test:db:init`). In sandboxed agent environments they may need elevated permissions.

@@ -1,7 +1,6 @@
 import assert from "node:assert";
-import { describe, it } from "node:test";
 
-import esmock from "esmock";
+import { describe, it, vi } from "vitest";
 
 import { createPaytrailCallbackRoutes } from "./payment.provider.paytrail.callbacks.ts";
 import { calculateHmac } from "./payment.provider.paytrail.signature.ts";
@@ -16,16 +15,13 @@ const createSignature = (query: Record<string, string>, secretKey: string) => {
 const loadPaytrailCallbacksModule = async () => {
   const reconciliationCalls: Array<unknown> = [];
 
-  const module = await esmock<typeof import("./payment.provider.paytrail.callbacks.ts")>(
-    "./payment.provider.paytrail.callbacks.ts",
-    {
-      "./payment.reconciliation.ts": {
-        handlePaymentReconciliation: async (event: unknown) => {
-          reconciliationCalls.push(event);
-        },
-      },
+  vi.resetModules();
+  vi.doMock("./payment.reconciliation.ts", () => ({
+    handlePaymentReconciliation: async (event: unknown) => {
+      reconciliationCalls.push(event);
     },
-  );
+  }));
+  const module = await import("./payment.provider.paytrail.callbacks.ts");
 
   return { ...module, reconciliationCalls };
 };

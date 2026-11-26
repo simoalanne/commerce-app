@@ -31,11 +31,7 @@ const logFormat = ({
 const createLogger = (logLevel: LogLevel) => {
   const level = logMap[logLevel];
   // Same detection as config.ts, which forces NODE_ENV "test" under the test runner.
-  const isTestRunner =
-    process.env.NODE_ENV === "test" ||
-    Boolean(process.env.NODE_TEST_CONTEXT) ||
-    process.argv.some((arg) => arg.endsWith(".test.ts")) ||
-    process.execArgv.includes("--test");
+  const isTestRunner = process.env.NODE_ENV === "test" || Boolean(process.env.VITEST);
   const transports: winston.transport[] = [
     new winston.transports.Console({
       format: winston.format.combine(

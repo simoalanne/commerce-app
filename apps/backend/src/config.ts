@@ -71,12 +71,10 @@ const mapErrorIssues = (issues: z.core.$ZodIssue[]) =>
 // The compose development database; the test runner overrides it below.
 process.env.DATABASE_URL ??= "postgresql://postgres:postgres@localhost:5432/acme_dev";
 
-const isNodeTestRunner =
-  process.env.NODE_TEST_CONTEXT ||
-  process.argv.some((arg) => arg.endsWith(".test.ts")) ||
-  process.execArgv.includes("--test");
+// Vitest sets VITEST in every worker.
+const isTestRunner = Boolean(process.env.VITEST);
 
-const envToUse = isNodeTestRunner
+const envToUse = isTestRunner
   ? {
       DATABASE_URL: "postgresql://postgres:postgres@localhost:5433/acme_test",
       JWT_SECRET: "test-secret",

@@ -12,9 +12,6 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
-    env:
-      # prisma.config.ts validates the env; generate never connects.
-      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -22,6 +19,8 @@ jobs:
         with:
           node-version: lts/*
           cache: pnpm
+      # The backend's scripts, including the postinstall contract extraction, run on Bun.
+      - uses: oven-sh/setup-bun@v2
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter backend exec prisma generate
       - run: pnpm check
