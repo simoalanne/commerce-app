@@ -57,7 +57,7 @@ chore/tooling-update
 
 ## Database
 
-The backend uses PostgreSQL through Drizzle, selected with `DATABASE_URL` (see `database.md`). There are no migrations: schema changes are applied with `drizzle-kit push` (`pnpm db:push`). Search needs the `pg_trgm` extension, which `db:push` does not create.
+The backend uses PostgreSQL through Drizzle, selected with `DATABASE_URL`. There are no migrations: schema changes are applied with `drizzle-kit push` (`pnpm db:push`). Search needs the `pg_trgm` extension, which `db:push` does not create.
 
 `compose.yaml` in the repo root runs two local databases:
 

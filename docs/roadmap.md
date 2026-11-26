@@ -17,7 +17,7 @@ The project is a general commerce core: catalog, cart, checkout, orders, refunds
 5. **Payment provider registry.**
 6. **Integer cents**, on Prisma, so the Drizzle port only translates queries.
 7. **Transactional route builders**, on Prisma: `customerTxRoute` / `dashboardTxRoute` replace `runAppTransaction` in handlers.
-8. **Drizzle**, with pg-boss. Done: see `database.md` and `job-queue.md`.
+8. **Drizzle**, with pg-boss. Done; the queue is described in `job-queue.md`.
 
 Deferred, not scheduled: Clerk → Better Auth, the TanStack Start store, the search documents review.
 
