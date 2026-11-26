@@ -1,18 +1,19 @@
 import z from "zod";
 
-import { dashboardRoute } from "#src/routing/base.ts";
+import { dashboardTxRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
+import { logAdminAction } from "#src/utils/adminActionLog.ts";
 
 import { AlreadyAdmin, UserNotFound } from "./admins.errors.ts";
 
-const adminRoute = dashboardRoute.meta({ access: "ADMIN" });
+const adminTxRoute = dashboardTxRoute.meta({ access: "ADMIN" });
 
 const GrantAdminSchema = z.object({
   clerkId: z.string().min(1),
 });
 
 export const adminsRoutes = {
-  grantAdmin: adminRoute
+  grantAdmin: adminTxRoute
     .post("/admins/grant")
     .body(GrantAdminSchema)
     .error(UserNotFound)
@@ -35,24 +36,22 @@ export const adminsRoutes = {
       if (!user) throw new UserNotFound();
       if (user.admin_account) throw new AlreadyAdmin();
 
-      await context.runAppTransaction(async ({ tx, logAdminAction }) => {
-        const adminAccount = await tx.adminAccount.create({
-          data: { user_id: actualClerkId },
-        });
+      const adminAccount = await context.db.adminAccount.create({
+        data: { user_id: actualClerkId },
+      });
 
-        await logAdminAction({
-          actor: context.authContext,
-          action: "OTHER",
-          entity: "adminAccount",
-          entityId: adminAccount.id,
-          details: {
-            operation: "admins.grantAdmin",
-            adminAccountId: adminAccount.id,
-            targetUserId: user.clerk_id,
-            targetClerkId: actualClerkId,
-            input: body.clerkId,
-          },
-        });
+      await logAdminAction(context.db, {
+        actor: context.authContext,
+        action: "OTHER",
+        entity: "adminAccount",
+        entityId: adminAccount.id,
+        details: {
+          operation: "admins.grantAdmin",
+          adminAccountId: adminAccount.id,
+          targetUserId: user.clerk_id,
+          targetClerkId: actualClerkId,
+          input: body.clerkId,
+        },
       });
 
       return toResponse({ success: true as const }, context.locale);

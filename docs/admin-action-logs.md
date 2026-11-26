@@ -44,32 +44,26 @@ The logging utility is in:
 
 - `apps/backend/src/utils/adminActionLog.ts`
 
-It is exposed to application transactions through:
-
-- `apps/backend/src/utils/runAppTransaction.ts`
-
-Services normally call it through the transaction context:
+Handlers call it inside a transactional route (`dashboardTxRoute`), passing the transaction as `context.db`:
 
 ```ts
-await runAppTransaction(async ({ tx, logAdminAction }) => {
-	const updated = await tx.someModel.update(...);
+const updated = await context.db.someModel.update(...);
 
-	await logAdminAction({
-		actor: authContext,
-		action: "UPDATE",
-		entity: "someEntity",
-		entityId: updated.id,
-		before: existingRecord,
-		after: updated,
-	});
+await logAdminAction(context.db, {
+	actor: context.authContext,
+	action: "UPDATE",
+	entity: "someEntity",
+	entityId: updated.id,
+	before: existingRecord,
+	after: updated,
 });
 ```
 
 For non-CRUD actions, use `details` instead of `before` and `after`:
 
 ```ts
-await logAdminAction({
-  actor: authContext,
+await logAdminAction(context.db, {
+  actor: context.authContext,
   action: "OTHER",
   entity: "review",
   entityId: reviewId,
@@ -86,7 +80,7 @@ The logger requires an authenticated admin actor. If `authContext.adminId` is mi
 
 ## Transaction Boundary
 
-Admin action logs should usually be written in the same `runAppTransaction` call as the mutation they describe.
+Admin action logs are written in the same transaction as the mutation they describe: the handler runs on a transactional builder, so both go through `context.db`.
 
 That keeps the mutation and the log atomic:
 
@@ -213,7 +207,7 @@ Retention should be implemented as scheduled backend maintenance, not request-pa
 For the current stage:
 
 - log stable dashboard mutations that are useful for accountability
-- keep logs close to the mutation through `runAppTransaction`
+- keep logs in the same transaction as the mutation (a `dashboardTxRoute` handler)
 - use CRUD action types for resource lifecycle changes
 - use `OTHER` with compact details for moderation, security, and operational actions
 - avoid logging temporary, dangerous, or unclear features until their design settles

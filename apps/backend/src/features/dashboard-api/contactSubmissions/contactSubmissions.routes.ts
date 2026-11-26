@@ -1,10 +1,12 @@
 import { ContactSubmissionStatusSchema } from "@acme/shared/schemas/contactSubmissions";
 import z from "zod";
 
-import { dashboardRoute } from "#src/routing/base.ts";
+import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
+import { logAdminAction } from "#src/utils/adminActionLog.ts";
 
 const contactSubmissionRoute = dashboardRoute.meta({ access: "ADMIN" });
+const contactSubmissionTxRoute = dashboardTxRoute.meta({ access: "ADMIN" });
 
 const idParams = z.object({ id: z.coerce.number<number>().int().positive() });
 
@@ -60,7 +62,7 @@ export const contactSubmissionsRoutes = {
       );
     }),
 
-  updateStatus: contactSubmissionRoute
+  updateStatus: contactSubmissionTxRoute
     .put("/contact-submissions/:id/status")
     .params(idParams)
     .body(z.object({ status: ContactSubmissionStatusSchema }))
@@ -73,25 +75,23 @@ export const contactSubmissionsRoutes = {
         },
       });
 
-      await context.runAppTransaction(async ({ tx, logAdminAction }) => {
-        await tx.contactSubmission.update({
-          where: { id: params.id },
-          data: { status: body.status },
-        });
+      await context.db.contactSubmission.update({
+        where: { id: params.id },
+        data: { status: body.status },
+      });
 
-        await logAdminAction({
-          actor: context.authContext,
-          action: "OTHER",
-          entity: "contactSubmission",
-          entityId: params.id,
-          details: {
-            operation: "contactSubmission.updateStatus",
-            submissionId: params.id,
-            fromStatus: existingSubmission.status,
-            toStatus: body.status,
-            topic: existingSubmission.topic,
-          },
-        });
+      await logAdminAction(context.db, {
+        actor: context.authContext,
+        action: "OTHER",
+        entity: "contactSubmission",
+        entityId: params.id,
+        details: {
+          operation: "contactSubmission.updateStatus",
+          submissionId: params.id,
+          fromStatus: existingSubmission.status,
+          toStatus: body.status,
+          topic: existingSubmission.topic,
+        },
       });
     }),
 };

@@ -1,9 +1,9 @@
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
 import type { AuthProvider } from "#src/integrations/auth/auth.provider.ts";
 
 export const findCustomerIdByEmail = async (
-  { db, auth }: { db: PrismaClient; auth: AuthProvider },
+  { db, auth }: { db: Prisma.TransactionClient; auth: AuthProvider },
   email: string,
 ) => {
   const normalizedEmail = email.trim().toLowerCase();

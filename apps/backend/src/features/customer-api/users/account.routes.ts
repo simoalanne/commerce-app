@@ -1,4 +1,3 @@
-import type { PrismaClient } from "@prisma/client";
 import { PrismaClientKnownRequestError, sqltag as sql } from "@prisma/client/runtime/client";
 import { RouteError } from "@rest-rpc/server";
 import z from "zod";
@@ -8,12 +7,14 @@ import {
   activeStorefrontProductWhere,
 } from "#src/domain/storefrontVisibility.ts";
 import logger from "#src/logger.ts";
-import { customerRoute } from "#src/routing/base.ts";
+import { customerRoute, customerTxRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
+import type { RunAppTransaction } from "#src/utils/runAppTransaction.ts";
 
 import { AccountDeletionBlockedByPaidOrders } from "./account.errors.ts";
 
 const accountRoute = customerRoute.meta({ access: "AUTHENTICATED" });
+const accountTxRoute = customerTxRoute.meta({ access: "AUTHENTICATED" });
 
 const idParams = z.object({ id: z.coerce.number<number>().int().positive() });
 
@@ -70,7 +71,7 @@ const assertUniqueProductIds = (items: Array<{ productId: number }>) => {
 };
 
 const finalizeLocalAccountDeletion = async (
-  db: PrismaClient,
+  runAppTransaction: RunAppTransaction,
   {
     clerkId,
     customerId,
@@ -79,7 +80,7 @@ const finalizeLocalAccountDeletion = async (
     customerId: number;
   },
 ) =>
-  db.$transaction(async (tx) => {
+  runAppTransaction(async ({ tx }) => {
     await tx.$executeRaw(sql`
 			UPDATE "Order"
 			SET order_details = order_details::jsonb
@@ -132,7 +133,7 @@ export const accountRoutes = {
       await auth.deleteUser(authContext.clerkId);
 
       try {
-        await finalizeLocalAccountDeletion(db, {
+        await finalizeLocalAccountDeletion(context.runAppTransaction, {
           clerkId: authContext.clerkId,
           customerId: authContext.customerId,
         });
@@ -186,7 +187,7 @@ export const accountRoutes = {
     );
   }),
 
-  setSavedCart: accountRoute
+  setSavedCart: accountTxRoute
     .put("/users/account/saved-cart")
     .body(
       z.object({
@@ -200,23 +201,21 @@ export const accountRoutes = {
       assertUniqueProductIds(items);
 
       try {
-        await db.$transaction(async (tx) => {
-          await tx.customerSavedCartItem.deleteMany({
-            where: {
-              customer_account_id: authContext.customerId,
-            },
-          });
-
-          if (items.length > 0) {
-            await tx.customerSavedCartItem.createMany({
-              data: items.map((item) => ({
-                customer_account_id: authContext.customerId,
-                product_id: item.productId,
-                quantity: item.quantity,
-              })),
-            });
-          }
+        await db.customerSavedCartItem.deleteMany({
+          where: {
+            customer_account_id: authContext.customerId,
+          },
         });
+
+        if (items.length > 0) {
+          await db.customerSavedCartItem.createMany({
+            data: items.map((item) => ({
+              customer_account_id: authContext.customerId,
+              product_id: item.productId,
+              quantity: item.quantity,
+            })),
+          });
+        }
       } catch (error) {
         throwBadAccountItemWrite(error, {
           duplicate: "Duplicate saved cart product",

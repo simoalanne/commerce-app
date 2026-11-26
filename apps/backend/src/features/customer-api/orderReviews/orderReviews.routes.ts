@@ -3,7 +3,7 @@ import z from "zod";
 
 import { verifyOrderCapabilityJwt } from "#src/features/customer-api/orders/orderCapabilities.ts";
 import { ordersRoutes as customerOrdersRoutes } from "#src/features/customer-api/orders/orders.routes.ts";
-import { customerRoute } from "#src/routing/base.ts";
+import { customerRoute, customerTxRoute } from "#src/routing/base.ts";
 import { ImageUploadInvalidContentType, ImageUploadTooLarge } from "#src/routing/errors.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
 import { buildTag } from "#src/utils/buildTags.ts";
@@ -218,7 +218,7 @@ export const orderReviewsRoutes = {
       );
     }),
 
-  saveByOrder: customerRoute
+  saveByOrder: customerTxRoute
     .post("/order-reviews")
     .query(tokenQuery)
     .body(
@@ -388,36 +388,33 @@ export const orderReviewsRoutes = {
         };
       });
 
-      await context.runAppTransaction(async ({ tx, enqueueJob }) => {
-        for (const review of reviews) {
-          await tx.review.create({
-            data: {
-              order: { connect: { id: orderId } },
-              kind: review.kind,
-              reviewer_name: reviewerName,
-              product:
-                review.kind === "PRODUCT" ? { connect: { id: review.productId } } : undefined,
-              vendor: review.kind === "VENDOR" ? { connect: { id: review.vendorId } } : undefined,
-              rating: review.review.rating,
-              comment: review.review.comment,
-              show_reviewer_name: review.review.showReviewerName,
-              images: review.review.objectKey
-                ? { create: [{ storage_key: review.review.objectKey }] }
-                : undefined,
-            },
-          });
-        }
-
-        await enqueueJob({
-          type: "invalidateStorefrontCache",
-          payload: {
-            tags: [
-              ...buildReviewInvalidationTags(reviewInvalidationTargets),
-              buildTag(customerOrdersRoutes.list),
-              buildTag(customerOrdersRoutes.getById, orderId),
-            ],
+      for (const review of reviews) {
+        await context.db.review.create({
+          data: {
+            order: { connect: { id: orderId } },
+            kind: review.kind,
+            reviewer_name: reviewerName,
+            product: review.kind === "PRODUCT" ? { connect: { id: review.productId } } : undefined,
+            vendor: review.kind === "VENDOR" ? { connect: { id: review.vendorId } } : undefined,
+            rating: review.review.rating,
+            comment: review.review.comment,
+            show_reviewer_name: review.review.showReviewerName,
+            images: review.review.objectKey
+              ? { create: [{ storage_key: review.review.objectKey }] }
+              : undefined,
           },
         });
+      }
+
+      await context.enqueueJob({
+        type: "invalidateStorefrontCache",
+        payload: {
+          tags: [
+            ...buildReviewInvalidationTags(reviewInvalidationTargets),
+            buildTag(customerOrdersRoutes.list),
+            buildTag(customerOrdersRoutes.getById, orderId),
+          ],
+        },
       });
     }),
 };

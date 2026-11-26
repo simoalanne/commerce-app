@@ -1,12 +1,14 @@
 import { WebhookSubscriptionFormSchema } from "@acme/shared/schemas/webhooks";
 import z from "zod";
 
-import { dashboardRoute } from "#src/routing/base.ts";
+import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { EntityInUse } from "#src/routing/errors.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
+import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import tryDeleteEntity from "#src/utils/tryDeleteEntity.ts";
 
 const webhookRoute = dashboardRoute.meta({ access: "ADMIN" });
+const webhookTxRoute = dashboardTxRoute.meta({ access: "ADMIN" });
 
 const idParams = z.object({ id: z.coerce.number<number>().int().positive() });
 
@@ -34,30 +36,26 @@ export const webhooksRoutes = {
       ),
     ),
 
-  create: webhookRoute
+  create: webhookTxRoute
     .post("/webhooks")
     .body(WebhookSubscriptionFormSchema)
     .handler(async ({ body, context }) => {
-      const subscription = await context.runAppTransaction(async ({ tx, logAdminAction }) => {
-        const subscription = await tx.webhookSubscription.create({
-          data: body,
-        });
+      const subscription = await context.db.webhookSubscription.create({
+        data: body,
+      });
 
-        await logAdminAction({
-          actor: context.authContext,
-          action: "CREATE",
-          entity: "webhookSubscription",
-          entityId: subscription.id,
-          after: subscription,
-        });
-
-        return subscription;
+      await logAdminAction(context.db, {
+        actor: context.authContext,
+        action: "CREATE",
+        entity: "webhookSubscription",
+        entityId: subscription.id,
+        after: subscription,
       });
 
       return toResponse({ id: subscription.id }, context.locale);
     }),
 
-  update: webhookRoute
+  update: webhookTxRoute
     .put("/webhooks/:id")
     .params(idParams)
     .body(WebhookSubscriptionFormSchema)
@@ -66,42 +64,38 @@ export const webhooksRoutes = {
         where: { id: params.id },
       });
 
-      await context.runAppTransaction(async ({ tx, logAdminAction }) => {
-        const updated = await tx.webhookSubscription.update({
-          where: { id: params.id },
-          data: body,
-        });
+      const updated = await context.db.webhookSubscription.update({
+        where: { id: params.id },
+        data: body,
+      });
 
-        await logAdminAction({
-          actor: context.authContext,
-          action: "UPDATE",
-          entity: "webhookSubscription",
-          entityId: params.id,
-          before: existingSubscription,
-          after: updated,
-        });
+      await logAdminAction(context.db, {
+        actor: context.authContext,
+        action: "UPDATE",
+        entity: "webhookSubscription",
+        entityId: params.id,
+        before: existingSubscription,
+        after: updated,
       });
     }),
 
-  delete: webhookRoute
+  delete: webhookTxRoute
     .delete("/webhooks/:id")
     .params(idParams)
     .error(EntityInUse)
     .handler(async ({ params, context }) => {
-      await context.runAppTransaction(async ({ tx, logAdminAction }) => {
-        const deleted = await tryDeleteEntity(() =>
-          tx.webhookSubscription.delete({
-            where: { id: params.id },
-          }),
-        );
+      const deleted = await tryDeleteEntity(() =>
+        context.db.webhookSubscription.delete({
+          where: { id: params.id },
+        }),
+      );
 
-        await logAdminAction({
-          actor: context.authContext,
-          action: "DELETE",
-          entity: "webhookSubscription",
-          entityId: params.id,
-          before: deleted,
-        });
+      await logAdminAction(context.db, {
+        actor: context.authContext,
+        action: "DELETE",
+        entity: "webhookSubscription",
+        entityId: params.id,
+        before: deleted,
       });
     }),
 

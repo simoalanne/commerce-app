@@ -1,10 +1,12 @@
 import z from "zod";
 
-import { dashboardRoute } from "#src/routing/base.ts";
+import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
+import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import { buildReviewInvalidationTags } from "#src/utils/reviewInvalidationTags.ts";
 
 const reviewRoute = dashboardRoute.meta({ access: "ADMIN" });
+const reviewTxRoute = dashboardTxRoute.meta({ access: "ADMIN" });
 
 const reviewStatusSchema = z.enum(["PENDING", "APPROVED", "REJECTED"]);
 
@@ -103,7 +105,7 @@ export const reviewsRoutes = {
       );
     }),
 
-  updateStatus: reviewRoute
+  updateStatus: reviewTxRoute
     .put("/reviews/:id/status")
     .params(z.object({ id: z.coerce.number<number>().int().positive() }))
     .body(z.object({ status: reviewStatusSchema }))
@@ -118,37 +120,35 @@ export const reviewsRoutes = {
         },
       });
 
-      await context.runAppTransaction(async ({ tx, enqueueJob, logAdminAction }) => {
-        const review = await tx.review.update({
-          where: { id: params.id },
-          data: { status: body.status },
-          select: {
-            kind: true,
-            product_id: true,
-            vendor_id: true,
-          },
-        });
+      const review = await context.db.review.update({
+        where: { id: params.id },
+        data: { status: body.status },
+        select: {
+          kind: true,
+          product_id: true,
+          vendor_id: true,
+        },
+      });
 
-        await logAdminAction({
-          actor: context.authContext,
-          action: "OTHER",
-          entity: "review",
-          entityId: params.id,
-          details: {
-            operation: "review.updateStatus",
-            reviewId: params.id,
-            fromStatus: existingReview.status,
-            toStatus: body.status,
-            kind: review.kind,
-            productId: review.product_id,
-            vendorId: review.vendor_id,
-          },
-        });
+      await logAdminAction(context.db, {
+        actor: context.authContext,
+        action: "OTHER",
+        entity: "review",
+        entityId: params.id,
+        details: {
+          operation: "review.updateStatus",
+          reviewId: params.id,
+          fromStatus: existingReview.status,
+          toStatus: body.status,
+          kind: review.kind,
+          productId: review.product_id,
+          vendorId: review.vendor_id,
+        },
+      });
 
-        await enqueueJob({
-          type: "invalidateStorefrontCache",
-          payload: { tags: buildReviewInvalidationTags([review]) },
-        });
+      await context.enqueueJob({
+        type: "invalidateStorefrontCache",
+        payload: { tags: buildReviewInvalidationTags([review]) },
       });
     }),
 };

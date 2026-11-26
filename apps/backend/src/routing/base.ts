@@ -1,7 +1,7 @@
 // Route modules are imported at build time without an environment (contract
 // extraction), so everything with side effects is imported as a type and
 // provided per request by index.ts as initial context.
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { route } from "@rest-rpc/server";
 
 import { customerApiPrefix, dashboardApiPrefix } from "#src/apiPrefixes.ts";
@@ -29,7 +29,9 @@ declare module "@rest-rpc/server" {
 
 export type AppContext = {
   headers: Headers;
-  db: PrismaClient;
+  // A transaction client type even outside a transaction, so handlers cannot
+  // open nested transactions; explicit ones go through runAppTransaction.
+  db: Prisma.TransactionClient;
   config: typeof envConfig;
   auth: AuthProvider;
   payments: PaymentProviders;
@@ -123,3 +125,15 @@ const withContext = route
 export const customerRoute = withContext.prefix(customerApiPrefix);
 
 export const dashboardRoute = withContext.prefix(dashboardApiPrefix);
+
+// The handler runs in one transaction: context.db is the transaction, and
+// context.enqueueJob writes jobs that become visible on commit. Use these for
+// writes; use the plain builders for reads and for routes that call external
+// services, which must not hold a transaction open.
+const withTransaction = withContext.use(({ context, next }) =>
+  context.runAppTransaction(({ tx, enqueueJob }) => next({ context: { db: tx, enqueueJob } })),
+);
+
+export const customerTxRoute = withTransaction.prefix(customerApiPrefix);
+
+export const dashboardTxRoute = withTransaction.prefix(dashboardApiPrefix);

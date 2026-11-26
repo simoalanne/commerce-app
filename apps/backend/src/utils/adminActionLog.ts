@@ -4,7 +4,6 @@ import AuthProvider from "#src/integrations/auth/auth.provider.ts";
 import type { AuthContext } from "#src/routing/auth.ts";
 
 type LogAdminActionInputBase = {
-  tx: Prisma.TransactionClient;
   actor: AuthContext;
   action: "CREATE" | "UPDATE" | "DELETE" | "OTHER";
   entity: string;
@@ -122,7 +121,7 @@ export const getChangedFields = (
   };
 };
 
-export async function logAdminAction(input: LogAdminActionInput) {
+export async function logAdminAction(db: Prisma.TransactionClient, input: LogAdminActionInput) {
   if (!input.actor.adminId) {
     throw new Error("Admin action logging requires an authenticated admin");
   }
@@ -151,7 +150,7 @@ export async function logAdminAction(input: LogAdminActionInput) {
     }
   }
 
-  await input.tx.adminActionLog.create({
+  await db.adminActionLog.create({
     data: {
       admin_account_id: input.actor.adminId,
       admin_email: identity.email,

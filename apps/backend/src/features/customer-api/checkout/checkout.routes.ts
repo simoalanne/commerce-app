@@ -1,7 +1,7 @@
 import { calculateOrderPricing } from "@acme/shared";
 import { DeliveryInstructionsSchema } from "@acme/shared/schemas";
 import { isValidPhoneNumber } from "@acme/shared/utils/addressValidation";
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import * as Sentry from "@sentry/node";
 import { isAfter, isBefore } from "date-fns";
 import z from "zod";
@@ -259,7 +259,7 @@ const createPaymentInternal = async (
       amountCents: payment.amountCents,
     };
   } catch (error) {
-    await db.$transaction(async (tx) => {
+    await context.runAppTransaction(async ({ tx }) => {
       await tx.order.delete({
         where: { id: order.id },
       });
@@ -274,7 +274,7 @@ const createPaymentInternal = async (
 };
 
 const getValidatedPromoCodeForPayment = async (
-  db: PrismaClient,
+  db: Prisma.TransactionClient,
   {
     promoCode,
     itemsSubtotalCents,
@@ -295,7 +295,7 @@ const getValidatedPromoCodeForPayment = async (
 };
 
 const getValidatedPromoCode = async (
-  db: PrismaClient,
+  db: Prisma.TransactionClient,
   {
     promoCode,
     itemsSubtotalCents,
@@ -353,6 +353,8 @@ const checkoutPaymentRateLimit = {
 } satisfies RateLimitPolicy;
 
 export const checkoutRoutes = {
+  // A plain route on purpose: the provider call must not run inside a
+  // transaction, so the order is written and compensated in explicit ones.
   createPayment: customerRoute
     .meta({
       access: "OPTIONAL_AUTHENTICATED",

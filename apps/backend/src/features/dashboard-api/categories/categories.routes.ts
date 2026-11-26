@@ -4,9 +4,10 @@ import z from "zod";
 import { categoriesRoutes as customerCategoriesRoutes } from "#src/features/customer-api/categories/categories.routes.ts";
 import { productsRoutes as customerProductsRoutes } from "#src/features/customer-api/products/products.routes.ts";
 import { storefrontRoutes } from "#src/features/customer-api/storefront/storefront.routes.ts";
-import { dashboardRoute } from "#src/routing/base.ts";
+import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { EntityInUse } from "#src/routing/errors.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
+import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import { buildTag } from "#src/utils/buildTags.ts";
 import {
   mergeLocalizedSlug,
@@ -17,6 +18,7 @@ import {
 import tryDeleteEntity from "#src/utils/tryDeleteEntity.ts";
 
 const categoryRoute = dashboardRoute.meta({ access: "ADMIN" });
+const categoryTxRoute = dashboardTxRoute.meta({ access: "ADMIN" });
 
 const idParams = z.object({ id: z.coerce.number<number>().int().positive() });
 
@@ -92,43 +94,37 @@ export const categoriesRoutes = {
       ),
     ),
 
-  create: categoryRoute
+  create: categoryTxRoute
     .post("/categories")
     .body(CategoryFormSchema)
     .handler(async ({ body, context }) => {
-      const category = await context.runAppTransaction(
-        async ({ tx, enqueueJob, logAdminAction }) => {
-          const category = await tx.category.create({
-            data: {
-              name: toLocalizedString(body.name, context.locale),
-              slug: toLocalizedSlug(body.name, context.locale),
-              markup_percent: body.markup_percent,
-              image: { connect: { id: body.image_id } },
-            },
-            include: categoryMutationAuditInclude,
-          });
-
-          await logAdminAction({
-            actor: context.authContext,
-            action: "CREATE",
-            entity: "category",
-            entityId: category.id,
-            after: category,
-          });
-
-          await enqueueJob({
-            type: "invalidateStorefrontCache",
-            payload: { tags: buildCategoryInvalidationTags() },
-          });
-
-          return category;
+      const category = await context.db.category.create({
+        data: {
+          name: toLocalizedString(body.name, context.locale),
+          slug: toLocalizedSlug(body.name, context.locale),
+          markup_percent: body.markup_percent,
+          image: { connect: { id: body.image_id } },
         },
-      );
+        include: categoryMutationAuditInclude,
+      });
+
+      await logAdminAction(context.db, {
+        actor: context.authContext,
+        action: "CREATE",
+        entity: "category",
+        entityId: category.id,
+        after: category,
+      });
+
+      await context.enqueueJob({
+        type: "invalidateStorefrontCache",
+        payload: { tags: buildCategoryInvalidationTags() },
+      });
 
       return toResponse({ id: category.id }, context.locale);
     }),
 
-  update: categoryRoute
+  update: categoryTxRoute
     .put("/categories/:id")
     .params(idParams)
     .body(CategoryFormSchema)
@@ -142,41 +138,39 @@ export const categoriesRoutes = {
       });
       const affectedProductIds = existingCategory.products.map((product) => product.id);
 
-      await context.runAppTransaction(async ({ tx, enqueueJob, logAdminAction }) => {
-        const updated = await tx.category.update({
-          where: { id: params.id },
-          data: {
-            name: mergeLocalizedString(existingCategory.name, body.name, context.locale),
-            slug: mergeLocalizedSlug(existingCategory.slug, body.name, context.locale),
-            markup_percent: body.markup_percent,
-            image: { connect: { id: body.image_id } },
-          },
-          include: categoryMutationAuditInclude,
-        });
+      const updated = await context.db.category.update({
+        where: { id: params.id },
+        data: {
+          name: mergeLocalizedString(existingCategory.name, body.name, context.locale),
+          slug: mergeLocalizedSlug(existingCategory.slug, body.name, context.locale),
+          markup_percent: body.markup_percent,
+          image: { connect: { id: body.image_id } },
+        },
+        include: categoryMutationAuditInclude,
+      });
 
-        await logAdminAction({
-          actor: context.authContext,
-          action: "UPDATE",
-          entity: "category",
-          entityId: params.id,
-          before: existingCategory,
-          after: updated,
-        });
+      await logAdminAction(context.db, {
+        actor: context.authContext,
+        action: "UPDATE",
+        entity: "category",
+        entityId: params.id,
+        before: existingCategory,
+        after: updated,
+      });
 
-        await enqueueJob({
-          type: "invalidateStorefrontCache",
-          payload: {
-            tags: buildCategoryInvalidationTags(affectedProductIds),
-          },
-        });
-        await enqueueJob({
-          type: "invalidateSearchIndex",
-          payload: { productIds: affectedProductIds },
-        });
+      await context.enqueueJob({
+        type: "invalidateStorefrontCache",
+        payload: {
+          tags: buildCategoryInvalidationTags(affectedProductIds),
+        },
+      });
+      await context.enqueueJob({
+        type: "invalidateSearchIndex",
+        payload: { productIds: affectedProductIds },
       });
     }),
 
-  delete: categoryRoute
+  delete: categoryTxRoute
     .delete("/categories/:id")
     .params(idParams)
     .error(EntityInUse)
@@ -187,30 +181,28 @@ export const categoriesRoutes = {
       });
       const productIds = category.products.map((product) => product.id);
 
-      await context.runAppTransaction(async ({ tx, enqueueJob, logAdminAction }) => {
-        const deleted = await tryDeleteEntity(() =>
-          tx.category.delete({
-            where: { id: params.id },
-            include: categoryMutationAuditInclude,
-          }),
-        );
+      const deleted = await tryDeleteEntity(() =>
+        context.db.category.delete({
+          where: { id: params.id },
+          include: categoryMutationAuditInclude,
+        }),
+      );
 
-        await logAdminAction({
-          actor: context.authContext,
-          action: "DELETE",
-          entity: "category",
-          entityId: params.id,
-          before: deleted,
-        });
+      await logAdminAction(context.db, {
+        actor: context.authContext,
+        action: "DELETE",
+        entity: "category",
+        entityId: params.id,
+        before: deleted,
+      });
 
-        await enqueueJob({
-          type: "invalidateStorefrontCache",
-          payload: { tags: buildCategoryInvalidationTags(productIds) },
-        });
-        await enqueueJob({
-          type: "invalidateSearchIndex",
-          payload: { productIds },
-        });
+      await context.enqueueJob({
+        type: "invalidateStorefrontCache",
+        payload: { tags: buildCategoryInvalidationTags(productIds) },
+      });
+      await context.enqueueJob({
+        type: "invalidateSearchIndex",
+        payload: { productIds },
       });
     }),
 

@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 import type { EnvConfig } from "#src/config.ts";
@@ -39,7 +39,7 @@ type CreateOrderCapabilityParams = { scope: "order:read" | "order:review" } & (
 );
 
 export const createOrderCapabilityJwt = async (
-  { db, config }: { db: PrismaClient; config: EnvConfig },
+  { db, config }: { db: Prisma.TransactionClient; config: EnvConfig },
   { token, orderId, customerId, scope }: CreateOrderCapabilityParams,
 ) => {
   const whereClause = orderId ? { id: orderId, customer_id: customerId } : { claim_token: token };

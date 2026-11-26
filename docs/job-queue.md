@@ -126,11 +126,7 @@ The startup repair is intentionally simple. It is not trying to become a general
 
 Some backend work needs to create database changes and jobs together.
 
-For that, backend services use `runAppTransaction(...)` from:
-
-- `apps/backend/src/utils/runAppTransaction.ts`
-
-The pattern is:
+Route handlers get this from the transactional builders (`customerTxRoute` / `dashboardTxRoute` in `src/routing/base.ts`); jobs and webhooks use `runAppTransaction(...)` from `apps/backend/src/utils/runAppTransaction.ts` directly. The pattern is:
 
 - open a Prisma transaction
 - make the domain change
@@ -141,28 +137,26 @@ The pattern is:
 
 This matters because the system should not enqueue follow-up work for a transaction that later rolls back.
 
-In service code, the shape is:
+In a transactional route handler, the shape is:
 
 ```ts
-await runAppTransaction(async ({ tx, enqueueJob, logAdminAction }) => {
-	await tx.someModel.update(...);
+await context.db.someModel.update(...);
 
-	await logAdminAction({
-		actor: authContext,
-		action: "OTHER",
-		entity: "someEntity",
-		entityId,
-		details: { operation: "some.operation" },
-	});
+await logAdminAction(context.db, {
+	actor: context.authContext,
+	action: "OTHER",
+	entity: "someEntity",
+	entityId,
+	details: { operation: "some.operation" },
+});
 
-	await enqueueJob({
-		type: "invalidateStorefrontCache",
-		payload: { tags },
-	});
+await context.enqueueJob({
+	type: "invalidateStorefrontCache",
+	payload: { tags },
 });
 ```
 
-`enqueueJob(...)` writes the job row using the transaction client. `runAppTransaction(...)` records the created job ids and schedules them only after the database transaction commits successfully.
+`enqueueJob(...)` writes the job row using the transaction client. The transaction wrapper records the created job ids and schedules them only after the database transaction commits successfully.
 
 This means:
 

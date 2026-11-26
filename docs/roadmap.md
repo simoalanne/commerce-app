@@ -16,7 +16,8 @@ The project is a general commerce core: catalog, cart, checkout, orders, refunds
 4. **MJML → React Email.**
 5. **Payment provider registry.**
 6. **Integer cents**, on Prisma, so the Drizzle port only translates queries.
-7. **Drizzle**, with pg-boss and removing `runAppTransaction`.
+7. **Transactional route builders**, on Prisma: `customerTxRoute` / `dashboardTxRoute` replace `runAppTransaction` in handlers.
+8. **Drizzle**, with pg-boss.
 
 Deferred, not scheduled: Clerk → Better Auth, the TanStack Start store, the search documents review.
 
@@ -97,11 +98,11 @@ Keep the good parts: the transactional enqueue (jobs are rows written in the sam
 
 `docs/job-queue.md` gets rewritten with the swap. The admin job queue page stays if pg-boss exposes the job state it needs.
 
-### `runAppTransaction`: remove
+### `runAppTransaction`: replaced by transactional builders
 
-It wraps `prisma.$transaction` and hands the callback `tx`, `enqueueJob` and `logAdminAction`, then schedules the enqueued jobs after commit. It bundles three unrelated things into one callback context, uses the global Prisma client and job queue despite the `AppContext` pattern, and casts around the admin log's input type.
+Handlers no longer call it. A route that writes is built with `customerTxRoute` / `dashboardTxRoute`, whose middleware runs the whole handler in one transaction and provides it as `context.db`, with `context.enqueueJob` for jobs. `logAdminAction(db, entry)` is a plain helper. `AppContext.db` is typed as a transaction client, so handlers cannot open nested transactions.
 
-Handlers call `db.transaction(async (tx) => ...)` and pass `tx` to plain helpers: `enqueue(tx, job)`, `logAdminAction(tx, entry)`. A small unit of work with `afterCommit(fn)` is only worth adding if the port shows a recurring post-commit need that isn't a job.
+What remains of `runAppTransaction` is plumbing: the builders' middleware, jobs, webhooks, and the few plain routes that must keep an external call outside a transaction (checkout payment creation, account deletion, and auth's user creation). Its only extra job is handing enqueued job ids to the in-memory queue after commit. With pg-boss that step disappears and it becomes `db.transaction`; the builders and `context.enqueueJob` stay.
 
 ### Payment provider registry: simplify
 

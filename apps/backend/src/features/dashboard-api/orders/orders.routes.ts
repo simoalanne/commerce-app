@@ -8,12 +8,14 @@ import {
   findRelevantOrders,
   type RelevantOrder,
 } from "#src/features/customer-api/orders/relevantOrders.ts";
-import { dashboardRoute } from "#src/routing/base.ts";
+import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
+import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import { generateOrderInvoicePdf } from "#src/utils/pdf/generateOrderInvoicePdf.ts";
 import { generateRefundReceiptPdf } from "#src/utils/pdf/generateRefundReceiptPdf.ts";
 
 const orderRoute = dashboardRoute.meta({ access: "ADMIN" });
+const orderTxRoute = dashboardTxRoute.meta({ access: "ADMIN" });
 
 const idParams = z.object({ id: z.coerce.number<number>().int().positive() });
 
@@ -309,7 +311,7 @@ export const ordersRoutes = {
       });
     }),
 
-  refund: orderRoute
+  refund: orderTxRoute
     .post("/orders/:id/refund")
     .params(idParams)
     .body(
@@ -325,118 +327,116 @@ export const ordersRoutes = {
 
       Sentry.getCurrentScope().setContext("order", { orderId: id });
 
-      const result = await context.runAppTransaction(async ({ tx, enqueueJob, logAdminAction }) => {
-        const order = await findRelevantOrderById(tx, {
-          orderId: id,
-        });
-        const refundability = buildOrderRefundability(order);
-
-        if (!refundability.canCreateRefund) {
-          throw new RouteError("BAD_REQUEST", {
-            status: 400,
-            message: refundability.blockedReason ?? "ORDER_NOT_REFUNDABLE",
-          });
-        }
-
-        const refundableItemById = new Map(
-          refundability.items.map((item) => [item.orderItemId, item]),
-        );
-        const seenOrderItemIds = new Set<number>();
-
-        for (const item of items) {
-          if (seenOrderItemIds.has(item.orderItemId)) {
-            throw new RouteError("BAD_REQUEST", {
-              status: 400,
-              message: "DUPLICATE_REFUND_ITEM",
-            });
-          }
-          seenOrderItemIds.add(item.orderItemId);
-
-          const refundableItem = refundableItemById.get(item.orderItemId);
-          if (!refundableItem) {
-            throw new RouteError("BAD_REQUEST", {
-              status: 400,
-              message: "INVALID_REFUND_TARGET",
-            });
-          }
-          if (item.quantity > refundableItem.refundableQuantity) {
-            throw new RouteError("BAD_REQUEST", {
-              status: 400,
-              message: "INVALID_REFUND_QUANTITY",
-            });
-          }
-          if (item.amountCents > refundableItem.refundableAmountCents) {
-            throw new RouteError("BAD_REQUEST", {
-              status: 400,
-              message: "INVALID_REFUND_AMOUNT",
-            });
-          }
-          if (
-            item.restockQuantity != null &&
-            item.restockQuantity > refundableItem.refundableQuantity
-          ) {
-            throw new RouteError("BAD_REQUEST", {
-              status: 400,
-              message: "INVALID_RESTOCK_QUANTITY",
-            });
-          }
-        }
-
-        const totalAmountCents = items.reduce((total, item) => total + item.amountCents, 0);
-
-        if (totalAmountCents <= 0) {
-          throw new RouteError("BAD_REQUEST", {
-            status: 400,
-            message: "NOTHING_TO_REFUND",
-          });
-        }
-
-        const refund = await tx.refund.create({
-          data: {
-            order_id: id,
-            status: "PENDING",
-            total_amount_cents: totalAmountCents,
-            reason,
-            internal_notes: internalNotes,
-            refund_items: {
-              create: items.map((item) => ({
-                order_item_id: item.orderItemId,
-                quantity: item.quantity,
-                restock_quantity: item.restockQuantity,
-                amount_cents: item.amountCents,
-              })),
-            },
-          },
-          select: { id: true },
-        });
-
-        await logAdminAction({
-          actor: context.authContext,
-          action: "OTHER",
-          entity: "order",
-          entityId: id,
-          details: {
-            operation: "order.refund.intent.create",
-            orderId: id,
-            refundId: refund.id,
-            reason,
-            internalNotes,
-            totalAmountCents,
-            items,
-          },
-        });
-
-        await enqueueJob({
-          type: "processRefund",
-          payload: { refundId: refund.id },
-          maxAttempts: 1,
-        });
-
-        return {
-          refundId: refund.id,
-          status: "PENDING" as const,
-        };
+      const order = await findRelevantOrderById(context.db, {
+        orderId: id,
       });
+      const refundability = buildOrderRefundability(order);
+
+      if (!refundability.canCreateRefund) {
+        throw new RouteError("BAD_REQUEST", {
+          status: 400,
+          message: refundability.blockedReason ?? "ORDER_NOT_REFUNDABLE",
+        });
+      }
+
+      const refundableItemById = new Map(
+        refundability.items.map((item) => [item.orderItemId, item]),
+      );
+      const seenOrderItemIds = new Set<number>();
+
+      for (const item of items) {
+        if (seenOrderItemIds.has(item.orderItemId)) {
+          throw new RouteError("BAD_REQUEST", {
+            status: 400,
+            message: "DUPLICATE_REFUND_ITEM",
+          });
+        }
+        seenOrderItemIds.add(item.orderItemId);
+
+        const refundableItem = refundableItemById.get(item.orderItemId);
+        if (!refundableItem) {
+          throw new RouteError("BAD_REQUEST", {
+            status: 400,
+            message: "INVALID_REFUND_TARGET",
+          });
+        }
+        if (item.quantity > refundableItem.refundableQuantity) {
+          throw new RouteError("BAD_REQUEST", {
+            status: 400,
+            message: "INVALID_REFUND_QUANTITY",
+          });
+        }
+        if (item.amountCents > refundableItem.refundableAmountCents) {
+          throw new RouteError("BAD_REQUEST", {
+            status: 400,
+            message: "INVALID_REFUND_AMOUNT",
+          });
+        }
+        if (
+          item.restockQuantity != null &&
+          item.restockQuantity > refundableItem.refundableQuantity
+        ) {
+          throw new RouteError("BAD_REQUEST", {
+            status: 400,
+            message: "INVALID_RESTOCK_QUANTITY",
+          });
+        }
+      }
+
+      const totalAmountCents = items.reduce((total, item) => total + item.amountCents, 0);
+
+      if (totalAmountCents <= 0) {
+        throw new RouteError("BAD_REQUEST", {
+          status: 400,
+          message: "NOTHING_TO_REFUND",
+        });
+      }
+
+      const refund = await context.db.refund.create({
+        data: {
+          order_id: id,
+          status: "PENDING",
+          total_amount_cents: totalAmountCents,
+          reason,
+          internal_notes: internalNotes,
+          refund_items: {
+            create: items.map((item) => ({
+              order_item_id: item.orderItemId,
+              quantity: item.quantity,
+              restock_quantity: item.restockQuantity,
+              amount_cents: item.amountCents,
+            })),
+          },
+        },
+        select: { id: true },
+      });
+
+      await logAdminAction(context.db, {
+        actor: context.authContext,
+        action: "OTHER",
+        entity: "order",
+        entityId: id,
+        details: {
+          operation: "order.refund.intent.create",
+          orderId: id,
+          refundId: refund.id,
+          reason,
+          internalNotes,
+          totalAmountCents,
+          items,
+        },
+      });
+
+      await context.enqueueJob({
+        type: "processRefund",
+        payload: { refundId: refund.id },
+        maxAttempts: 1,
+      });
+
+      const result = {
+        refundId: refund.id,
+        status: "PENDING" as const,
+      };
 
       return toResponse(result, context.locale);
     }),

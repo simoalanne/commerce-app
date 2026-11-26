@@ -6,15 +6,17 @@ import { productsRoutes as customerProductsRoutes } from "#src/features/customer
 import { reviewsRoutes as customerReviewsRoutes } from "#src/features/customer-api/reviews/reviews.routes.ts";
 import { storefrontRoutes } from "#src/features/customer-api/storefront/storefront.routes.ts";
 import { vendorsRoutes as customerVendorsRoutes } from "#src/features/customer-api/vendors/vendors.routes.ts";
-import { dashboardRoute } from "#src/routing/base.ts";
+import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { EntityInUse } from "#src/routing/errors.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
+import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import { buildTag } from "#src/utils/buildTags.ts";
 import { buildCreateImageLinks, buildReplaceImageLinks } from "#src/utils/imageLinks.ts";
 import { mergeLocalizedString, toLocalizedString } from "#src/utils/localizedObject.ts";
 import tryDeleteEntity from "#src/utils/tryDeleteEntity.ts";
 
 const vendorRoute = dashboardRoute.meta({ access: "ADMIN" });
+const vendorTxRoute = dashboardTxRoute.meta({ access: "ADMIN" });
 
 const idParams = z.object({ id: z.coerce.number<number>().int().positive() });
 
@@ -81,45 +83,41 @@ export const vendorsRoutes = {
       return toResponse(mapVendor(vendor), context.locale);
     }),
 
-  create: vendorRoute
+  create: vendorTxRoute
     .post("/vendors")
     .body(VendorFormSchema)
     .handler(async ({ body, context }) => {
       const { images, ...data } = body;
 
-      const vendor = await context.runAppTransaction(async ({ tx, enqueueJob, logAdminAction }) => {
-        const vendor = await tx.vendor.create({
-          data: {
-            ...data,
-            slug: slugify(data.name),
-            slogan: toLocalizedString(data.slogan, context.locale),
-            story: toLocalizedString(data.story, context.locale),
-            tags: toLocalizedString(data.tags, context.locale),
-            images: buildCreateImageLinks(images),
-          },
-          include: vendorMutationAuditInclude,
-        });
+      const vendor = await context.db.vendor.create({
+        data: {
+          ...data,
+          slug: slugify(data.name),
+          slogan: toLocalizedString(data.slogan, context.locale),
+          story: toLocalizedString(data.story, context.locale),
+          tags: toLocalizedString(data.tags, context.locale),
+          images: buildCreateImageLinks(images),
+        },
+        include: vendorMutationAuditInclude,
+      });
 
-        await logAdminAction({
-          actor: context.authContext,
-          action: "CREATE",
-          entity: "vendor",
-          entityId: vendor.id,
-          after: vendor,
-        });
+      await logAdminAction(context.db, {
+        actor: context.authContext,
+        action: "CREATE",
+        entity: "vendor",
+        entityId: vendor.id,
+        after: vendor,
+      });
 
-        await enqueueJob({
-          type: "invalidateStorefrontCache",
-          payload: { tags: buildVendorInvalidationTags(vendor.id) },
-        });
-
-        return vendor;
+      await context.enqueueJob({
+        type: "invalidateStorefrontCache",
+        payload: { tags: buildVendorInvalidationTags(vendor.id) },
       });
 
       return toResponse({ id: vendor.id }, context.locale);
     }),
 
-  update: vendorRoute
+  update: vendorTxRoute
     .put("/vendors/:id")
     .params(idParams)
     .body(VendorFormSchema)
@@ -139,47 +137,45 @@ export const vendorsRoutes = {
       });
       const affectedProductIds = existingVendor.products.map((product) => product.id);
 
-      await context.runAppTransaction(async ({ tx, enqueueJob, logAdminAction }) => {
-        const updated = await tx.vendor.update({
-          where: { id },
-          data: {
-            slug: slugify(data.name),
-            name: data.name,
-            storefront_visibility: data.storefront_visibility,
-            is_featured: data.is_featured,
-            slogan: mergeLocalizedString(existingVendor.slogan, data.slogan, context.locale),
-            story: mergeLocalizedString(existingVendor.story, data.story, context.locale),
-            tags: mergeLocalizedString(existingVendor.tags, data.tags, context.locale),
-            images: buildReplaceImageLinks(images),
-          },
-          include: vendorMutationAuditInclude,
-        });
+      const updated = await context.db.vendor.update({
+        where: { id },
+        data: {
+          slug: slugify(data.name),
+          name: data.name,
+          storefront_visibility: data.storefront_visibility,
+          is_featured: data.is_featured,
+          slogan: mergeLocalizedString(existingVendor.slogan, data.slogan, context.locale),
+          story: mergeLocalizedString(existingVendor.story, data.story, context.locale),
+          tags: mergeLocalizedString(existingVendor.tags, data.tags, context.locale),
+          images: buildReplaceImageLinks(images),
+        },
+        include: vendorMutationAuditInclude,
+      });
 
-        await logAdminAction({
-          actor: context.authContext,
-          action: "UPDATE",
-          entity: "vendor",
-          entityId: id,
-          before: existingVendor,
-          after: updated,
-        });
+      await logAdminAction(context.db, {
+        actor: context.authContext,
+        action: "UPDATE",
+        entity: "vendor",
+        entityId: id,
+        before: existingVendor,
+        after: updated,
+      });
 
-        await enqueueJob({
-          type: "invalidateStorefrontCache",
-          payload: {
-            tags: buildVendorInvalidationTags(id, affectedProductIds),
-          },
-        });
-        await enqueueJob({
-          type: "invalidateSearchIndex",
-          payload: {
-            productIds: affectedProductIds,
-          },
-        });
+      await context.enqueueJob({
+        type: "invalidateStorefrontCache",
+        payload: {
+          tags: buildVendorInvalidationTags(id, affectedProductIds),
+        },
+      });
+      await context.enqueueJob({
+        type: "invalidateSearchIndex",
+        payload: {
+          productIds: affectedProductIds,
+        },
       });
     }),
 
-  delete: vendorRoute
+  delete: vendorTxRoute
     .delete("/vendors/:id")
     .params(idParams)
     .error(EntityInUse)
@@ -196,37 +192,35 @@ export const vendorsRoutes = {
         },
       });
 
-      await context.runAppTransaction(async ({ tx, enqueueJob, logAdminAction }) => {
-        const deleted = await tryDeleteEntity(() =>
-          tx.vendor.delete({
-            where: { id },
-            include: vendorMutationAuditInclude,
-          }),
-        );
+      const deleted = await tryDeleteEntity(() =>
+        context.db.vendor.delete({
+          where: { id },
+          include: vendorMutationAuditInclude,
+        }),
+      );
 
-        await logAdminAction({
-          actor: context.authContext,
-          action: "DELETE",
-          entity: "vendor",
-          entityId: id,
-          before: deleted,
-        });
+      await logAdminAction(context.db, {
+        actor: context.authContext,
+        action: "DELETE",
+        entity: "vendor",
+        entityId: id,
+        before: deleted,
+      });
 
-        await enqueueJob({
-          type: "invalidateStorefrontCache",
-          payload: {
-            tags: buildVendorInvalidationTags(
-              id,
-              vendor.products.map((product) => product.id),
-            ),
-          },
-        });
-        await enqueueJob({
-          type: "invalidateSearchIndex",
-          payload: {
-            productIds: vendor.products.map((product) => product.id),
-          },
-        });
+      await context.enqueueJob({
+        type: "invalidateStorefrontCache",
+        payload: {
+          tags: buildVendorInvalidationTags(
+            id,
+            vendor.products.map((product) => product.id),
+          ),
+        },
+      });
+      await context.enqueueJob({
+        type: "invalidateSearchIndex",
+        payload: {
+          productIds: vendor.products.map((product) => product.id),
+        },
       });
     }),
 

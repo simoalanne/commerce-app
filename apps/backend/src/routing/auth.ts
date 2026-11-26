@@ -1,7 +1,8 @@
-import type { Prisma, PrismaClient } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
 import type { AuthProvider } from "#src/integrations/auth/auth.provider.ts";
 import logger from "#src/logger.ts";
+import type { RunAppTransaction } from "#src/utils/runAppTransaction.ts";
 
 import { Forbidden, Unauthorized } from "./errors.ts";
 
@@ -16,8 +17,9 @@ export type AuthContext = {
 
 type AuthDependencies = {
   headers: Headers;
-  db: PrismaClient;
+  db: Prisma.TransactionClient;
   auth: AuthProvider;
+  runAppTransaction: RunAppTransaction;
 };
 
 const userRecordSelect = {
@@ -35,7 +37,7 @@ const isUniqueConstraintError = (error: unknown) =>
   typeof error === "object" && error !== null && "code" in error && error.code === "P2002";
 
 const getOrCreateUserRecord = async (
-  { db, auth }: Omit<AuthDependencies, "headers">,
+  { db, auth, runAppTransaction }: Omit<AuthDependencies, "headers">,
   userId: string,
 ) => {
   const existingUser = await db.user.findUnique({
@@ -50,7 +52,7 @@ const getOrCreateUserRecord = async (
   const authUser = await auth.getUserById(userId);
 
   try {
-    const createdUser = await db.$transaction(async (tx) => {
+    const createdUser = await runAppTransaction(async ({ tx }) => {
       const createdUser = await tx.user.create({
         data: {
           clerk_id: userId,
@@ -185,7 +187,7 @@ const createProxyAuthContext = () =>
  *   for authenticated users but does NOT throw if auth fails, allowing the handler to branch on `isAuthenticated`.
  */
 export const resolveAuthContext = async (
-  { headers, db, auth }: AuthDependencies,
+  { headers, db, auth, runAppTransaction }: AuthDependencies,
   accessLevel: AccessLevel | null,
 ): Promise<AuthContext> => {
   if (!accessLevel) {
@@ -204,7 +206,7 @@ export const resolveAuthContext = async (
     return createProxyAuthContext();
   }
 
-  const userRecord = await getOrCreateUserRecord({ db, auth }, userId);
+  const userRecord = await getOrCreateUserRecord({ db, auth, runAppTransaction }, userId);
   const authContext = tryBuildAuthContext(accessLevel, userRecord);
   const roles = {
     requiredRole: AccessLevelToRoleMap[accessLevel],

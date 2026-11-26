@@ -5,9 +5,10 @@ import { categoriesRoutes as customerCategoriesRoutes } from "#src/features/cust
 import { productsRoutes as customerProductsRoutes } from "#src/features/customer-api/products/products.routes.ts";
 import { reviewsRoutes as customerReviewsRoutes } from "#src/features/customer-api/reviews/reviews.routes.ts";
 import { storefrontRoutes } from "#src/features/customer-api/storefront/storefront.routes.ts";
-import { dashboardRoute } from "#src/routing/base.ts";
+import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { EntityInUse } from "#src/routing/errors.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
+import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import { buildTag } from "#src/utils/buildTags.ts";
 import { buildCreateImageLinks, buildReplaceImageLinks } from "#src/utils/imageLinks.ts";
 import {
@@ -20,6 +21,7 @@ import { buildCreateTagLinks, buildReplaceTagLinks } from "#src/utils/tagLinks.t
 import tryDeleteEntity from "#src/utils/tryDeleteEntity.ts";
 
 const productRoute = dashboardRoute.meta({ access: "ADMIN" });
+const productTxRoute = dashboardTxRoute.meta({ access: "ADMIN" });
 
 const idParams = z.object({ id: z.coerce.number<number>().int().positive() });
 
@@ -139,63 +141,57 @@ export const productsRoutes = {
       return toResponse(mapProduct(product), context.locale);
     }),
 
-  create: productRoute
+  create: productTxRoute
     .post("/products")
     .body(ProductFormSchema)
     .handler(async ({ body, context }) => {
       const { category_id, vendor_id, images, tags, ...data } = body;
 
-      const product = await context.runAppTransaction(
-        async ({ tx, enqueueJob, logAdminAction }) => {
-          const product = await tx.product.create({
-            data: {
-              ...data,
-              name: toLocalizedString(data.name, context.locale),
-              slug: toLocalizedSlug(data.name, context.locale),
-              headline: toLocalizedString(data.headline, context.locale),
-              full_description: toLocalizedString(data.full_description, context.locale),
-              tags: buildCreateTagLinks(tags),
-              category:
-                category_id == null
-                  ? undefined
-                  : {
-                      connect: { id: category_id },
-                    },
-              images: buildCreateImageLinks(images),
-              vendor: {
-                connect: {
-                  id: vendor_id,
+      const product = await context.db.product.create({
+        data: {
+          ...data,
+          name: toLocalizedString(data.name, context.locale),
+          slug: toLocalizedSlug(data.name, context.locale),
+          headline: toLocalizedString(data.headline, context.locale),
+          full_description: toLocalizedString(data.full_description, context.locale),
+          tags: buildCreateTagLinks(tags),
+          category:
+            category_id == null
+              ? undefined
+              : {
+                  connect: { id: category_id },
                 },
-              },
+          images: buildCreateImageLinks(images),
+          vendor: {
+            connect: {
+              id: vendor_id,
             },
-            include: productMutationAuditInclude,
-          });
-
-          await logAdminAction({
-            actor: context.authContext,
-            action: "CREATE",
-            entity: "product",
-            entityId: product.id,
-            after: product,
-          });
-
-          await enqueueJob({
-            type: "invalidateStorefrontCache",
-            payload: { tags: buildProductInvalidationTags(product.id) },
-          });
-          await enqueueJob({
-            type: "invalidateSearchIndex",
-            payload: { productIds: [product.id] },
-          });
-
-          return product;
+          },
         },
-      );
+        include: productMutationAuditInclude,
+      });
+
+      await logAdminAction(context.db, {
+        actor: context.authContext,
+        action: "CREATE",
+        entity: "product",
+        entityId: product.id,
+        after: product,
+      });
+
+      await context.enqueueJob({
+        type: "invalidateStorefrontCache",
+        payload: { tags: buildProductInvalidationTags(product.id) },
+      });
+      await context.enqueueJob({
+        type: "invalidateSearchIndex",
+        payload: { productIds: [product.id] },
+      });
 
       return toResponse({ id: product.id }, context.locale);
     }),
 
-  update: productRoute
+  update: productTxRoute
     .put("/products/:id")
     .params(idParams)
     .body(ProductFormSchema)
@@ -207,90 +203,86 @@ export const productsRoutes = {
         include: productMutationAuditInclude,
       });
 
-      await context.runAppTransaction(async ({ tx, enqueueJob, logAdminAction }) => {
-        const updated = await tx.product.update({
-          where: { id },
-          data: {
-            name: mergeLocalizedString(existingProduct.name, data.name, context.locale),
-            slug: mergeLocalizedSlug(existingProduct.slug, data.name, context.locale),
-            weight_grams: data.weight_grams,
-            headline: mergeLocalizedString(existingProduct.headline, data.headline, context.locale),
-            full_description: mergeLocalizedString(
-              existingProduct.full_description,
-              data.full_description,
-              context.locale,
-            ),
-            tags: buildReplaceTagLinks(tags),
-            cost_price_cents: data.cost_price_cents,
-            sales_price_cents: data.sales_price_cents,
-            current_stock: data.current_stock,
-            storefront_visibility: data.storefront_visibility,
-            is_featured: data.is_featured,
-            category:
-              category_id == null
-                ? {
-                    disconnect: true,
-                  }
-                : {
-                    connect: { id: category_id },
-                  },
-            images: buildReplaceImageLinks(images),
-            purchase_limit_per_order: data.purchase_limit_per_order,
-          },
-          include: productMutationAuditInclude,
-        });
+      const updated = await context.db.product.update({
+        where: { id },
+        data: {
+          name: mergeLocalizedString(existingProduct.name, data.name, context.locale),
+          slug: mergeLocalizedSlug(existingProduct.slug, data.name, context.locale),
+          weight_grams: data.weight_grams,
+          headline: mergeLocalizedString(existingProduct.headline, data.headline, context.locale),
+          full_description: mergeLocalizedString(
+            existingProduct.full_description,
+            data.full_description,
+            context.locale,
+          ),
+          tags: buildReplaceTagLinks(tags),
+          cost_price_cents: data.cost_price_cents,
+          sales_price_cents: data.sales_price_cents,
+          current_stock: data.current_stock,
+          storefront_visibility: data.storefront_visibility,
+          is_featured: data.is_featured,
+          category:
+            category_id == null
+              ? {
+                  disconnect: true,
+                }
+              : {
+                  connect: { id: category_id },
+                },
+          images: buildReplaceImageLinks(images),
+          purchase_limit_per_order: data.purchase_limit_per_order,
+        },
+        include: productMutationAuditInclude,
+      });
 
-        await logAdminAction({
-          actor: context.authContext,
-          action: "UPDATE",
-          entity: "product",
-          entityId: id,
-          before: existingProduct,
-          after: updated,
-        });
+      await logAdminAction(context.db, {
+        actor: context.authContext,
+        action: "UPDATE",
+        entity: "product",
+        entityId: id,
+        before: existingProduct,
+        after: updated,
+      });
 
-        await enqueueJob({
-          type: "invalidateStorefrontCache",
-          payload: { tags: buildProductInvalidationTags(id) },
-        });
-        await enqueueJob({
-          type: "invalidateSearchIndex",
-          payload: { productIds: [id] },
-        });
+      await context.enqueueJob({
+        type: "invalidateStorefrontCache",
+        payload: { tags: buildProductInvalidationTags(id) },
+      });
+      await context.enqueueJob({
+        type: "invalidateSearchIndex",
+        payload: { productIds: [id] },
       });
     }),
 
-  delete: productRoute
+  delete: productTxRoute
     .delete("/products/:id")
     .params(idParams)
     .error(EntityInUse)
     .handler(async ({ params, context }) => {
       const { id } = params;
 
-      await context.runAppTransaction(async ({ tx, enqueueJob, logAdminAction }) => {
-        const deleted = await tryDeleteEntity(() =>
-          tx.product.delete({
-            where: { id },
-            include: productMutationAuditInclude,
-          }),
-        );
+      const deleted = await tryDeleteEntity(() =>
+        context.db.product.delete({
+          where: { id },
+          include: productMutationAuditInclude,
+        }),
+      );
 
-        await logAdminAction({
-          actor: context.authContext,
-          action: "DELETE",
-          entity: "product",
-          entityId: id,
-          before: deleted,
-        });
+      await logAdminAction(context.db, {
+        actor: context.authContext,
+        action: "DELETE",
+        entity: "product",
+        entityId: id,
+        before: deleted,
+      });
 
-        await enqueueJob({
-          type: "invalidateStorefrontCache",
-          payload: { tags: buildProductInvalidationTags(id) },
-        });
-        await enqueueJob({
-          type: "invalidateSearchIndex",
-          payload: { productIds: [id] },
-        });
+      await context.enqueueJob({
+        type: "invalidateStorefrontCache",
+        payload: { tags: buildProductInvalidationTags(id) },
+      });
+      await context.enqueueJob({
+        type: "invalidateSearchIndex",
+        payload: { productIds: [id] },
       });
     }),
 

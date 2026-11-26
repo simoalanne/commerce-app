@@ -1,4 +1,4 @@
-import type { Prisma, PrismaClient, Product } from "@prisma/client";
+import type { Prisma, Product } from "@prisma/client";
 import type z from "zod";
 
 import { activeStorefrontProductWhere } from "#src/domain/storefrontVisibility.ts";
@@ -64,7 +64,7 @@ export const buildOrderDetails = ({
   },
 });
 
-export const fetchPurchasableProducts = (db: PrismaClient, skus: string[]) =>
+export const fetchPurchasableProducts = (db: Prisma.TransactionClient, skus: string[]) =>
   db.product.findMany({
     where: activeStorefrontProductWhere({ skus }),
     include: { vendor: { select: { name: true } } },

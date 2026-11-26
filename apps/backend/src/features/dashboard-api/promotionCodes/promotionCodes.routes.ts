@@ -1,12 +1,14 @@
 import { PromotionCodeFormSchema } from "@acme/shared/schemas/promotionCodes";
 import z from "zod";
 
-import { dashboardRoute } from "#src/routing/base.ts";
+import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { EntityInUse } from "#src/routing/errors.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
+import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import tryDeleteEntity from "#src/utils/tryDeleteEntity.ts";
 
 const promotionCodeRoute = dashboardRoute.meta({ access: "ADMIN" });
+const promotionCodeTxRoute = dashboardTxRoute.meta({ access: "ADMIN" });
 
 const idParams = z.object({ id: z.coerce.number<number>().int().positive() });
 
@@ -53,30 +55,26 @@ export const promotionCodesRoutes = {
       ),
     ),
 
-  create: promotionCodeRoute
+  create: promotionCodeTxRoute
     .post("/promotion-codes")
     .body(PromotionCodeFormSchema)
     .handler(async ({ body, context }) => {
-      const promotionCode = await context.runAppTransaction(async ({ tx, logAdminAction }) => {
-        const promotionCode = await tx.promotionCode.create({
-          data: toPromotionCodeWriteData(body),
-        });
+      const promotionCode = await context.db.promotionCode.create({
+        data: toPromotionCodeWriteData(body),
+      });
 
-        await logAdminAction({
-          actor: context.authContext,
-          action: "CREATE",
-          entity: "promotionCode",
-          entityId: promotionCode.id,
-          after: promotionCode,
-        });
-
-        return promotionCode;
+      await logAdminAction(context.db, {
+        actor: context.authContext,
+        action: "CREATE",
+        entity: "promotionCode",
+        entityId: promotionCode.id,
+        after: promotionCode,
       });
 
       return toResponse({ id: promotionCode.id }, context.locale);
     }),
 
-  update: promotionCodeRoute
+  update: promotionCodeTxRoute
     .put("/promotion-codes/:id")
     .params(idParams)
     .body(PromotionCodeFormSchema)
@@ -85,42 +83,38 @@ export const promotionCodesRoutes = {
         where: { id: params.id },
       });
 
-      await context.runAppTransaction(async ({ tx, logAdminAction }) => {
-        const updated = await tx.promotionCode.update({
-          where: { id: params.id },
-          data: toPromotionCodeWriteData(body),
-        });
+      const updated = await context.db.promotionCode.update({
+        where: { id: params.id },
+        data: toPromotionCodeWriteData(body),
+      });
 
-        await logAdminAction({
-          actor: context.authContext,
-          action: "UPDATE",
-          entity: "promotionCode",
-          entityId: params.id,
-          before: existingPromotionCode,
-          after: updated,
-        });
+      await logAdminAction(context.db, {
+        actor: context.authContext,
+        action: "UPDATE",
+        entity: "promotionCode",
+        entityId: params.id,
+        before: existingPromotionCode,
+        after: updated,
       });
     }),
 
-  delete: promotionCodeRoute
+  delete: promotionCodeTxRoute
     .delete("/promotion-codes/:id")
     .params(idParams)
     .error(EntityInUse)
     .handler(async ({ params, context }) => {
-      await context.runAppTransaction(async ({ tx, logAdminAction }) => {
-        const deleted = await tryDeleteEntity(() =>
-          tx.promotionCode.delete({
-            where: { id: params.id },
-          }),
-        );
+      const deleted = await tryDeleteEntity(() =>
+        context.db.promotionCode.delete({
+          where: { id: params.id },
+        }),
+      );
 
-        await logAdminAction({
-          actor: context.authContext,
-          action: "DELETE",
-          entity: "promotionCode",
-          entityId: params.id,
-          before: deleted,
-        });
+      await logAdminAction(context.db, {
+        actor: context.authContext,
+        action: "DELETE",
+        entity: "promotionCode",
+        entityId: params.id,
+        before: deleted,
       });
     }),
 

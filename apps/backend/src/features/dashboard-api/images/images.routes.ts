@@ -1,12 +1,14 @@
 import { ImageMetadataSchema } from "@acme/shared/schemas/images";
 import z from "zod";
 
-import { type AppContext, dashboardRoute } from "#src/routing/base.ts";
+import { type AppContext, dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { ImageUploadInvalidContentType, ImageUploadTooLarge } from "#src/routing/errors.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
+import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import { mergeLocalizedString, toLocalizedString } from "#src/utils/localizedObject.ts";
 
 const imageRoute = dashboardRoute.meta({ access: "ADMIN" });
+const imageTxRoute = dashboardTxRoute.meta({ access: "ADMIN" });
 
 const idParams = z.object({ id: z.coerce.number<number>().int().positive() });
 
@@ -62,7 +64,7 @@ export const imagesRoutes = {
       return toResponse(toImageResponse(context.storage, image), context.locale);
     }),
 
-  update: imageRoute
+  update: imageTxRoute
     .put("/images/:id")
     .params(idParams)
     .body(ImageMetadataSchema)
@@ -71,30 +73,27 @@ export const imagesRoutes = {
         where: { id: params.id, kind: "CMS" },
       });
 
-      const updated = await context.runAppTransaction(async ({ tx, logAdminAction }) => {
-        const updated = await tx.image.update({
-          where: { id: params.id, kind: "CMS" },
-          data: {
-            name: body.name,
-            alt: mergeLocalizedString(existingImage.alt, body.alt, context.locale),
-          },
-        });
-
-        await logAdminAction({
-          actor: context.authContext,
-          action: "UPDATE",
-          entity: "image",
-          entityId: params.id,
-          before: existingImage,
-          after: updated,
-        });
-
-        return updated;
+      const updated = await context.db.image.update({
+        where: { id: params.id, kind: "CMS" },
+        data: {
+          name: body.name,
+          alt: mergeLocalizedString(existingImage.alt, body.alt, context.locale),
+        },
       });
+
+      await logAdminAction(context.db, {
+        actor: context.authContext,
+        action: "UPDATE",
+        entity: "image",
+        entityId: params.id,
+        before: existingImage,
+        after: updated,
+      });
+
       return toResponse(toImageResponse(context.storage, updated), context.locale);
     }),
 
-  delete: imageRoute
+  delete: imageTxRoute
     .delete("/images/:id")
     .params(idParams)
     .handler(async ({ params, context }) => {
@@ -102,23 +101,22 @@ export const imagesRoutes = {
         where: { id: params.id, kind: "CMS" },
       });
 
+      const deleted = await context.db.image.delete({
+        where: { id: image.id, kind: "CMS" },
+      });
+
+      await logAdminAction(context.db, {
+        actor: context.authContext,
+        action: "DELETE",
+        entity: "image",
+        entityId: params.id,
+        before: deleted,
+      });
+
+      // Last, so a failed row delete keeps the file and a failed file delete
+      // rolls the row back.
       await context.storage.deleteObject(image.storage_key);
 
-      const deleted = await context.runAppTransaction(async ({ tx, logAdminAction }) => {
-        const deleted = await tx.image.delete({
-          where: { id: image.id, kind: "CMS" },
-        });
-
-        await logAdminAction({
-          actor: context.authContext,
-          action: "DELETE",
-          entity: "image",
-          entityId: params.id,
-          before: deleted,
-        });
-
-        return deleted;
-      });
       return toResponse(toImageResponse(context.storage, deleted), context.locale);
     }),
 
@@ -150,7 +148,7 @@ export const imagesRoutes = {
       );
     }),
 
-  create: imageRoute
+  create: imageTxRoute
     .post("/images")
     .body(
       z.object({
@@ -160,26 +158,23 @@ export const imagesRoutes = {
       }),
     )
     .handler(async ({ body, context }) => {
-      const image = await context.runAppTransaction(async ({ tx, logAdminAction }) => {
-        const image = await tx.image.create({
-          data: {
-            name: body.name,
-            alt: toLocalizedString(body.alt, context.locale),
-            storage_key: body.objectKey,
-            kind: "CMS",
-          },
-        });
-
-        await logAdminAction({
-          actor: context.authContext,
-          action: "CREATE",
-          entity: "image",
-          entityId: image.id,
-          after: image,
-        });
-
-        return image;
+      const image = await context.db.image.create({
+        data: {
+          name: body.name,
+          alt: toLocalizedString(body.alt, context.locale),
+          storage_key: body.objectKey,
+          kind: "CMS",
+        },
       });
+
+      await logAdminAction(context.db, {
+        actor: context.authContext,
+        action: "CREATE",
+        entity: "image",
+        entityId: image.id,
+        after: image,
+      });
+
       return toResponse(toImageResponse(context.storage, image), context.locale);
     }),
 };
