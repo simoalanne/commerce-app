@@ -23,11 +23,6 @@ const vendorTxRoute = dashboardTxRoute.meta({ access: "ADMIN" });
 
 const idParams = z.object({ id: z.coerce.number<number>().int().positive() });
 
-const mapVendor = <T extends { images: Array<{ imageId: number }> }>(vendor: T) => ({
-  ...vendor,
-  images: vendor.images.map((image) => image.imageId),
-});
-
 const buildVendorInvalidationTags = (vendorId: number, productIds: number[] = []) => [
   buildTag(customerVendorsRoutes.getAll),
   buildTag(customerVendorsRoutes.getById, vendorId),
@@ -68,17 +63,9 @@ const replaceVendorImages = async (db: Db, vendorId: number, imageIds: number[])
 
 export const vendorsRoutes = {
   getAll: vendorRoute.get("/vendors").handler(async ({ context }) => {
-    const vendors = await context.db.query.vendor.findMany({
-      with: {
-        images: {
-          columns: {
-            imageId: true,
-          },
-        },
-      },
-    });
+    const vendors = await context.db.query.vendor.findMany();
 
-    return resolveLocalizedFields(vendors.map(mapVendor), context.locale);
+    return resolveLocalizedFields(vendors, context.locale);
   }),
 
   getById: vendorRoute
@@ -87,17 +74,11 @@ export const vendorsRoutes = {
     .handler(async ({ params, context }) => {
       const vendor = await context.db.query.vendor.findFirst({
         where: { id: params.id },
-        with: {
-          images: {
-            columns: {
-              imageId: true,
-            },
-          },
-        },
+        with: { images: { columns: { imageId: true }, orderBy: { imageId: "asc" } } },
       });
       if (!vendor) throw new RouteError("NOT_FOUND", { status: 404 });
 
-      return resolveLocalizedFields(mapVendor(vendor), context.locale);
+      return resolveLocalizedFields(vendor, context.locale);
     }),
 
   create: vendorTxRoute

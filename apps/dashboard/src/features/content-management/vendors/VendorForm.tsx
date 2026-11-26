@@ -46,7 +46,9 @@ const VendorFormContent = ({ entityData, onSuccess }: VendorFormProps) => {
 
   const form = useForm<FormInput, unknown, FormOutput>({
     resolver: zodResolver(formSchema),
-    defaultValues: entityData ? { ...entityData } : fallbackDefaults,
+    defaultValues: entityData
+      ? { ...entityData, images: entityData.images.map((link) => link.imageId) }
+      : fallbackDefaults,
   });
 
   const isPending = createVendorMutation.isPending || updateVendorMutation.isPending;

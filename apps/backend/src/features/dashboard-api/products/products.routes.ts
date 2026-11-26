@@ -27,20 +27,6 @@ const productTxRoute = dashboardTxRoute.meta({ access: "ADMIN" });
 
 const idParams = z.object({ id: z.coerce.number<number>().int().positive() });
 
-const mapProduct = <
-  T extends {
-    categoryId: number | null;
-    images: Array<{ imageId: number }>;
-    tags: Array<{ tagId: number }>;
-  },
->(
-  product: T,
-) => ({
-  ...product,
-  images: product.images.map((image) => image.imageId),
-  tags: product.tags.map((tag) => tag.tagId),
-});
-
 const buildProductInvalidationTags = (productId: number) => [
   buildTag(customerProductsRoutes.getAll),
   buildTag(customerProductsRoutes.getById, productId),
@@ -94,7 +80,7 @@ export const productsRoutes = {
   getAll: productRoute.get("/products").handler(async ({ context }) => {
     const products = await context.db.query.product.findMany({ with: productLinksWith });
 
-    return resolveLocalizedFields(products.map(mapProduct), context.locale);
+    return resolveLocalizedFields(products, context.locale);
   }),
 
   getById: productRoute
@@ -107,7 +93,7 @@ export const productsRoutes = {
       });
       if (!product) throw new RouteError("NOT_FOUND", { status: 404 });
 
-      return resolveLocalizedFields(mapProduct(product), context.locale);
+      return resolveLocalizedFields(product, context.locale);
     }),
 
   create: productTxRoute

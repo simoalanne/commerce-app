@@ -88,7 +88,11 @@ function ProductFormContent({ entityData, onSuccess }: ProductFormProps) {
   const form = useForm<FormInput, unknown, FormOutput>({
     resolver: zodResolver(formSchema),
     defaultValues: entityData
-      ? { ...entityData }
+      ? {
+          ...entityData,
+          images: entityData.images.map((link) => link.imageId),
+          tags: entityData.tags.map((link) => link.tagId),
+        }
       : {
           ...fallbackDefaults,
           vendorId: defaultVendorId ?? fallbackDefaults.vendorId ?? 0,
