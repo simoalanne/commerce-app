@@ -22,7 +22,7 @@ export type CheckoutCartAdjustmentNotice = {
   changedItems: Array<{
     sku: string;
     productName: string;
-    productImageUrl: string;
+    productImageUrl: string | null;
     newQuantity: number;
     newUnitPriceCents: number;
     oldQuantity?: number | null;

@@ -1,7 +1,5 @@
 import type { ObjectStorageProvider } from "#src/integrations/object-storage/objectStorage.provider.ts";
 
-export const IMAGE_PLACEHOLDER_URL = "https://placehold.co";
-
 // For `with: { images: ... }` on products and vendors, whose image links
 // carry the image.
 export const ALL_LINKED_IMAGES_SELECT = {
@@ -22,10 +20,7 @@ type PublicUrlStorage = Pick<ObjectStorageProvider, "getPublicUrl">;
 export const getFirstLinkedImageUrl = (
   storage: PublicUrlStorage,
   links: ImageLinkWithUrl[] | null | undefined,
-) =>
-  links?.[0]?.image.storageKey
-    ? storage.getPublicUrl(links[0].image.storageKey)
-    : IMAGE_PLACEHOLDER_URL;
+) => (links?.[0]?.image.storageKey ? storage.getPublicUrl(links[0].image.storageKey) : null);
 
 export const getLinkedImageUrls = (
   storage: PublicUrlStorage,

@@ -90,10 +90,10 @@ function getAdjustedCartItems(
   }
 }
 
-function CartItemImage({ src, alt }: { src: string; alt: string }) {
+function CartItemImage({ src, alt }: { src: string | null; alt: string }) {
   return (
     <div className={styles.imageWrap}>
-      <Image src={src} alt={alt} width={48} height={48} className={styles.image} />
+      {src && <Image src={src} alt={alt} width={48} height={48} className={styles.image} />}
     </div>
   );
 }

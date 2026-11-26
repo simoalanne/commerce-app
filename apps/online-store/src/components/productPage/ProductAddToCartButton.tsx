@@ -9,7 +9,7 @@ type ProductAddToCartButtonProps = {
   product: ProductSummary;
   className?: string;
   flyToCart?: boolean;
-  imgUrl?: string;
+  imgUrl?: string | null;
 };
 
 export default function ProductAddToCartButton({

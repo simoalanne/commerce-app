@@ -9,7 +9,7 @@ type UseFlyToCartOptions = {
   // Enable the fly-to-cart animation
   flyToCart?: boolean;
   // Image URL to use as the animated clone (if provided)
-  imgUrl?: string | undefined;
+  imgUrl?: string | null;
   // DOM id of the element the clone will fly to (string)
   targetId?: string;
   // Product represented by the animation (used as image alt text)

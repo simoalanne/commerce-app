@@ -122,7 +122,7 @@ function createCatalogEntries(
     sitemapEntries.push({
       url: `${base}/${locale}/vendors/${vendor.slug}`,
       lastModified: vendor.updatedAt,
-      images: [vendor.imageUrl],
+      images: vendor.imageUrl ? [vendor.imageUrl] : [],
       alternates: createAlternates(
         Object.fromEntries(
           locales.map((altLocale) => [altLocale, `${base}/${altLocale}/vendors/${vendor.slug}`]),
@@ -136,7 +136,7 @@ function createCatalogEntries(
     sitemapEntries.push({
       url: `${base}/${locale}/products/${product.slug}`,
       lastModified: product.updatedAt,
-      images: [product.imageUrl],
+      images: product.imageUrl ? [product.imageUrl] : [],
       alternates: createAlternates(
         Object.fromEntries(
           locales.map((altLocale) => {

@@ -8,7 +8,7 @@ export type SearchResultVendor = {
   id: number;
   name: string;
   slug: string;
-  imageUrl: string;
+  imageUrl: string | null;
 };
 
 export type SearchResultCategory = {

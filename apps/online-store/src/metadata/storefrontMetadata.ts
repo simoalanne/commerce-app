@@ -84,7 +84,7 @@ export async function generateVendorDetailsMetadata({ params }: RouteParams): Pr
     title: tVendor("openGraph.openGraphTitle", { vendor: vendor.name }),
     description: tVendor("openGraph.openGraphDesc", { vendor: vendor.name }),
     pathname: `/vendors/${vendor.slug}`,
-    imageUrl: vendor.imageUrl ?? undefined,
+    imageUrl: vendor.imageUrl,
   });
 }
 

@@ -23,7 +23,7 @@ export type NewOrderNotificationEmailPayload = {
   items: {
     name: string;
     vendorName: string | null;
-    imageUrl: string;
+    imageUrl: string | null;
     quantity: number;
     unitPriceCents: number;
     lineTotalCents: number;

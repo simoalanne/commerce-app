@@ -163,7 +163,7 @@ export default async function ProductPage({ params }: RouteParams) {
         <div className={styles.productImageWrapper}>
           <ProductImageCarousel
             product={product}
-            images={Array.from(new Set([product.imageUrl, ...(product.imageUrls || [])]))}
+            images={product.imageUrls}
             altText={product.name}
           />
         </div>

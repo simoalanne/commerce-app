@@ -82,22 +82,24 @@ export default function ProductCard({
                 ))}
               </div>
             ) : null}
-            <Image
-              src={product.imageUrl}
-              alt={product.name}
-              fill
-              priority={isPriority}
-              fetchPriority={isPriority ? "high" : undefined}
-              quality={55}
-              className={
-                product.isOutOfStock ? styles.productOutOfStockOverlay : styles.productImage
-              }
-              sizes={
-                layout === "carousel"
-                  ? "(max-width: 768px) 50vw, 280px"
-                  : "(max-width: 480px) 50vw, (max-width: 768px) 33vw, (max-width: 1200px) 25vw, 300px"
-              }
-            />
+            {product.imageUrl && (
+              <Image
+                src={product.imageUrl}
+                alt={product.name}
+                fill
+                priority={isPriority}
+                fetchPriority={isPriority ? "high" : undefined}
+                quality={55}
+                className={
+                  product.isOutOfStock ? styles.productOutOfStockOverlay : styles.productImage
+                }
+                sizes={
+                  layout === "carousel"
+                    ? "(max-width: 768px) 50vw, 280px"
+                    : "(max-width: 480px) 50vw, (max-width: 768px) 33vw, (max-width: 1200px) 25vw, 300px"
+                }
+              />
+            )}
           </div>
         </Link>
         <div className={styles.actionsRow}>

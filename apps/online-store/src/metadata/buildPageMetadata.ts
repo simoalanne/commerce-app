@@ -10,7 +10,7 @@ export type BuildPageMetadataOptions = {
   title: string;
   description: string;
   pathname: `/${string}`;
-  imageUrl?: string;
+  imageUrl?: string | null;
   fallbackImageUrl?: string;
 };
 

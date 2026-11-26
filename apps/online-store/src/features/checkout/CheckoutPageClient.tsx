@@ -86,13 +86,15 @@ export function CheckoutPageClient({
         {cartAdjustmentNotice.changedItems.map((item) => (
           <article key={item.sku} className={styles.adjustmentItem}>
             <div className={styles.adjustmentImageWrap}>
-              <Image
-                className={styles.adjustmentImage}
-                src={item.productImageUrl}
-                alt={item.productName}
-                width={64}
-                height={64}
-              />
+              {item.productImageUrl && (
+                <Image
+                  className={styles.adjustmentImage}
+                  src={item.productImageUrl}
+                  alt={item.productName}
+                  width={64}
+                  height={64}
+                />
+              )}
             </div>
 
             <div className={styles.adjustmentDetails}>

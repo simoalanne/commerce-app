@@ -9,7 +9,7 @@ import styles from "./SearchModalProductsList.module.css";
 type BaseSearchCardItem = {
   id: number;
   name: string;
-  imageUrl: string;
+  imageUrl: string | null;
   href: string;
 };
 

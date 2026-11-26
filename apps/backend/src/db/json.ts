@@ -58,7 +58,7 @@ export type ProductSearchDocumentData = {
     id: number;
     name: string;
     slug: string;
-    imageUrl: string;
+    imageUrl: string | null;
     priceCents: number;
     outOfStock: boolean;
   };
@@ -66,7 +66,7 @@ export type ProductSearchDocumentData = {
     id: number;
     name: string;
     slug: string;
-    imageUrl: string;
+    imageUrl: string | null;
   };
   category: {
     id: number;

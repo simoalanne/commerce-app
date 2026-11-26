@@ -209,7 +209,7 @@ export const FieldTable = ({ rows }: { rows: { label: string; value: ReactNode }
 export type EmailItem = {
   name: string;
   initials: string;
-  imageUrl: string;
+  imageUrl: string | null;
   imageAlt: string;
   lineItem?: string;
   vendor: string | null;

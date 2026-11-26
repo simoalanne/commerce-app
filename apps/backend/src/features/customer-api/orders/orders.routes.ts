@@ -4,7 +4,7 @@ import z from "zod";
 import type { ObjectStorageProvider } from "#src/integrations/object-storage/objectStorage.provider.ts";
 import { customerRoute } from "#src/routing/base.ts";
 import { resolveLocalizedFields } from "#src/routing/localizedFields.ts";
-import { getFirstLinkedImageUrl, IMAGE_PLACEHOLDER_URL } from "#src/utils/imageUrl.ts";
+import { getFirstLinkedImageUrl } from "#src/utils/imageUrl.ts";
 import { relevantOrderStatuses } from "#src/utils/orderStatus.ts";
 import { generateOrderInvoicePdf } from "#src/utils/pdf/generateOrderInvoicePdf.ts";
 import { generateRefundReceiptPdf } from "#src/utils/pdf/generateRefundReceiptPdf.ts";
@@ -23,15 +23,11 @@ function buildOrderDetail(storage: ObjectStorageProvider, order: RelevantOrder) 
 
   const firstVendorItem = order.orderItems[0];
   const vendorName = firstVendorItem?.vendorName ?? "Unknown Farm";
-  const vendorImage = firstVendorItem?.vendor
-    ? getFirstLinkedImageUrl(storage, firstVendorItem.vendor.images)
-    : undefined;
+  const vendorImage = getFirstLinkedImageUrl(storage, firstVendorItem?.vendor?.images);
   const items = order.orderItems.map((item) => ({
     sku: item.sku,
     name: item.product?.name ?? item.name,
-    imageUrl: item.product
-      ? getFirstLinkedImageUrl(storage, item.product.images)
-      : IMAGE_PLACEHOLDER_URL,
+    imageUrl: getFirstLinkedImageUrl(storage, item.product?.images),
     quantity: item.quantity,
     refundedQuantity: order.refundSummary.refundedQuantityByOrderItemId.get(item.id) ?? 0,
     unitPriceCents: item.unitSalesPriceCents,

@@ -14,7 +14,7 @@ type AddToCartProps = {
   style?: React.CSSProperties;
   children?: React.ReactNode; // custom button content
   flyToCart?: boolean; // enable flying-clone animation
-  imgUrl?: string; // image URL for animation
+  imgUrl?: string | null; // image URL for animation
   disabled?: boolean; // disable the button (out of stock)
 };
 
