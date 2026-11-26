@@ -6,6 +6,7 @@ Last updated: 2026-11-26
 
 - The project is a general commerce core built on contracts and data it owns, meant to grow features off-the-shelf stacks don't give out of the box (still to be decided). `Acme` is a placeholder name. It also serves as a proving ground for rest-rpc and for agent-driven development. See `README.md`.
 - Nothing is deployed. Backward compatibility is unnecessary unless the user explicitly asks for it. Prefer direct cleanup over compatibility layers, migration bridges, or preserving stale behavior.
+- Existing code is evidence of what the app needs, not a spec. When replacing a library or rewriting code, keep what users and the frontends depend on and design the rest the way the new approach does it best; a shim that reproduces old behavior is a sign to stop and reconsider. Report what changed.
 - The plan is `docs/roadmap.md`. Parts it replaces (Next-only caching machinery) shouldn't be extended.
 - Prefer in-process libraries over platforms that own the data model or the API. The data layer is Drizzle with pg-boss for jobs; the planned swap is Clerk → Better Auth.
 - Payments: the backend supports Stripe and Paytrail through one provider interface; the online store currently implements only the Paytrail flow.
