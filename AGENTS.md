@@ -61,6 +61,7 @@ Do not hand-write parallel types or ad hoc fetch wrappers unless there is a stro
 
 ## Commands And Permissions
 
+- Work and commit on `main` unless asked to use a branch.
 - Prefer workspace-scoped commands such as `pnpm --filter <workspace> ...`.
 - After changing code, run `pnpm check` from the repo root (format check, lint, typecheck; the same as CI). `pnpm fix` applies formatting and autofixable lint fixes. `pnpm typecheck` alone typechecks every workspace in a few seconds.
 - Run tests when they verify the work at hand, scoped to it: the unit or integration tests covering the code you changed. Don't run the full suite, or integration tests, for changes they don't exercise (UI wiring, copy, styling). Broad refactors of backend behavior (ORM, queue, transactions) do warrant the full integration suite.
