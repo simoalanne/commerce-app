@@ -1,3 +1,7 @@
+import { and, eq } from "drizzle-orm";
+
+import { productTable, vendorTable } from "#src/db/schema.ts";
+
 type ProductScopeInput = {
   productId?: number | null;
   productIds?: number[];
@@ -25,3 +29,10 @@ export const activeStorefrontProductWhere = ({
   ...(categoryId != null ? { categoryId } : {}),
   vendor: activeStorefrontVendorWhere({ vendorId }),
 });
+
+/** The same rule for core queries that join product and vendor. */
+export const activeStorefrontProductAndVendor = () =>
+  and(
+    eq(productTable.storefrontVisibility, "ACTIVE"),
+    eq(vendorTable.storefrontVisibility, "ACTIVE"),
+  );

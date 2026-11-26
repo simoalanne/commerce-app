@@ -2,25 +2,19 @@ import { RouteError } from "@rest-rpc/server";
 import z from "zod";
 
 import { activeStorefrontVendorWhere } from "#src/domain/storefrontVisibility.ts";
+import {
+  getReviewSummaryMap,
+  type ReviewSummary,
+} from "#src/features/customer-api/reviews/reviews.utils.ts";
 import { customerRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
 import { FIRST_LINKED_IMAGE_SELECT, getFirstLinkedImageUrl } from "#src/utils/imageUrl.ts";
 
-const getReviewSummary = (reviews: Array<{ rating: number }>) => {
-  if (reviews.length === 0) {
-    return {
-      avgRating: null,
-      totalRatings: null,
-    };
-  }
-
-  const total = reviews.reduce((sum, review) => sum + review.rating, 0);
-
-  return {
-    avgRating: Number((total / reviews.length).toFixed(1)),
-    totalRatings: reviews.length,
-  };
-};
+// Vendors without approved reviews have no rating rather than a zero.
+const toRating = (summary: ReviewSummary | undefined) => ({
+  avgRating: summary?.avgRating ?? null,
+  totalRatings: summary?.reviewCount ?? null,
+});
 
 export const vendorsRoutes = {
   getById: customerRoute
@@ -35,21 +29,13 @@ export const vendorsRoutes = {
         where: activeStorefrontVendorWhere({ vendorId: params.id }),
         with: {
           images: FIRST_LINKED_IMAGE_SELECT,
-          reviews: {
-            where: {
-              kind: "VENDOR",
-              status: "APPROVED",
-            },
-            columns: {
-              rating: true,
-            },
-          },
         },
       });
 
       if (!vendor) {
         throw new RouteError("NOT_FOUND", { status: 404 });
       }
+      const ratings = await getReviewSummaryMap(context.db, "VENDOR", [vendor.id]);
 
       return toResponse(
         {
@@ -59,7 +45,7 @@ export const vendorsRoutes = {
           isFeatured: vendor.isFeatured,
           imageUrl: getFirstLinkedImageUrl(context.storage, vendor.images),
           tags: vendor.tags,
-          ...getReviewSummary(vendor.reviews),
+          ...toRating(ratings.get(vendor.id)),
           story: vendor.story,
           slogan: vendor.slogan,
         },
@@ -72,20 +58,16 @@ export const vendorsRoutes = {
       where: activeStorefrontVendorWhere(),
       with: {
         images: FIRST_LINKED_IMAGE_SELECT,
-        reviews: {
-          where: {
-            kind: "VENDOR",
-            status: "APPROVED",
-          },
-          columns: {
-            rating: true,
-          },
-        },
       },
       orderBy: {
         id: "asc",
       },
     });
+    const ratings = await getReviewSummaryMap(
+      context.db,
+      "VENDOR",
+      vendors.map((vendor) => vendor.id),
+    );
 
     return toResponse(
       vendors.map((vendor) => ({
@@ -95,7 +77,7 @@ export const vendorsRoutes = {
         isFeatured: vendor.isFeatured,
         imageUrl: getFirstLinkedImageUrl(context.storage, vendor.images),
         tags: vendor.tags,
-        ...getReviewSummary(vendor.reviews),
+        ...toRating(ratings.get(vendor.id)),
       })),
       context.locale,
     );

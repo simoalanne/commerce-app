@@ -1,5 +1,7 @@
+import { and, count, eq, notInArray, sql, sum } from "drizzle-orm";
 import z from "zod";
 
+import { customerAccountTable, orderTable } from "#src/db/schema.ts";
 import logger from "#src/logger.ts";
 import { dashboardRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
@@ -15,67 +17,53 @@ export const customersRoutes = {
       }),
     )
     .handler(async ({ query, context }) => {
-      const customers = await context.db.query.customerAccount.findMany({
-        ...(query.customerId && { where: { id: query.customerId } }),
-        with: {
-          user: {
-            columns: {
-              clerkId: true,
-            },
-          },
-          orders: {
-            columns: {
-              chargedTotalCents: true,
-              orderDetails: true,
-              createdAt: true,
-            },
-            where: {
-              status: {
-                notIn: ["PENDING", "EXPIRED"],
-              },
-            },
-            orderBy: {
-              createdAt: "desc",
-            },
-          },
-        },
-      });
+      const customers = await context.db
+        .select({
+          id: customerAccountTable.id,
+          clerkId: customerAccountTable.userId,
+          orderCount: count(orderTable.id),
+          lifetimeValueCents:
+            sql<number>`coalesce(${sum(orderTable.chargedTotalCents)}, 0)`.mapWith(Number),
+          latestOrderCity: sql<
+            string | null
+          >`(array_agg(${orderTable.orderDetails}->'delivery'->>'city' ORDER BY ${orderTable.createdAt} DESC))[1]`,
+        })
+        .from(customerAccountTable)
+        .leftJoin(
+          orderTable,
+          and(
+            eq(orderTable.customerId, customerAccountTable.id),
+            notInArray(orderTable.status, ["PENDING", "EXPIRED"]),
+          ),
+        )
+        .where(query.customerId ? eq(customerAccountTable.id, query.customerId) : undefined)
+        .groupBy(customerAccountTable.id);
 
       if (customers.length === 0) {
         return toResponse([], context.locale);
       }
 
-      const clerkIds = customers.map((customer) => customer.user.clerkId);
+      const clerkIds = customers.map((customer) => customer.clerkId);
       const authUsers = await context.auth.getUsersByIds(clerkIds);
       const clerkUserById = new Map(authUsers.map((user) => [user.id, user] as const));
 
       return toResponse(
         customers
           .filter((customer) => {
-            const exists = clerkUserById.has(customer.user.clerkId);
+            const exists = clerkUserById.has(customer.clerkId);
             if (!exists) {
               logger.warn(
-                `Customer with id ${customer.id} has clerk_id ${customer.user.clerkId} which does not exist in Clerk. This customer will be skipped.`,
+                `Customer with id ${customer.id} has Clerk id ${customer.clerkId} which does not exist in Clerk. This customer will be skipped.`,
               );
             }
             return exists;
           })
-          .map((customer) => {
-            const latestOrder = customer.orders[0];
-            const clerkUser = clerkUserById.get(customer.user.clerkId)!;
-            const latest_order_city = latestOrder?.orderDetails.delivery.city ?? null;
-            const lifetime_value_cents = customer.orders.reduce(
-              (sum, order) => sum + order.chargedTotalCents,
-              0,
-            );
-
+          .map(({ clerkId, ...customer }) => {
+            const clerkUser = clerkUserById.get(clerkId)!;
             return {
-              id: customer.id,
+              ...customer,
               email: clerkUser.email,
-              full_name: clerkUser.fullName ?? clerkUser.email,
-              latest_order_city,
-              order_count: customer.orders.length,
-              lifetime_value_cents,
+              fullName: clerkUser.fullName ?? clerkUser.email,
             };
           }),
         context.locale,

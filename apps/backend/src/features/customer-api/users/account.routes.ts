@@ -86,26 +86,20 @@ const finalizeLocalAccountDeletion = async (
   },
 ) =>
   db.transaction(async (tx) => {
-    await tx.execute(sql`
-			UPDATE ${orderTable}
-			SET order_details = order_details::jsonb
-				|| jsonb_build_object(
-					'customer',
-					COALESCE(order_details::jsonb->'customer', '{}'::jsonb)
-						|| jsonb_build_object(
-							'name', 'Deleted customer',
-							'email', 'deleted@acme.invalid'
-						),
-					'delivery',
-					COALESCE(order_details::jsonb->'delivery', '{}'::jsonb)
-						|| jsonb_build_object(
-							'addressLabel', 'Deleted address',
-							'city', 'Deleted',
-							'instructions', NULL
-						)
-				)
-			WHERE customer_id = ${customerId}
-		`);
+    await tx
+      .update(orderTable)
+      .set({
+        orderDetails: sql`${orderTable.orderDetails}
+          || jsonb_build_object(
+            'customer',
+            COALESCE(${orderTable.orderDetails}->'customer', '{}'::jsonb)
+              || jsonb_build_object('name', 'Deleted customer', 'email', 'deleted@acme.invalid'),
+            'delivery',
+            COALESCE(${orderTable.orderDetails}->'delivery', '{}'::jsonb)
+              || jsonb_build_object('addressLabel', 'Deleted address', 'city', 'Deleted', 'instructions', NULL)
+          )`,
+      })
+      .where(eq(orderTable.customerId, customerId));
 
     await tx.delete(userTable).where(eq(userTable.clerkId, clerkId));
   });

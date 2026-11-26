@@ -124,7 +124,7 @@ export const customerFavoriteProductTable = snakeCase.table(
       .references(() => productTable.id, { onDelete: "cascade" }),
     addedAt: createdAt(),
   },
-  (t) => [primaryKey({ columns: [t.customerAccountId, t.productId] })],
+  (t) => [index().on(t.productId), primaryKey({ columns: [t.customerAccountId, t.productId] })],
 );
 
 export const customerFavoriteVendorTable = snakeCase.table(
@@ -138,7 +138,7 @@ export const customerFavoriteVendorTable = snakeCase.table(
       .references(() => vendorTable.id, { onDelete: "cascade" }),
     addedAt: createdAt(),
   },
-  (t) => [primaryKey({ columns: [t.customerAccountId, t.vendorId] })],
+  (t) => [index().on(t.vendorId), primaryKey({ columns: [t.customerAccountId, t.vendorId] })],
 );
 
 export const customerSavedCartItemTable = snakeCase.table(
@@ -153,7 +153,7 @@ export const customerSavedCartItemTable = snakeCase.table(
     quantity: integer().notNull(),
     addedAt: createdAt(),
   },
-  (t) => [primaryKey({ columns: [t.customerAccountId, t.productId] })],
+  (t) => [index().on(t.productId), primaryKey({ columns: [t.customerAccountId, t.productId] })],
 );
 
 export const adminAccountTable = snakeCase.table("admin_account", {
@@ -185,29 +185,33 @@ export const promotionCodeTable = snakeCase.table(
   (t) => [check("promotion_code_code_upper", sql`${t.code} = upper(${t.code})`)],
 );
 
-export const orderTable = snakeCase.table("order", {
-  id: serial().primaryKey(),
-  itemsSubtotalCents: integer().notNull(),
-  itemsDiscountCents: integer().notNull().default(0),
-  chargedTotalCents: integer().notNull(),
-  // Whole percent.
-  vatRate: integer().notNull(),
-  includedVatCents: integer().notNull(),
-  totalWeightGrams: integer().notNull().default(0),
-  status: orderStatusEnum().notNull().default("PENDING"),
-  paymentId: text().unique(),
-  paymentProvider: paymentProviderEnum().notNull(),
-  claimToken: uuidv7(),
-  hasBeenLinkedToCustomerAccount: boolean().notNull().default(false),
-  preferredLocale: text().notNull().default("en"),
-  appliedPromoCode: text(),
-  orderDetails: jsonb().$type<OrderDetails>().notNull(),
-  invoiceDetails: jsonb().$type<OrderInvoiceDetails>().notNull(),
-  paidAt: timestamp({ precision: 3, withTimezone: true }),
-  createdAt: createdAt(),
-  updatedAt: updatedAt(),
-  customerId: integer().references(() => customerAccountTable.id, { onDelete: "set null" }),
-});
+export const orderTable = snakeCase.table(
+  "order",
+  {
+    id: serial().primaryKey(),
+    itemsSubtotalCents: integer().notNull(),
+    itemsDiscountCents: integer().notNull().default(0),
+    chargedTotalCents: integer().notNull(),
+    // Whole percent.
+    vatRate: integer().notNull(),
+    includedVatCents: integer().notNull(),
+    totalWeightGrams: integer().notNull().default(0),
+    status: orderStatusEnum().notNull().default("PENDING"),
+    paymentId: text().unique(),
+    paymentProvider: paymentProviderEnum().notNull(),
+    claimToken: uuidv7(),
+    hasBeenLinkedToCustomerAccount: boolean().notNull().default(false),
+    preferredLocale: text().notNull().default("en"),
+    appliedPromoCode: text(),
+    orderDetails: jsonb().$type<OrderDetails>().notNull(),
+    invoiceDetails: jsonb().$type<OrderInvoiceDetails>().notNull(),
+    paidAt: timestamp({ precision: 3, withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    customerId: integer().references(() => customerAccountTable.id, { onDelete: "set null" }),
+  },
+  (t) => [index().on(t.customerId)],
+);
 
 export const orderItemTable = snakeCase.table(
   "order_item",
@@ -226,7 +230,7 @@ export const orderItemTable = snakeCase.table(
       .notNull()
       .references(() => orderTable.id, { onDelete: "cascade" }),
   },
-  (t) => [index().on(t.orderId), index().on(t.vendorId)],
+  (t) => [index().on(t.productId), index().on(t.orderId), index().on(t.vendorId)],
 );
 
 export const refundTable = snakeCase.table(
@@ -266,17 +270,21 @@ export const refundItemTable = snakeCase.table(
   (t) => [index().on(t.refundId), index().on(t.orderItemId)],
 );
 
-export const customerAddressTable = snakeCase.table("customer_address", {
-  id: serial().primaryKey(),
-  customerId: integer()
-    .notNull()
-    .references(() => customerAccountTable.id, { onDelete: "cascade" }),
-  street: text().notNull(),
-  streetNumber: text(),
-  postalCode: text().notNull(),
-  city: text().notNull(),
-  deliveryDetails: jsonb().$type<CustomerAddressDeliveryDetails>().notNull(),
-});
+export const customerAddressTable = snakeCase.table(
+  "customer_address",
+  {
+    id: serial().primaryKey(),
+    customerId: integer()
+      .notNull()
+      .references(() => customerAccountTable.id, { onDelete: "cascade" }),
+    street: text().notNull(),
+    streetNumber: text(),
+    postalCode: text().notNull(),
+    city: text().notNull(),
+    deliveryDetails: jsonb().$type<CustomerAddressDeliveryDetails>().notNull(),
+  },
+  (t) => [index().on(t.customerId)],
+);
 
 export const categoryTable = snakeCase.table(
   "category",
@@ -318,7 +326,7 @@ export const productTable = snakeCase.table(
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [index().on(t.categoryId)],
+  (t) => [index().on(t.vendorId), index().on(t.categoryId)],
 );
 
 export const vendorTable = snakeCase.table("vendor", {
@@ -334,17 +342,21 @@ export const vendorTable = snakeCase.table("vendor", {
   updatedAt: updatedAt(),
 });
 
-export const imageTable = snakeCase.table("image", {
-  id: serial().primaryKey(),
-  name: text(),
-  kind: imageKindEnum().notNull().default("CMS"),
-  alt: jsonb().$type<LocalizedString>(),
-  storageKey: text().notNull().unique(),
-  createdAt: createdAt(),
-  vendorId: integer(),
-  // Annotated to break the circular type: Category → Image → Review → Product → Category.
-  reviewId: integer().references((): AnyPgColumn => reviewTable.id, { onDelete: "set null" }),
-});
+export const imageTable = snakeCase.table(
+  "image",
+  {
+    id: serial().primaryKey(),
+    name: text(),
+    kind: imageKindEnum().notNull().default("CMS"),
+    alt: jsonb().$type<LocalizedString>(),
+    storageKey: text().notNull().unique(),
+    createdAt: createdAt(),
+    vendorId: integer(),
+    // Annotated to break the circular type: Category → Image → Review → Product → Category.
+    reviewId: integer().references((): AnyPgColumn => reviewTable.id, { onDelete: "set null" }),
+  },
+  (t) => [index().on(t.reviewId)],
+);
 
 export const legalDocumentTable = snakeCase.table("legal_document", {
   id: serial().primaryKey(),

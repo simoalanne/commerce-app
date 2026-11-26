@@ -1,60 +1,37 @@
-import { and, avg, count, eq, inArray } from "drizzle-orm";
+import { and, count, eq, inArray, sql } from "drizzle-orm";
 
 import type { Db } from "#src/db/client.ts";
 import { reviewTable } from "#src/db/schema.ts";
 
-export type ProductReviewSummary = {
+export type ReviewSummary = {
   avgRating: number;
   reviewCount: number;
 };
 
-const EMPTY_PRODUCT_REVIEW_SUMMARY: ProductReviewSummary = {
-  avgRating: 0,
-  reviewCount: 0,
-};
+/** Average rating and count of approved reviews, by product or vendor id. */
+export const getReviewSummaryMap = async (
+  db: Db,
+  kind: "PRODUCT" | "VENDOR",
+  ids: number[],
+): Promise<Map<number, ReviewSummary>> => {
+  if (ids.length === 0) return new Map();
 
-export const getProductReviewSummaryMap = async (db: Db, productIds: number[]) => {
-  const summaryMap = new Map<number, ProductReviewSummary>();
-
-  if (productIds.length === 0) {
-    return summaryMap;
-  }
-
-  const groupedReviews = await db
+  const subjectId = kind === "PRODUCT" ? reviewTable.productId : reviewTable.vendorId;
+  const rows = await db
     .select({
-      productId: reviewTable.productId,
-      avgRating: avg(reviewTable.rating),
+      subjectId,
+      avgRating: sql<number>`round(avg(${reviewTable.rating}), 1)`.mapWith(Number),
       reviewCount: count(),
     })
     .from(reviewTable)
     .where(
-      and(
-        eq(reviewTable.kind, "PRODUCT"),
-        eq(reviewTable.status, "APPROVED"),
-        inArray(reviewTable.productId, productIds),
-      ),
+      and(eq(reviewTable.kind, kind), eq(reviewTable.status, "APPROVED"), inArray(subjectId, ids)),
     )
-    .groupBy(reviewTable.productId);
+    .groupBy(subjectId);
 
-  for (const groupedReview of groupedReviews) {
-    if (groupedReview.productId == null) {
-      continue;
-    }
-
-    summaryMap.set(groupedReview.productId, {
-      avgRating:
-        groupedReview.avgRating == null ? 0 : Number(Number(groupedReview.avgRating).toFixed(1)),
-      reviewCount: groupedReview.reviewCount,
-    });
-  }
-
-  return summaryMap;
-};
-
-export const getProductReviewSummaryByProductId = async (db: Db, productId: number) => {
-  const summaryMap = await getProductReviewSummaryMap(db, [productId]);
-
-  return summaryMap.get(productId) ?? EMPTY_PRODUCT_REVIEW_SUMMARY;
+  return new Map(
+    rows.flatMap(({ subjectId: id, ...summary }) => (id == null ? [] : [[id, summary]])),
+  );
 };
 
 export const getReviewerDisplayName = (name: string, showReviewerName: boolean) => {

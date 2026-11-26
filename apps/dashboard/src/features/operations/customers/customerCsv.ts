@@ -43,7 +43,7 @@ const escapeCsvField = (value: string) => {
 
 export const buildCustomerCsv = (customers: CustomerRow[]) => {
   const rows = customers.map((customer) => {
-    const { firstName, lastName } = splitCustomerName(customer.full_name);
+    const { firstName, lastName } = splitCustomerName(customer.fullName);
     return [customer.email, firstName, lastName].map(escapeCsvField).join(",");
   });
 

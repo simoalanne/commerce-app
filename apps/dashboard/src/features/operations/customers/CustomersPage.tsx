@@ -31,22 +31,22 @@ export function CustomersPage() {
           header: "Email",
         },
         {
-          accessorKey: "full_name",
+          accessorKey: "fullName",
           header: "Name",
         },
         {
-          accessorKey: "latest_order_city",
+          accessorKey: "latestOrderCity",
           header: "Latest order city",
-          cell: ({ row }) => row.original.latest_order_city ?? "-",
+          cell: ({ row }) => row.original.latestOrderCity ?? "-",
         },
         {
-          accessorKey: "order_count",
+          accessorKey: "orderCount",
           header: "Orders",
         },
         {
-          accessorKey: "lifetime_value_cents",
+          accessorKey: "lifetimeValueCents",
           header: "Lifetime value",
-          cell: ({ row }) => formatCents(row.original.lifetime_value_cents),
+          cell: ({ row }) => formatCents(row.original.lifetimeValueCents),
         },
       ]}
       extraRowActions={(customer) => (
@@ -54,7 +54,7 @@ export function CustomersPage() {
           route="/orders"
           queryParams={{
             customerId: customer.id.toString(),
-            customerName: customer.full_name,
+            customerName: customer.fullName,
           }}
           label={`View orders for customer #${customer.id}`}
         />
@@ -63,7 +63,7 @@ export function CustomersPage() {
         singular: "Customer",
         plural: "Customers",
       }}
-      getEntityName={(row) => row.full_name}
+      getEntityName={(row) => row.fullName}
       actions={{ create: false, edit: false, delete: false }}
       transformData={(customers) =>
         customerIdParam

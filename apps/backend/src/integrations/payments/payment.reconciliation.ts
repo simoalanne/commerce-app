@@ -2,7 +2,6 @@ import * as Sentry from "@sentry/node";
 import { and, eq, inArray, sql } from "drizzle-orm";
 
 import { db, type Db } from "#src/db/client.ts";
-import type { OrderDetails } from "#src/db/json.ts";
 import {
   type OrderStatus,
   orderItemTable,
@@ -23,13 +22,6 @@ import { type EnqueueJob, jobQueue } from "#src/jobs/queue.ts";
 import logger from "#src/logger.ts";
 
 import type { PaymentProviderName } from "./payment.provider.ts";
-
-type PendingOrderState = {
-  previousStatus: OrderStatus;
-  updated: boolean;
-  orderDetails: OrderDetails;
-  appliedPromoCode: string | null;
-};
 
 const getOrderStockAdjustments = async ({
   orderId,
@@ -110,32 +102,32 @@ const updatePendingOrderStatus = async ({
   status: OrderStatus;
   transaction: Db;
 }) => {
-  const {
-    rows: [state],
-  } = await transaction.execute<PendingOrderState>(sql`
-		WITH current AS (
-			SELECT status, order_details, applied_promo_code
-			FROM ${orderTable}
-			WHERE id = ${orderId}
-			FOR UPDATE
-		),
-		updated AS (
-			UPDATE ${orderTable}
-			SET status = ${status}::order_status,
-				payment_id = ${paymentId}
-			WHERE id = ${orderId}
-				AND status = 'PENDING'
-			RETURNING id
-		)
-		SELECT
-			current.status AS "previousStatus",
-			EXISTS (SELECT 1 FROM updated) AS updated,
-			current.order_details AS "orderDetails",
-			current.applied_promo_code AS "appliedPromoCode"
-		FROM current;
-	`);
+  // Locked, so the status check and the update see the same order.
+  const [order] = await transaction
+    .select({
+      status: orderTable.status,
+      orderDetails: orderTable.orderDetails,
+      appliedPromoCode: orderTable.appliedPromoCode,
+    })
+    .from(orderTable)
+    .where(eq(orderTable.id, orderId))
+    .for("update");
+  if (!order) return undefined;
 
-  return state;
+  const updated = order.status === "PENDING";
+  if (updated) {
+    await transaction
+      .update(orderTable)
+      .set({ status, paymentId })
+      .where(eq(orderTable.id, orderId));
+  }
+
+  return {
+    previousStatus: order.status,
+    updated,
+    orderDetails: order.orderDetails,
+    appliedPromoCode: order.appliedPromoCode,
+  };
 };
 
 const recoverPaidOrderAfterPendingCancellation = async ({

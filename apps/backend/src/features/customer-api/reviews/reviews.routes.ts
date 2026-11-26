@@ -5,7 +5,7 @@ import { reviewTable } from "#src/db/schema.ts";
 import { customerRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
 
-import { getProductReviewSummaryByProductId, getReviewerDisplayName } from "./reviews.utils.ts";
+import { getReviewSummaryMap, getReviewerDisplayName } from "./reviews.utils.ts";
 
 export const reviewsRoutes = {
   list: customerRoute.get("/reviews").handler(async ({ context }) => {
@@ -110,8 +110,8 @@ export const reviewsRoutes = {
       }),
     )
     .handler(async ({ params, context }) => {
-      const [summary, reviews] = await Promise.all([
-        getProductReviewSummaryByProductId(context.db, params.productId),
+      const [summaries, reviews] = await Promise.all([
+        getReviewSummaryMap(context.db, "PRODUCT", [params.productId]),
         context.db.query.review.findMany({
           where: {
             kind: "PRODUCT",
@@ -121,6 +121,7 @@ export const reviewsRoutes = {
           orderBy: { createdAt: "desc", id: "desc" },
         }),
       ]);
+      const summary = summaries.get(params.productId) ?? { avgRating: 0, reviewCount: 0 };
 
       return toResponse(
         {

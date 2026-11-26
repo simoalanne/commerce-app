@@ -3,6 +3,10 @@ import z from "zod";
 
 import type { Db } from "#src/db/client.ts";
 import { activeStorefrontProductWhere } from "#src/domain/storefrontVisibility.ts";
+import {
+  getReviewSummaryMap,
+  type ReviewSummary,
+} from "#src/features/customer-api/reviews/reviews.utils.ts";
 import type { ObjectStorageProvider } from "#src/integrations/object-storage/objectStorage.provider.ts";
 import { customerRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
@@ -21,10 +25,6 @@ const productWith = {
     columns: {},
     with: { tag: { columns: { name: true, color: true } } },
   },
-  reviews: {
-    where: { kind: "PRODUCT" },
-    columns: { rating: true },
-  },
 } as const;
 
 const findProduct = (db: Db, id: number) =>
@@ -35,23 +35,11 @@ const findProduct = (db: Db, id: number) =>
 
 type ProductWithRelations = NonNullable<Awaited<ReturnType<typeof findProduct>>>;
 
-const getProductReviewSummary = (product: ProductWithRelations) => {
-  if (product.reviews.length === 0) {
-    return {
-      avgRating: 0,
-      reviewCount: 0,
-    };
-  }
-
-  const totalRating = product.reviews.reduce((sum, review) => sum + review.rating, 0);
-
-  return {
-    avgRating: Number((totalRating / product.reviews.length).toFixed(1)),
-    reviewCount: product.reviews.length,
-  };
-};
-
-const toProductSummary = (storage: ObjectStorageProvider, product: ProductWithRelations) => ({
+const toProductSummary = (
+  storage: ObjectStorageProvider,
+  product: ProductWithRelations,
+  reviewSummary: ReviewSummary | undefined,
+) => ({
   id: product.id,
   slug: product.slug,
   sku: product.sku,
@@ -66,7 +54,8 @@ const toProductSummary = (storage: ObjectStorageProvider, product: ProductWithRe
   purchaseLimitPerOrder: product.purchaseLimitPerOrder,
   isOutOfStock: product.currentStock - product.reservedStock <= 0,
   isFeatured: product.isFeatured,
-  ...getProductReviewSummary(product),
+  avgRating: reviewSummary?.avgRating ?? 0,
+  reviewCount: reviewSummary?.reviewCount ?? 0,
 });
 
 export const productsRoutes = {
@@ -76,10 +65,11 @@ export const productsRoutes = {
     .handler(async ({ params, context }) => {
       const product = await findProduct(context.db, params.id);
       if (!product) throw new RouteError("NOT_FOUND", { status: 404 });
+      const reviewSummaries = await getReviewSummaryMap(context.db, "PRODUCT", [product.id]);
 
       return toResponse(
         {
-          ...toProductSummary(context.storage, product),
+          ...toProductSummary(context.storage, product, reviewSummaries.get(product.id)),
           fullDescription: product.fullDescription,
           imageUrls: getLinkedImageUrls(context.storage, product.images),
         },
@@ -103,9 +93,16 @@ export const productsRoutes = {
         }),
         with: { ...productWith, images: FIRST_LINKED_IMAGE_SELECT },
       });
+      const reviewSummaries = await getReviewSummaryMap(
+        context.db,
+        "PRODUCT",
+        products.map((product) => product.id),
+      );
 
       return toResponse(
-        products.map((product) => toProductSummary(context.storage, product)),
+        products.map((product) =>
+          toProductSummary(context.storage, product, reviewSummaries.get(product.id)),
+        ),
         context.locale,
       );
     }),
