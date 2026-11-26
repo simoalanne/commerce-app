@@ -49,7 +49,7 @@ export const reserveStockOrThrow = async ({ items, transaction }: StockAdjustmen
 			),
 			updated AS (
 				UPDATE ${productTable} p
-				SET reserved_stock = p.reserved_stock + r.quantity
+				SET reserved_stock = p.reserved_stock + r.quantity, updated_at = now()
 				FROM requested r
 				WHERE p.sku = r.sku
 					AND (p.current_stock - p.reserved_stock) >= r.quantity
@@ -80,7 +80,8 @@ export const commitReservedStock = async ({ items, transaction }: StockAdjustmen
   await transaction.execute(sql`
 		UPDATE ${productTable} p
 		SET current_stock = p.current_stock - s.quantity,
-				reserved_stock = p.reserved_stock - s.quantity
+				reserved_stock = p.reserved_stock - s.quantity,
+				updated_at = now()
 		FROM (VALUES ${buildValues(items)}) AS s(sku, quantity)
 		WHERE p.sku = s.sku;
 	`);
@@ -91,7 +92,7 @@ export const releaseReservedStock = async ({ items, transaction }: StockAdjustme
 
   await transaction.execute(sql`
 		UPDATE ${productTable} p
-		SET reserved_stock = p.reserved_stock - s.quantity
+		SET reserved_stock = p.reserved_stock - s.quantity, updated_at = now()
 		FROM (VALUES ${buildValues(items)}) AS s(sku, quantity)
 		WHERE p.sku = s.sku;
 	`);
@@ -106,7 +107,7 @@ export const restockProductStock = async ({ items, transaction }: ProductStockAd
 
   await transaction.execute(sql`
 		UPDATE ${productTable} p
-		SET current_stock = p.current_stock + s.quantity
+		SET current_stock = p.current_stock + s.quantity, updated_at = now()
 		FROM (
 			VALUES ${sql.join(
         restockItems.map((item) => sql`(${item.productId}::int, ${item.quantity}::int)`),
@@ -140,7 +141,8 @@ export const commitAsMuchStockAsPossible = async ({
 		),
 		updated AS (
 			UPDATE ${productTable} p
-			SET current_stock = p.current_stock - LEAST(current.available_stock, current.quantity)
+			SET current_stock = p.current_stock - LEAST(current.available_stock, current.quantity),
+				updated_at = now()
 			FROM current
 			WHERE p.id = current.product_id
 			RETURNING

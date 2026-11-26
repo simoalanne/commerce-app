@@ -387,8 +387,7 @@ class PostgresSearchProvider implements SearchProvider {
 					to_tsvector(
             ${getPostgresSearchDictionary(document.locale)},
             ${document.searchText}
-          ),
-          now()
+          )
 				)`,
       ),
       sql`, `,
@@ -402,8 +401,7 @@ class PostgresSearchProvider implements SearchProvider {
 				vendor_search_text,
 				category_search_text,
 				search_data,
-				search_vector,
-				updated_at
+				search_vector
 			)
 			VALUES ${values}
 			ON CONFLICT (product_id, locale) DO UPDATE SET
@@ -411,8 +409,7 @@ class PostgresSearchProvider implements SearchProvider {
 				vendor_search_text = EXCLUDED.vendor_search_text,
 				category_search_text = EXCLUDED.category_search_text,
 				search_data = EXCLUDED.search_data,
-				search_vector = EXCLUDED.search_vector,
-				updated_at = EXCLUDED.updated_at
+				search_vector = EXCLUDED.search_vector
 		`);
   }
 }

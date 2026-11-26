@@ -465,8 +465,6 @@ export const productSearchDocumentTable = snakeCase.table(
     categorySearchText: text().notNull(),
     searchData: jsonb().$type<ProductSearchDocumentData>().notNull(),
     searchVector: tsvector().notNull(),
-    createdAt: createdAt(),
-    updatedAt: updatedAt(),
   },
   (t) => [
     primaryKey({ columns: [t.productId, t.locale] }),
