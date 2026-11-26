@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/node";
 import { sql } from "drizzle-orm";
 import { fromDrizzle, PgBoss, type SendOptions } from "pg-boss";
 
@@ -63,7 +62,6 @@ const createJobQueue = (connectionString: string): JobQueue => {
 
   boss.on("error", (error) => {
     logger.error("Job queue error", { tag: "job-queue", error: error.stack ?? error.message });
-    Sentry.captureException(error);
   });
 
   return {
@@ -83,23 +81,18 @@ const createJobQueue = (connectionString: string): JobQueue => {
     work: async (context) => {
       for (const type of jobTypes) {
         await boss.work(type, async ([job]) => {
-          await Sentry.withIsolationScope(async () => {
-            try {
-              await runJob(type, job.data, context);
-            } catch (error) {
-              logger.error("Background job failed", {
-                tag: "job-queue",
-                jobId: job.id,
-                type,
-                retryCount: job.retryCount,
-                error: error instanceof Error ? (error.stack ?? error.message) : String(error),
-              });
-              Sentry.captureException(error, (scope) =>
-                scope.setContext("job", { jobId: job.id, type, retryCount: job.retryCount }),
-              );
-              throw error;
-            }
-          });
+          try {
+            await runJob(type, job.data, context);
+          } catch (error) {
+            logger.error("Background job failed", {
+              tag: "job-queue",
+              jobId: job.id,
+              type,
+              retryCount: job.retryCount,
+              error: error instanceof Error ? (error.stack ?? error.message) : String(error),
+            });
+            throw error;
+          }
         });
       }
       logger.info("Background job workers started", { tag: "job-queue" });

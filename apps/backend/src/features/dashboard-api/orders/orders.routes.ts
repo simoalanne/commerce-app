@@ -1,5 +1,4 @@
 import { RouteError } from "@rest-rpc/server";
-import * as Sentry from "@sentry/node";
 import z from "zod";
 
 import { refundItemTable, refundTable } from "#src/db/schema.ts";
@@ -318,8 +317,6 @@ export const ordersRoutes = {
     .handler(async ({ params, body, context }) => {
       const { reason, internalNotes, items } = body;
       const id = params.id;
-
-      Sentry.getCurrentScope().setContext("order", { orderId: id });
 
       const order = await findRelevantOrderById(context.db, {
         orderId: id,

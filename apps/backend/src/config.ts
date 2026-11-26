@@ -2,7 +2,6 @@ import z from "zod";
 
 const RuntimeEnvSchema = z.object({
   DATABASE_URL: z.string().min(1),
-  SENTRY_DSN: z.string().optional(),
   CLERK_SECRET_KEY: z.string().optional(),
   CLERK_PUBLISHABLE_KEY: z.string().optional(),
   STRIPE_SECRET_KEY: z.string().optional(),

@@ -2,7 +2,6 @@ import { calculateOrderPricing } from "@acme/shared";
 import { DeliveryInstructionsSchema } from "@acme/shared/schemas";
 import { isValidPhoneNumber } from "@acme/shared/utils/addressValidation";
 import { RouteError } from "@rest-rpc/server";
-import * as Sentry from "@sentry/node";
 import { isAfter, isBefore } from "date-fns";
 import { eq } from "drizzle-orm";
 import z from "zod";
@@ -211,8 +210,6 @@ const createPaymentInternal = async (
     return order;
   });
 
-  Sentry.getCurrentScope().setContext("order", { orderId: order.id });
-
   const amountCents = pricingSnapshot.chargedTotalCents;
 
   try {
@@ -226,11 +223,6 @@ const createPaymentInternal = async (
         locale: context.locale,
         ...(customerId != null ? { customerId } : {}),
       },
-    });
-
-    Sentry.getCurrentScope().setContext("order", {
-      orderId: order.id,
-      paymentId: payment.paymentId,
     });
 
     await db.transaction(async (tx) => {

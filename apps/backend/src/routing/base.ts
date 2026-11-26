@@ -13,7 +13,6 @@ import type { PaymentProviders } from "#src/integrations/payments/payment.provid
 import type { SearchProvider } from "#src/integrations/search/search.provider.ts";
 import type { EnqueueJob, JobQueue } from "#src/jobs/queue.ts";
 import { type SupportedLocale, supportedLocales } from "#src/locales.ts";
-import { requestContextStorage } from "#src/utils/requestContext.ts";
 
 import { type AccessLevel, resolveAuthContext } from "./auth.ts";
 import { Forbidden, RateLimitExceeded, Unauthorized } from "./errors.ts";
@@ -105,9 +104,6 @@ const withContext = route
   .error(RateLimitExceeded)
   .use(async ({ context, route, next }) => {
     const authContext = await resolveAuthContext(context, route.meta?.access ?? null);
-    // Read by the error handler to tag Sentry events with the user.
-    const requestContext = requestContextStorage.getStore();
-    if (requestContext) requestContext.authContext = authContext;
 
     return next({
       context: {

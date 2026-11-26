@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/node";
 import { and, eq, inArray, sql } from "drizzle-orm";
 
 import { db, type Db } from "#src/db/client.ts";
@@ -488,12 +487,6 @@ const reconcileRefund = async ({
 };
 
 export const handlePaymentReconciliation = async (event: PaymentReconciliationEvent) => {
-  Sentry.getCurrentScope().setContext("order", {
-    orderId: event.orderId,
-    paymentId: event.paymentId,
-    provider: event.provider,
-  });
-
   const reconcileResult = await reconcileOrder(event);
 
   if (!reconcileResult) {
@@ -502,12 +495,5 @@ export const handlePaymentReconciliation = async (event: PaymentReconciliationEv
 };
 
 export const handleRefundReconciliation = async (event: RefundReconciliationEvent) => {
-  Sentry.getCurrentScope().setContext("order", {
-    refundId: event.refundId,
-    refundKey: event.refundKey,
-    paymentId: event.paymentId,
-    provider: event.provider,
-  });
-
   await reconcileRefund(event);
 };

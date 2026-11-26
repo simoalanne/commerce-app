@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/node";
 import { and, eq } from "drizzle-orm";
 
 import { db } from "#src/db/client.ts";
@@ -16,8 +15,6 @@ export async function processRefund(
   { refundId }: ProcessRefundPayload,
   { jobQueue }: JobHandlerContext,
 ) {
-  Sentry.getCurrentScope().setContext("refund", { refundId });
-
   const [claimedRefund] = await db
     .update(refundTable)
     .set({ status: "PROCESSING" })

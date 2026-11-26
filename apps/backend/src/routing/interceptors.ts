@@ -1,14 +1,9 @@
 import { randomUUID } from "node:crypto";
 
 import { errorResponse, interceptor, onError, RouteError } from "@rest-rpc/server";
-import * as Sentry from "@sentry/node";
 
 import logger from "#src/logger.ts";
-import {
-  getClientRequestId,
-  getRequestId,
-  requestContextStorage,
-} from "#src/utils/requestContext.ts";
+import { requestContextStorage } from "#src/utils/requestContext.ts";
 
 // The response's headers may be immutable, so headers are set on a copy.
 const withHeaders = (response: Response, headers: Record<string, string>) => {
@@ -22,9 +17,8 @@ const withHeaders = (response: Response, headers: Record<string, string>) => {
 /** Gives the request an id, in the logger's context and the response. */
 export const requestContext = interceptor(async ({ request, next }) => {
   const requestId = randomUUID();
-  const clientRequestId = request.headers.get("x-request-id") ?? undefined;
 
-  return requestContextStorage.run({ requestId, clientRequestId }, async () => {
+  return requestContextStorage.run({ requestId }, async () => {
     const startedAt = Date.now();
     const response = await next();
     logger.debug("API request processed", {
@@ -68,22 +62,6 @@ export const reportError = (error: unknown) => {
   if (error instanceof RouteError) return;
 
   logger.error("Unexpected error occurred:", error);
-
-  Sentry.captureException(error, (scope) => {
-    scope.setContext("request", {
-      requestId: getRequestId(),
-      clientRequestId: getClientRequestId(),
-    });
-
-    const authContext = requestContextStorage.getStore()?.authContext;
-    if (!authContext?.isAuthenticated) return scope;
-
-    scope.setUser({ id: authContext.clerkId });
-    scope.setTag("customerId", authContext.customerId);
-    if (authContext.adminId) scope.setTag("adminId", authContext.adminId);
-
-    return scope;
-  });
 };
 
 /** Reports errors that are not route errors, after `sendErrors` is out of the way. */

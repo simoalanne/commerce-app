@@ -33,7 +33,7 @@ Per-job settings are pg-boss's send options, passed as `options`: `{ startAfter:
 
 `index.ts` calls `jobQueue.start()` before serving requests, since enqueueing looks queues up through pg-boss, then `jobQueue.work({ jobQueue })` to run the handlers in the same process. pg-boss claims jobs with `SELECT ... FOR UPDATE SKIP LOCKED`, so several backend instances can run workers against the same database without running a job twice.
 
-Each worker validates the payload with the job's schema, runs the handler, and reports a failure to the log and Sentry before rethrowing it to pg-boss.
+Each worker validates the payload with the job's schema, runs the handler, and logs a failure before rethrowing it to pg-boss.
 
 Workers poll their queue (every 2 seconds by default). Unlike the earlier in-memory scheduler, this keeps the database awake, which matters only for a database that scales to zero; raise pg-boss's polling interval if that becomes a cost.
 
