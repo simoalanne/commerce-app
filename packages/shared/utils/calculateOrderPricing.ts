@@ -2,10 +2,10 @@ import type { OrderPricingSummary } from "../schemas/index.ts";
 
 // One flat placeholder rate in whole percent; tax rules per product or region
 // are out of scope.
-export const ORDER_VAT_RATE = 20;
+const ORDER_VAT_RATE = 20;
 
 /** VAT included in a gross amount, in cents. */
-export const getIncludedVatCents = (grossCents: number, vatRate: number) =>
+const getIncludedVatCents = (grossCents: number, vatRate: number) =>
   Math.round((grossCents * vatRate) / (100 + vatRate));
 
 type OrderPricingInput = {

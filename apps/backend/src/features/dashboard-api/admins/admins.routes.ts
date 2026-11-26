@@ -41,7 +41,7 @@ export const adminsRoutes = {
         .values({ userId: actualClerkId })
         .returning();
 
-      await logAdminAction(context.db, {
+      await logAdminAction(context, {
         actor: context.authContext,
         action: "OTHER",
         entity: "adminAccount",

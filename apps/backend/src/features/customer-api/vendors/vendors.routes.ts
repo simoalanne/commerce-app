@@ -122,9 +122,9 @@ export const vendorsRoutes = {
 
         return {
           id: review.id,
-          vendorId: review.vendorId ?? id,
+          vendorId: id,
           rating: review.rating,
-          comment: review.comment ?? null,
+          comment: review.comment,
           createdAt: review.createdAt,
           updatedAt: review.updatedAt,
           reviewer: {

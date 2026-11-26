@@ -12,7 +12,7 @@ import { usePathname } from "@/i18n/navigation";
 
 const ABSOLUTE_MIN = 1;
 
-export function getProductListingMaxPriceBound(maxPrice: number) {
+function getProductListingMaxPriceBound(maxPrice: number) {
   return Math.max(Math.ceil(maxPrice), ABSOLUTE_MIN + 1);
 }
 

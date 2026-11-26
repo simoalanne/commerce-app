@@ -70,9 +70,7 @@ const parseAcceptLanguage = (headerValue: string | undefined): ParsedLanguage[] 
     .sort((a, b) => b.q - a.q || a.index - b.index);
 };
 
-export const resolveSupportedLocale = (
-  headerValue: string | string[] | undefined,
-): SupportedLocale => {
+const resolveSupportedLocale = (headerValue: string | string[] | undefined): SupportedLocale => {
   const normalizedSupported = supportedLocales.map((locale) => ({
     original: locale,
     normalized: normalizeLocale(locale),

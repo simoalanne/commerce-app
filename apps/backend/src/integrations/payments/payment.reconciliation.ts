@@ -391,7 +391,7 @@ const unreconciledRefund = (refundId: number) =>
     inArray(refundTable.status, ["PENDING", "PROCESSING", "REQUIRES_MANUAL_REVIEW"]),
   );
 
-export const reconcileRefund = async ({
+const reconcileRefund = async ({
   refundId,
   refundKey,
   paymentId,

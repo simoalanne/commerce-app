@@ -43,24 +43,6 @@ export function buildCheckoutCartItems(products: ProductSummary[], items: CartIt
     .filter((item): item is CheckoutCartProductItem => item !== null);
 }
 
-export function applyQuantitiesToCheckoutCartItems(
-  items: CheckoutCartProductItem[],
-  cartItems: CartItems,
-) {
-  return items
-    .map((item) => ({
-      ...item,
-      quantity: cartItems[item.product.sku]?.quantity ?? 0,
-    }))
-    .filter((item) => item.quantity > 0);
-}
-
-export function getCheckoutCartQuantities(items: CheckoutCartProductItem[]) {
-  return Object.fromEntries(
-    items.map((item) => [item.product.sku, item.quantity]),
-  ) satisfies CartQuantities;
-}
-
 export function buildCartItemsFromCheckoutItems(items: CheckoutCartProductItem[]) {
   return Object.fromEntries(
     items.map((item) => [

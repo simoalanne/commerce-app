@@ -16,5 +16,3 @@ export const validateHmac = (hparams: HmacParams, signature: string, secretKey: 
   const hmac = calculateHmac(secretKey, hparams);
   return hmac === signature;
 };
-
-export const encodeMD5 = (data: string) => crypto.createHash("md5").update(data).digest("hex");

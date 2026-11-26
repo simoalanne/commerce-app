@@ -22,15 +22,6 @@ const toNullableInstructions = (instructions: DeliveryInstructions | undefined) 
   return Object.values(normalized).some(Boolean) ? normalized : null;
 };
 
-const statusLabels: Record<string, string> = {
-  PENDING: "pending",
-  PAID: "paid",
-  EXPIRED: "expired",
-  AWAITING_REFUND: "awaiting refund",
-  REFUNDED: "refunded",
-  DELIVERED: "delivered",
-};
-
 export const buildCustomerDataExport = async (
   { db, storage }: Pick<AppContext, "db" | "storage">,
   customerId: number,
@@ -176,7 +167,7 @@ export const buildCustomerDataExport = async (
       const details = order.orderDetails;
       return {
         orderNumber: order.id,
-        status: statusLabels[order.status] ?? order.status.toLowerCase(),
+        status: order.status,
         createdAt: order.createdAt,
         recipient: {
           name: details.customer.name,
@@ -206,19 +197,6 @@ export const buildCustomerDataExport = async (
         })),
       };
     }),
-    reviews: customerAccount.orders.flatMap((order) =>
-      order.reviews.map((review) => ({
-        orderNumber: order.id,
-        kind: review.kind,
-        rating: review.rating,
-        comment: review.comment ?? null,
-        showReviewerName: review.showReviewerName,
-        createdAt: review.createdAt,
-        imageUrl: review.images?.[0]?.storageKey
-          ? storage.getPublicUrl(review.images[0].storageKey)
-          : null,
-      })),
-    ),
   };
 
   return exportPayload;

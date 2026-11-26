@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Dialog, VisuallyHidden } from "radix-ui";
 import {
@@ -123,7 +123,7 @@ export function Modal({
   );
 }
 
-export function ModalIconButton({
+function ModalIconButton({
   label,
   icon,
   type = "button",
@@ -147,17 +147,5 @@ export function ModalCloseButton(props: Omit<ModalIconButtonProps, "label" | "ic
 
   return (
     <ModalIconButton label={t("close")} icon={<X size={18} aria-hidden="true" />} {...props} />
-  );
-}
-
-export function ModalBackButton(props: Omit<ModalIconButtonProps, "label" | "icon">) {
-  const t = useTranslations("modal");
-
-  return (
-    <ModalIconButton
-      label={t("back")}
-      icon={<ArrowLeft size={18} aria-hidden="true" />}
-      {...props}
-    />
   );
 }

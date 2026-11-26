@@ -41,7 +41,7 @@ export const promotionCodesRoutes = {
     .handler(async ({ body, context }) => {
       const [promotionCode] = await context.db.insert(promotionCodeTable).values(body).returning();
 
-      await logAdminAction(context.db, {
+      await logAdminAction(context, {
         actor: context.authContext,
         action: "CREATE",
         entity: "promotionCode",
@@ -68,7 +68,7 @@ export const promotionCodesRoutes = {
         .where(eq(promotionCodeTable.id, params.id))
         .returning();
 
-      await logAdminAction(context.db, {
+      await logAdminAction(context, {
         actor: context.authContext,
         action: "UPDATE",
         entity: "promotionCode",
@@ -91,7 +91,7 @@ export const promotionCodesRoutes = {
       );
       if (!deleted) throw new RouteError("NOT_FOUND", { status: 404 });
 
-      await logAdminAction(context.db, {
+      await logAdminAction(context, {
         actor: context.authContext,
         action: "DELETE",
         entity: "promotionCode",

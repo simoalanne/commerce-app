@@ -112,7 +112,7 @@ export const categoriesRoutes = {
         .returning({ id: categoryTable.id });
       const category = await findCategoryForAudit(context.db, id);
 
-      await logAdminAction(context.db, {
+      await logAdminAction(context, {
         actor: context.authContext,
         action: "CREATE",
         entity: "category",
@@ -151,7 +151,7 @@ export const categoriesRoutes = {
         .where(eq(categoryTable.id, params.id));
       const updated = await findCategoryForAudit(context.db, params.id);
 
-      await logAdminAction(context.db, {
+      await logAdminAction(context, {
         actor: context.authContext,
         action: "UPDATE",
         entity: "category",
@@ -188,7 +188,7 @@ export const categoriesRoutes = {
         context.db.delete(categoryTable).where(eq(categoryTable.id, params.id)),
       );
 
-      await logAdminAction(context.db, {
+      await logAdminAction(context, {
         actor: context.authContext,
         action: "DELETE",
         entity: "category",

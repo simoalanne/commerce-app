@@ -5,7 +5,7 @@ import { RateLimitExceeded } from "#src/routing/errors.ts";
 
 const MINUTE_SECONDS = 60;
 
-export const checkoutCreatePaymentRateLimitPolicy = {
+const checkoutCreatePaymentRateLimitPolicy = {
   windowMs: 15 * MINUTE_SECONDS * 1000,
   max: 5,
 } as const;

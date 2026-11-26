@@ -58,7 +58,7 @@ const runJob = async (type: JobType, rawPayload: unknown, context: JobHandlerCon
   await handler(definition.schema.parse(rawPayload), context);
 };
 
-export const createJobQueue = (connectionString: string): JobQueue => {
+const createJobQueue = (connectionString: string): JobQueue => {
   const boss = new PgBoss({ connectionString });
 
   boss.on("error", (error) => {

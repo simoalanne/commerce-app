@@ -119,7 +119,7 @@ export const vendorsRoutes = {
       await replaceVendorImages(context.db, id, images);
       const vendor = await findVendorForAudit(context.db, id);
 
-      await logAdminAction(context.db, {
+      await logAdminAction(context, {
         actor: context.authContext,
         action: "CREATE",
         entity: "vendor",
@@ -160,7 +160,7 @@ export const vendorsRoutes = {
       await replaceVendorImages(context.db, id, images);
       const updated = await findVendorForAudit(context.db, id);
 
-      await logAdminAction(context.db, {
+      await logAdminAction(context, {
         actor: context.authContext,
         action: "UPDATE",
         entity: "vendor",
@@ -194,7 +194,7 @@ export const vendorsRoutes = {
 
       await tryDeleteEntity(() => context.db.delete(vendorTable).where(eq(vendorTable.id, id)));
 
-      await logAdminAction(context.db, {
+      await logAdminAction(context, {
         actor: context.authContext,
         action: "DELETE",
         entity: "vendor",

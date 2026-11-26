@@ -43,7 +43,7 @@ const getLocaleFallbackOrder = (preferredLocale: ContentLocale) =>
     (locale, index, locales) => locales.indexOf(locale) === index,
   );
 
-export function resolveLocalizedValue(
+function resolveLocalizedValue(
   value: unknown,
   preferredLocale: ContentLocale,
 ): string | string[] | undefined {
@@ -65,7 +65,7 @@ export function resolveLocalizedValue(
   return undefined;
 }
 
-export function getLocalizedValueForLocale(
+function getLocalizedValueForLocale(
   value: unknown,
   locale: ContentLocale,
 ): string | string[] | undefined {

@@ -85,7 +85,7 @@ export const imagesRoutes = {
         .where(and(eq(imageTable.id, params.id), eq(imageTable.kind, "CMS")))
         .returning();
 
-      await logAdminAction(context.db, {
+      await logAdminAction(context, {
         actor: context.authContext,
         action: "UPDATE",
         entity: "image",
@@ -111,7 +111,7 @@ export const imagesRoutes = {
         .where(and(eq(imageTable.id, image.id), eq(imageTable.kind, "CMS")))
         .returning();
 
-      await logAdminAction(context.db, {
+      await logAdminAction(context, {
         actor: context.authContext,
         action: "DELETE",
         entity: "image",
@@ -171,7 +171,7 @@ export const imagesRoutes = {
         })
         .returning();
 
-      await logAdminAction(context.db, {
+      await logAdminAction(context, {
         actor: context.authContext,
         action: "CREATE",
         entity: "image",

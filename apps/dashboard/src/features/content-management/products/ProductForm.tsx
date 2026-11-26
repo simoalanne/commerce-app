@@ -48,7 +48,7 @@ export default function ProductForm(props: ProductFormProps) {
   return <ProductFormContent {...props} />;
 }
 
-export function ProductFormContent({ entityData, onSuccess }: ProductFormProps) {
+function ProductFormContent({ entityData, onSuccess }: ProductFormProps) {
   const queryClient = useQueryClient();
   const { contentLocale } = useDashboardLocalization();
   const [searchParams] = useSearchParams();

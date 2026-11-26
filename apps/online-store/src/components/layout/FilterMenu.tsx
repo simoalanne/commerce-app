@@ -252,7 +252,7 @@ function FilterMenuContent({
   );
 }
 
-export function FilterMenuFallback(props: FilterMenuProps) {
+function FilterMenuFallback(props: FilterMenuProps) {
   const ABSOLUTE_MIN = 1;
   const ABSOLUTE_MAX = Math.max(Math.ceil(props.maxPrice ?? 100), ABSOLUTE_MIN + 1);
 

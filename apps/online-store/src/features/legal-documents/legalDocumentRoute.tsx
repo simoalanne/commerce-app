@@ -17,10 +17,7 @@ function formatDate(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
-export async function renderLegalDocumentPage(
-  key: LegalDocumentKey,
-  params: DestructuredRouteParams,
-) {
+async function renderLegalDocumentPage(key: LegalDocumentKey, params: DestructuredRouteParams) {
   const document = await getLegalDocumentByKey(key, params);
 
   if (!document) {
@@ -56,7 +53,7 @@ export const createLegalDocumentRoute = (key: LegalDocumentKey) => {
   };
 };
 
-export async function generateLegalDocumentMetadata(
+async function generateLegalDocumentMetadata(
   key: LegalDocumentKey,
   params: DestructuredRouteParams,
 ): Promise<Metadata> {

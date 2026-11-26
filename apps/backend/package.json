@@ -6,7 +6,6 @@
   "license": "ISC",
   "author": "",
   "type": "module",
-  "main": "index.ts",
   "imports": {
     "#src/*": "./src/*"
   },
@@ -44,7 +43,6 @@
     "drizzle-orm": "1.0.0-rc.6",
     "ip-address": "^10.7.6",
     "jose": "^6.2.18",
-    "p-map": "^7.1.1",
     "pdfmake": "^0.3.15",
     "pg": "^8.23.1",
     "pg-boss": "12.40.0",

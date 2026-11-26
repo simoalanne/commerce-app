@@ -131,7 +131,7 @@ export const productsRoutes = {
       await replaceProductLinks(context.db, id, { images, tags });
       const product = await findProductForAudit(context.db, id);
 
-      await logAdminAction(context.db, {
+      await logAdminAction(context, {
         actor: context.authContext,
         action: "CREATE",
         entity: "product",
@@ -184,7 +184,7 @@ export const productsRoutes = {
       await replaceProductLinks(context.db, id, { images, tags });
       const updated = await findProductForAudit(context.db, id);
 
-      await logAdminAction(context.db, {
+      await logAdminAction(context, {
         actor: context.authContext,
         action: "UPDATE",
         entity: "product",
@@ -213,7 +213,7 @@ export const productsRoutes = {
       const deleted = await findProductForAudit(context.db, id);
       await tryDeleteEntity(() => context.db.delete(productTable).where(eq(productTable.id, id)));
 
-      await logAdminAction(context.db, {
+      await logAdminAction(context, {
         actor: context.authContext,
         action: "DELETE",
         entity: "product",

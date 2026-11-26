@@ -78,7 +78,7 @@ export const contactSubmissionsRoutes = {
         .set({ status: body.status })
         .where(eq(contactSubmissionTable.id, params.id));
 
-      await logAdminAction(context.db, {
+      await logAdminAction(context, {
         actor: context.authContext,
         action: "OTHER",
         entity: "contactSubmission",

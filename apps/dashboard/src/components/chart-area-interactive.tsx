@@ -27,8 +27,6 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-export const description = "An interactive area chart";
-
 type ChartPoint = {
   date: string;
   revenue: number;

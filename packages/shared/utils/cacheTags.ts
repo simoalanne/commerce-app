@@ -1,4 +1,4 @@
-export const normalizeEndpointTagPath = (path: string) => {
+const normalizeEndpointTagPath = (path: string) => {
   const normalizedSegments = path
     .split("/")
     .filter((segment) => segment.length > 0 && !segment.startsWith(":"));

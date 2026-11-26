@@ -72,7 +72,7 @@ export const tagsRoutes = {
         })
         .returning();
 
-      await logAdminAction(context.db, {
+      await logAdminAction(context, {
         actor: context.authContext,
         action: "CREATE",
         entity: "tag",
@@ -107,7 +107,7 @@ export const tagsRoutes = {
         .where(eq(tagTable.id, params.id))
         .returning();
 
-      await logAdminAction(context.db, {
+      await logAdminAction(context, {
         actor: context.authContext,
         action: "UPDATE",
         entity: "tag",
@@ -136,7 +136,7 @@ export const tagsRoutes = {
       )[0];
       if (!deleted) throw new RouteError("NOT_FOUND", { status: 404 });
 
-      await logAdminAction(context.db, {
+      await logAdminAction(context, {
         actor: context.authContext,
         action: "DELETE",
         entity: "tag",

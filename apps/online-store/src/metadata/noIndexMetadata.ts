@@ -5,14 +5,14 @@ import type { Messages } from "next-intl";
 import { getServerTranslations } from "@/i18n/serverTranslations";
 import type { DestructuredRouteParams, RouteParams } from "@/types";
 
-export const noIndexMetadata: Metadata = {
+const noIndexMetadata: Metadata = {
   robots: {
     index: false,
     follow: false,
   },
 };
 
-export async function generateNoIndexMetadata(
+async function generateNoIndexMetadata(
   titleKey: keyof Messages["metadata"]["noIndex"],
   params: DestructuredRouteParams,
 ): Promise<Metadata> {

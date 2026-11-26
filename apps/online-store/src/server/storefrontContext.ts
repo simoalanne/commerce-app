@@ -24,13 +24,13 @@ export const getCurrentProductSummary = async (params: DestructuredRouteParams) 
   return findOrThrow(ctx.products, slug);
 };
 
-export const getCurrentVendorSummary = async (params: DestructuredRouteParams) => {
+const getCurrentVendorSummary = async (params: DestructuredRouteParams) => {
   const ctx = await getStorefrontContext(params);
   const slug = await params.then((p) => p.vendor);
   return findOrThrow(ctx.vendors, slug);
 };
 
-export const getCurrentCategorySummary = async (params: DestructuredRouteParams) => {
+const getCurrentCategorySummary = async (params: DestructuredRouteParams) => {
   const ctx = await getStorefrontContext(params);
   const slug = await params.then((p) => p.category);
   return findOrThrow(ctx.categories, slug);

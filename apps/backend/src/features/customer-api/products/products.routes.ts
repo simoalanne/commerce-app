@@ -46,7 +46,7 @@ const toProductSummary = (
   name: product.name,
   headline: product.headline,
   category: product.category?.name ?? null,
-  vendorName: product.vendor?.name || "Tuntematon",
+  vendorName: product.vendor.name,
   tags: product.tags.map((productTag) => productTag.tag),
   imageUrl: getFirstLinkedImageUrl(storage, product.images),
   priceCents: product.salesPriceCents,

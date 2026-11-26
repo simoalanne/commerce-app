@@ -74,7 +74,7 @@ export const legalDocumentsRoutes = {
         })
         .returning();
 
-      await logAdminAction(context.db, {
+      await logAdminAction(context, {
         actor: context.authContext,
         action: existingDocument ? "UPDATE" : "CREATE",
         entity: "legalDocument",

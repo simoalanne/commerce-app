@@ -1,8 +1,7 @@
-import type { Db } from "#src/db/client.ts";
 import type { JsonObject, JsonValue } from "#src/db/json.ts";
 import { adminActionLogTable } from "#src/db/schema.ts";
-import AuthProvider from "#src/integrations/auth/auth.provider.ts";
 import type { AuthContext } from "#src/routing/auth.ts";
+import type { AppContext } from "#src/routing/base.ts";
 
 type LogAdminActionInputBase = {
   actor: AuthContext;
@@ -11,7 +10,7 @@ type LogAdminActionInputBase = {
   entityId?: number | string | null;
 };
 
-export type LogAdminActionInput = LogAdminActionInputBase &
+type LogAdminActionInput = LogAdminActionInputBase &
   (
     | {
         details: Record<string, unknown>;
@@ -118,11 +117,14 @@ export const getChangedFields = (
   };
 };
 
-export async function logAdminAction(db: Db, input: LogAdminActionInput) {
+export async function logAdminAction(
+  { db, auth }: Pick<AppContext, "db" | "auth">,
+  input: LogAdminActionInput,
+) {
   if (!input.actor.adminId) {
     throw new Error("Admin action logging requires an authenticated admin");
   }
-  const identity = await AuthProvider.getUserById(input.actor.clerkId);
+  const identity = await auth.getUserById(input.actor.clerkId);
 
   let details: JsonValue = null;
 

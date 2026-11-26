@@ -44,7 +44,7 @@ export const webhooksRoutes = {
         .values(body)
         .returning();
 
-      await logAdminAction(context.db, {
+      await logAdminAction(context, {
         actor: context.authContext,
         action: "CREATE",
         entity: "webhookSubscription",
@@ -71,7 +71,7 @@ export const webhooksRoutes = {
         .where(eq(webhookSubscriptionTable.id, params.id))
         .returning();
 
-      await logAdminAction(context.db, {
+      await logAdminAction(context, {
         actor: context.authContext,
         action: "UPDATE",
         entity: "webhookSubscription",
@@ -94,7 +94,7 @@ export const webhooksRoutes = {
       );
       if (!deleted) throw new RouteError("NOT_FOUND", { status: 404 });
 
-      await logAdminAction(context.db, {
+      await logAdminAction(context, {
         actor: context.authContext,
         action: "DELETE",
         entity: "webhookSubscription",

@@ -42,21 +42,6 @@ export const createCategory = async (
   return category;
 };
 
-export const createImage = async (overrides: Partial<typeof imageTable.$inferInsert> = {}) => {
-  const slug = uniqueValue("image");
-
-  const [image] = await db
-    .insert(imageTable)
-    .values({
-      name: "Test image",
-      alt: {},
-      storageKey: imageStorageKey("asset", slug),
-      ...overrides,
-    })
-    .returning();
-  return image;
-};
-
 export const createUser = async (overrides: Partial<typeof userTable.$inferInsert> = {}) => {
   const [user] = await db
     .insert(userTable)
@@ -201,13 +186,6 @@ const createReview = async (
     .returning();
   return review;
 };
-
-export const createVendorReview = async (
-  overrides: Partial<typeof reviewTable.$inferInsert> = {},
-) =>
-  createReview("VENDOR", overrides, {
-    vendorId: overrides.vendorId ?? (await createVendor()).id,
-  });
 
 export const createProductReview = async (
   overrides: Partial<typeof reviewTable.$inferInsert> = {},

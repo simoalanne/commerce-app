@@ -4,7 +4,7 @@ import envConfig from "#src/config.ts";
 
 import { handlePaymentReconciliation } from "./payment.reconciliation.ts";
 
-export const handlePaymentSucceeded = async (
+const handlePaymentSucceeded = async (
   paymentIntent: Pick<Stripe.PaymentIntent, "id" | "metadata">,
 ) => {
   await handlePaymentReconciliation({
