@@ -5,7 +5,6 @@ import {
   categoryTable,
   customerAccountTable,
   imageTable,
-  orderItemTable,
   orderTable,
   type OrderStatus,
   productImageTable,
@@ -140,13 +139,8 @@ export const createProduct = async ({
   return product;
 };
 
-type OrderItemInput = Omit<typeof orderItemTable.$inferInsert, "orderId">;
-
 export const createOrder = async (
-  {
-    orderItems = [],
-    ...overrides
-  }: Partial<typeof orderTable.$inferInsert> & { orderItems?: OrderItemInput[] } = {},
+  overrides: Partial<typeof orderTable.$inferInsert> = {},
   status: OrderStatus = "PENDING",
 ) => {
   const customerId =
@@ -182,11 +176,6 @@ export const createOrder = async (
     })
     .returning();
 
-  if (orderItems.length > 0) {
-    await db
-      .insert(orderItemTable)
-      .values(orderItems.map((item) => ({ ...item, orderId: order.id })));
-  }
   return order;
 };
 

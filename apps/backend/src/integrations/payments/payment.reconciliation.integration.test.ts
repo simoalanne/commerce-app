@@ -1,7 +1,14 @@
 import { inArray } from "drizzle-orm";
 
 import { db } from "#src/db/client.ts";
-import { categoryTable, orderTable, productTable, userTable, vendorTable } from "#src/db/schema.ts";
+import {
+  categoryTable,
+  orderItemTable,
+  orderTable,
+  productTable,
+  userTable,
+  vendorTable,
+} from "#src/db/schema.ts";
 import { assertOrderStatus, assertStock } from "#src/tests/asserts.ts";
 import {
   createCategory,
@@ -97,20 +104,21 @@ const createReconciliationScenario = async ({
         instructions: {},
       },
     },
-    orderItems: [
-      {
-        sku: product.sku,
-        name: product.name.en ?? "",
-        quantity,
-        unitCostPriceCents: product.costPriceCents,
-        unitSalesPriceCents: 990,
-        productId: product.id,
-        vendorId: vendor.id,
-        vendorName: vendor.name,
-      },
-    ],
   });
   createdOrderIds.add(order.id);
+  await db.insert(orderItemTable).values([
+    {
+      orderId: order.id,
+      sku: product.sku,
+      name: product.name.en ?? "",
+      quantity,
+      unitCostPriceCents: product.costPriceCents,
+      unitSalesPriceCents: 990,
+      productId: product.id,
+      vendorId: vendor.id,
+      vendorName: vendor.name,
+    },
+  ]);
 
   return { order, product };
 };
