@@ -196,7 +196,6 @@ export const orderTable = snakeCase.table(
     // Whole percent.
     vatRate: integer().notNull(),
     includedVatCents: integer().notNull(),
-    totalWeightGrams: integer().notNull().default(0),
     status: orderStatusEnum().notNull().default("PENDING"),
     paymentId: text().unique(),
     paymentProvider: paymentProviderEnum().notNull(),
@@ -310,7 +309,6 @@ export const productTable = snakeCase.table(
     sku: text().notNull().unique(),
     slug: jsonb().$type<LocalizedString>().notNull(),
     name: jsonb().$type<LocalizedString>().notNull(),
-    weightGrams: integer().notNull().default(0),
     headline: jsonb().$type<LocalizedString>().notNull(),
     fullDescription: jsonb().$type<LocalizedString>().notNull(),
     storefrontVisibility: storefrontVisibilityEnum().notNull().default("ACTIVE"),

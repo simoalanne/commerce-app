@@ -123,7 +123,6 @@ describe("checkout.utils", () => {
           vendor: { name: "Vendor 1" },
           costPriceCents: 80,
           salesPriceCents: 100,
-          weightGrams: 250,
         },
         {
           id: 2,
@@ -133,7 +132,6 @@ describe("checkout.utils", () => {
           vendor: { name: "Vendor 2" },
           costPriceCents: 150,
           salesPriceCents: 200,
-          weightGrams: 500,
         },
       ] as any;
 
@@ -152,7 +150,6 @@ describe("checkout.utils", () => {
           quantity: 2,
           unitPriceCents: 100,
           unitCostPriceCents: 80,
-          weightGrams: 250,
         },
         {
           sku: "SKU2",
@@ -163,7 +160,6 @@ describe("checkout.utils", () => {
           quantity: 1,
           unitPriceCents: 200,
           unitCostPriceCents: 150,
-          weightGrams: 500,
         },
       ]);
     });
@@ -174,7 +170,6 @@ describe("checkout.utils", () => {
           sku: "SKU1",
           costPriceCents: 80,
           salesPriceCents: 100,
-          weightGrams: 250,
         },
       ] as any;
 

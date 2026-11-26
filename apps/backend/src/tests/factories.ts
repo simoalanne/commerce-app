@@ -101,7 +101,6 @@ export const createProduct = async ({
       sku: uniqueValue("sku"),
       slug,
       name,
-      weightGrams: 500,
       headline: { en: "Test headline" },
       fullDescription: { en: "Test description" },
       costPriceCents: 990,
@@ -139,7 +138,6 @@ export const createOrder = async (
       chargedTotalCents: 1990,
       vatRate: 20,
       includedVatCents: 332,
-      totalWeightGrams: 500,
       paymentProvider: "STRIPE",
       status,
       orderDetails: {

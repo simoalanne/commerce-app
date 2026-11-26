@@ -70,7 +70,6 @@ function ProductFormContent({ entityData, onSuccess }: ProductFormProps) {
   const fallbackDefaults: FormOutput = {
     sku: "",
     name: "",
-    weightGrams: 0,
     headline: "",
     fullDescription: "",
     storefrontVisibility: "INACTIVE",
@@ -293,21 +292,6 @@ function ProductFormContent({ entityData, onSuccess }: ProductFormProps) {
             </Field>
           )}
         />
-
-        <Field>
-          <FieldLabel>Weight</FieldLabel>
-          <NumberInput
-            name="weightGrams"
-            control={form.control}
-            min={0}
-            step={1}
-            endSymbol="g"
-            placeholder="0"
-          />
-          {form.formState.errors.weightGrams ? (
-            <FieldError errors={[form.formState.errors.weightGrams]} />
-          ) : null}
-        </Field>
 
         <Field>
           <FieldLabel>Cost Price</FieldLabel>

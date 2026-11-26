@@ -9,7 +9,6 @@ const ProductImagesSchema = z
 export const ProductFormSchema = z.object({
   sku: z.string().min(1),
   name: z.string().min(1),
-  weightGrams: z.number().int(),
   headline: z.string().min(1),
   fullDescription: z.string().min(1),
   storefrontVisibility: z.enum(["ACTIVE", "INACTIVE"]),

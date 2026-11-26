@@ -90,7 +90,6 @@ export const buildOrderItemsFromProducts = (
     quantity: cart[p.sku].quantity,
     unitPriceCents: p.salesPriceCents,
     unitCostPriceCents: p.costPriceCents,
-    weightGrams: p.weightGrams,
   }));
 };
 

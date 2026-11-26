@@ -183,10 +183,6 @@ const createPaymentInternal = async (
         orderDetails,
         invoiceDetails: getCompanyDetails(config),
         appliedPromoCode: validatedPromoCode ? promoCode : null,
-        totalWeightGrams: orderItems.reduce(
-          (sum, item) => sum + item.weightGrams * item.quantity,
-          0,
-        ),
         preferredLocale: context.locale,
       })
       .returning();

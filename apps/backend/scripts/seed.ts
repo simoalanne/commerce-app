@@ -126,20 +126,19 @@ for (const definition of vendorDefinitions) {
 }
 
 const productDefinitions = [
-  ["Rolled Oats", "Pantry", "Northwind Goods", 240, 490, 120, 1000, "#a16207"],
-  ["Wildflower Honey", "Pantry", "Northwind Goods", 550, 1190, 40, 450, "#ca8a04"],
-  ["Sea Salt Flakes", "Pantry", "Northwind Goods", 180, 550, 80, 250, "#64748b"],
-  ["Cold Brew Coffee", "Drinks", "Harbor & Co", 210, 450, 60, 330, "#422006"],
-  ["Sparkling Lemonade", "Drinks", "Harbor & Co", 120, 320, 150, 330, "#facc15"],
-  ["Herbal Tea Blend", "Drinks", "Northwind Goods", 300, 790, 0, 100, "#15803d"],
-  ["Beeswax Candle", "Home", "Harbor & Co", 600, 1600, 25, 300, "#d97706"],
-  ["Linen Tea Towel", "Home", "Harbor & Co", 450, 1250, 35, 120, "#78716c"],
+  ["Rolled Oats", "Pantry", "Northwind Goods", 240, 490, 120, "#a16207"],
+  ["Wildflower Honey", "Pantry", "Northwind Goods", 550, 1190, 40, "#ca8a04"],
+  ["Sea Salt Flakes", "Pantry", "Northwind Goods", 180, 550, 80, "#64748b"],
+  ["Cold Brew Coffee", "Drinks", "Harbor & Co", 210, 450, 60, "#422006"],
+  ["Sparkling Lemonade", "Drinks", "Harbor & Co", 120, 320, 150, "#facc15"],
+  ["Herbal Tea Blend", "Drinks", "Northwind Goods", 300, 790, 0, "#15803d"],
+  ["Beeswax Candle", "Home", "Harbor & Co", 600, 1600, 25, "#d97706"],
+  ["Linen Tea Towel", "Home", "Harbor & Co", 450, 1250, 35, "#78716c"],
 ] as const;
 
 const productIds: number[] = [];
 for (const [index, definition] of productDefinitions.entries()) {
-  const [name, category, vendor, costPriceCents, salesPriceCents, stock, weightGrams, color] =
-    definition;
+  const [name, category, vendor, costPriceCents, salesPriceCents, stock, color] = definition;
   const image = await createImage(name, color);
   const [product] = await db
     .insert(productTable)
@@ -149,7 +148,6 @@ for (const [index, definition] of productDefinitions.entries()) {
       name: en(name),
       headline: en(`${name} from ${vendor}`),
       fullDescription: en(`${name} is a demo product created by the seed script.`),
-      weightGrams,
       isFeatured: index < 4,
       categoryId: categories[category],
       vendorId: vendors[vendor],

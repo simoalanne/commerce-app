@@ -132,7 +132,6 @@ export const productsRoutes = {
         .set({
           name: mergeLocalizedString(existingProduct.name, data.name, context.locale),
           slug: mergeLocalizedSlug(existingProduct.slug, data.name, context.locale),
-          weightGrams: data.weightGrams,
           headline: mergeLocalizedString(existingProduct.headline, data.headline, context.locale),
           fullDescription: mergeLocalizedString(
             existingProduct.fullDescription,
