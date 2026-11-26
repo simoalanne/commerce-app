@@ -7,7 +7,7 @@ Last updated: 2026-11-22
 - The project is a general commerce core built on contracts and data it owns, meant to grow features off-the-shelf stacks don't give out of the box (still to be decided). `Acme` is a placeholder name. It also serves as a proving ground for rest-rpc and for agent-driven development. See `README.md`.
 - Nothing is deployed. Backward compatibility is unnecessary unless the user explicitly asks for it. Prefer direct cleanup over compatibility layers, migration bridges, or preserving stale behavior.
 - The plan is `docs/roadmap.md`. Parts it replaces (Next-only caching machinery, the in-memory job queue, `runAppTransaction`) shouldn't be extended.
-- Prefer in-process libraries over platforms that own the data model or the API. Planned swaps: Prisma → Drizzle, Clerk → Better Auth.
+- Prefer in-process libraries over platforms that own the data model or the API. Planned swaps: Prisma → Drizzle (with integer cents and pg-boss), later Clerk → Better Auth.
 - Payments: the backend supports Stripe and Paytrail through one provider interface; the online store currently implements only the Paytrail flow.
 
 ## Architecture Posture
@@ -63,8 +63,8 @@ Do not hand-write parallel types or ad hoc fetch wrappers unless there is a stro
 
 - Prefer workspace-scoped commands such as `pnpm --filter <workspace> ...`.
 - After changing code, run `pnpm check` from the repo root (format check, lint, typecheck; the same as CI). `pnpm fix` applies formatting and autofixable lint fixes. `pnpm typecheck` alone typechecks every workspace in a few seconds.
-- Do not run tests unless the user asks.
-- Backend has separate unit and integration test suites. Integration tests usually need the Docker Compose test database running with the latest schema state and may require elevated permissions.
+- Run tests when they verify the work at hand, scoped to it: the unit or integration tests covering the code you changed. Don't run the full suite, or integration tests, for changes they don't exercise (UI wiring, copy, styling). Broad refactors of backend behavior (ORM, queue, transactions) do warrant the full integration suite.
+- Backend has separate unit and integration test suites. Integration tests need the Docker Compose test database running with the latest schema state and may require elevated permissions.
 - Some tests and commands require elevated permissions. Do not work around sandbox restrictions by changing the command or skipping the requested check. Ask for permission when the intended command needs it.
 - Do not spend time formatting code by hand. `pnpm fix` and the pre-commit hook format automatically. Typecheck matters more.
 - Tooling: oxfmt (`.oxfmtrc.json`), oxlint with type-aware rules (`.oxlintrc.json`), TypeScript 7 with one shared `tsconfig.base.json` that every workspace extends. Typecheck never emits. The online store's typecheck needs `apps/backend/generated/contracts/customer.json`, which the backend `postinstall` generates.
