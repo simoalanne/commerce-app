@@ -1,5 +1,6 @@
-# Tests will automatically use the acme_test db. For local dev db copy below and set in .env:
-# DATABASE_URL=postgresql://postgres:postgres@localhost:5432/acme_dev
+# Local databases: development on 5432 (the backend's default DATABASE_URL) and
+# test on 5433 (used automatically by the backend integration tests).
+name: acme
 
 services:
   dev-db:

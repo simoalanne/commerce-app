@@ -23,14 +23,17 @@ Not deployed. The next steps, starting with running locally without any accounts
 
 ```bash
 pnpm install                   # also installs the Git hooks and extracts the API contract
-pnpm --filter backend start    # API
-pnpm --filter dashboard dev    # dashboard
-pnpm --filter online-store dev # storefront
+docker compose up -d           # development and test databases
+pnpm db:push                   # apply the Prisma schema to the development database
+pnpm seed                      # demo catalog (replaces catalog, orders and content)
+pnpm dev                       # API on :3001, storefront on :3000, dashboard on Vite's port
 pnpm check                     # format check, lint and typecheck: the same as CI
 pnpm fix                       # format and apply autofixable lint fixes
 ```
 
-Add dependencies to the workspace that uses them: `pnpm --filter <workspace> add <package>`. Each workspace's `.env.example` lists its environment variables.
+Locally nothing needs an account: images are stored under `apps/backend/.local`, emails are printed to the backend console, and checkout offers a test payment provider. Signing in still needs Clerk keys until the auth swap. Each workspace's committed `.env.development` holds the local defaults; secrets and overrides go in `.env` (backend) or `.env.local` (frontends).
+
+Add dependencies to the workspace that uses them: `pnpm --filter <workspace> add <package>`.
 
 ## Docs
 

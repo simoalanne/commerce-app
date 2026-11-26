@@ -58,7 +58,7 @@ export const ObjectStorage: ObjectStorageProvider = r2Config
   ? new CloudflareR2ObjectStorageProvider(r2Config)
   : new FilesystemObjectStorageProvider({
       rootDir: fileURLToPath(new URL("../../../.local/storage", import.meta.url)),
-      publicBaseUrl: envConfig.API_PUBLIC_URL ?? `http://localhost:${envConfig.PORT}`,
+      publicBaseUrl: envConfig.API_PUBLIC_URL,
     });
 
 export const filesystemObjectStorage =

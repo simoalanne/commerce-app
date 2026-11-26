@@ -24,11 +24,13 @@ const throwUnconfigured = async (): Promise<never> => {
   throw new Error("Auth provider is not configured");
 };
 
-const stubAuthProvider: AuthProvider = {
-  authenticateUser: throwUnconfigured,
+// Without an identity service nobody can sign in, so guest flows work and
+// authenticated routes answer 401. Lookups of a specific user can't happen.
+const noUsersAuthProvider: AuthProvider = {
+  authenticateUser: async () => null,
   getUserById: throwUnconfigured,
-  getUsersByIds: throwUnconfigured,
-  getUserByEmail: throwUnconfigured,
+  getUsersByIds: async () => [],
+  getUserByEmail: async () => null,
   deleteUser: throwUnconfigured,
   updateUserPassword: throwUnconfigured,
 };
@@ -36,12 +38,12 @@ const stubAuthProvider: AuthProvider = {
 const canEnableClerk = envConfig.CLERK_SECRET_KEY && envConfig.CLERK_PUBLISHABLE_KEY;
 
 if (!canEnableClerk && envConfig.NODE_ENV === "development") {
-  logger.warn("Auth provider will be disabled and auth related features will not work");
+  logger.info("Clerk is not configured; sign-in is disabled and only guest flows work");
 }
 
 const AuthProvider: AuthProvider =
   envConfig.CLERK_SECRET_KEY && envConfig.CLERK_PUBLISHABLE_KEY
     ? new ClerkAuthProvider(envConfig.CLERK_SECRET_KEY, envConfig.CLERK_PUBLISHABLE_KEY)
-    : stubAuthProvider;
+    : noUsersAuthProvider;
 
 export default AuthProvider;

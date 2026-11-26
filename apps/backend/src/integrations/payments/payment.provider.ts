@@ -68,8 +68,6 @@ export interface PaymentProvider {
 const paytrailConfig =
   envConfig.PAYTRAIL_MERCHANT_ID &&
   envConfig.PAYTRAIL_SECRET_KEY &&
-  envConfig.API_PUBLIC_URL &&
-  envConfig.ONLINE_STORE_URL &&
   envConfig.PAYTRAIL_MERCHANT_NAME
     ? {
         merchantId: envConfig.PAYTRAIL_MERCHANT_ID,
@@ -93,7 +91,7 @@ export const paymentProviders: PaymentProviders = {
   ...(isDevelopment
     ? {
         DEV: new DevPaymentProvider({
-          apiBaseUrl: envConfig.API_PUBLIC_URL ?? `http://localhost:${envConfig.PORT}`,
+          apiBaseUrl: envConfig.API_PUBLIC_URL,
         }),
       }
     : {}),
@@ -129,7 +127,7 @@ export const getWebhookRoutes = async (): Promise<
     : {}),
   ...(paymentProviders.DEV
     ? (await import("./payment.provider.dev.routes.ts")).createDevPaymentRoutes({
-        storeUrl: envConfig.ONLINE_STORE_URL ?? "http://localhost:3000",
+        storeUrl: envConfig.ONLINE_STORE_URL,
       })
     : {}),
 });

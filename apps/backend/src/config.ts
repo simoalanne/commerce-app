@@ -10,8 +10,10 @@ const RuntimeEnvSchema = z.object({
   PAYTRAIL_MERCHANT_ID: z.coerce.number().optional(),
   PAYTRAIL_MERCHANT_NAME: z.string().optional(),
   PAYTRAIL_SECRET_KEY: z.string().optional(),
-  API_PUBLIC_URL: z.url().optional(),
-  ONLINE_STORE_URL: z.url().optional(),
+  // Local defaults match the dev ports (backend 3001, store 3000). Set
+  // API_PUBLIC_URL too when changing PORT.
+  API_PUBLIC_URL: z.url().default("http://localhost:3001"),
+  ONLINE_STORE_URL: z.url().default("http://localhost:3000"),
   INTERNAL_API_KEY: z.string().optional(),
   DASHBOARD_URL: z.url().optional(),
   RESEND_API_KEY: z.string().optional(),
@@ -66,7 +68,8 @@ const DeploymentEnvSchema = RuntimeEnvSchema.extend({
 const mapErrorIssues = (issues: z.core.$ZodIssue[]) =>
   issues.map((issue) => issue.path[0].toString());
 
-process.env.DATABASE_URL ??= "postgresql://postgres:postgres@localhost:5433/acme_test";
+// The compose development database; the test runner overrides it below.
+process.env.DATABASE_URL ??= "postgresql://postgres:postgres@localhost:5432/acme_dev";
 
 const isNodeTestRunner =
   process.env.NODE_TEST_CONTEXT ||

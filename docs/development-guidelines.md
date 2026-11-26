@@ -59,7 +59,7 @@ chore/tooling-update
 
 The backend uses PostgreSQL through Prisma, selected with `DATABASE_URL`. There are no migrations: schema changes are applied with `prisma db push`, and the client is regenerated with `prisma generate`. Agents may try generation, but if it fails in a sandbox they should report the error and move on.
 
-`apps/backend/docker-compose.yaml` runs two local databases:
+`compose.yaml` in the repo root runs two local databases:
 
 - development: `postgresql://postgres:postgres@localhost:5432/acme_dev`
 - test, used by the backend integration tests: `postgresql://postgres:postgres@localhost:5433/acme_test`

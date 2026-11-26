@@ -33,7 +33,7 @@ export const bootstrapTestDatabase = async () => {
     if (isTestDatabaseConnectionFailure(cause as Record<string, unknown>)) {
       throw new Error(
         `Failed to connect to the test database. Make sure the test database is running and accessible.
-				You can start the test db using with docker compose in the backend directory"`,
+				Start it with "docker compose up -d" in the repo root.`,
         { cause },
       );
     }

@@ -11,12 +11,6 @@ export async function invalidateStorefrontCache({ tags }: InvalidateStorefrontCa
     return;
   }
 
-  if (!envConfig.ONLINE_STORE_URL) {
-    throw new Error(
-      "missing ONLINE_STORE_URL environment variable, which is required to invalidate storefront cache",
-    );
-  }
-
   const secret = envConfig.INTERNAL_API_KEY;
   if (!secret || secret.length < 32) {
     throw new Error(
