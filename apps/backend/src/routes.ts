@@ -26,10 +26,6 @@ import { summaryRoutes } from "./features/dashboard-api/summary/summary.routes.t
 import { tagsRoutes } from "./features/dashboard-api/tags/tags.routes.ts";
 import { vendorsRoutes as dashboardVendorsRoutes } from "./features/dashboard-api/vendors/vendors.routes.ts";
 import { webhooksRoutes } from "./features/dashboard-api/webhooks/webhooks.routes.ts";
-import {
-  customerReadyRoutes,
-  dashboardReadyRoutes,
-} from "./features/shared-api/ready/ready.routes.ts";
 
 export const customerRouter = {
   categories: customerCategoriesRoutes,
@@ -40,7 +36,6 @@ export const customerRouter = {
   orders: customerOrdersRoutes,
   vendors: customerVendorsRoutes,
   products: customerProductsRoutes,
-  ready: customerReadyRoutes,
   reviews: customerReviewsRoutes,
   search: searchRoutes,
   storefront: storefrontRoutes,
@@ -60,7 +55,6 @@ export const dashboardRouter = {
   vendors: dashboardVendorsRoutes,
   products: dashboardProductsRoutes,
   promotionCodes: promotionCodesRoutes,
-  ready: dashboardReadyRoutes,
   reviews: dashboardReviewsRoutes,
   summary: summaryRoutes,
   tags: tagsRoutes,
