@@ -1,7 +1,17 @@
-import { PrismaClientKnownRequestError, sqltag as sql } from "@prisma/client/runtime/client";
 import { RouteError } from "@rest-rpc/server";
+import { and, eq, sql } from "drizzle-orm";
 import z from "zod";
 
+import type { Db } from "#src/db/client.ts";
+import { isForeignKeyViolation, isUniqueViolation, orNotFound } from "#src/db/errors.ts";
+import {
+  customerAccountTable,
+  customerFavoriteProductTable,
+  customerFavoriteVendorTable,
+  customerSavedCartItemTable,
+  orderTable,
+  userTable,
+} from "#src/db/schema.ts";
 import {
   activeStorefrontVendorWhere,
   activeStorefrontProductWhere,
@@ -9,7 +19,6 @@ import {
 import logger from "#src/logger.ts";
 import { customerRoute, customerTxRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
-import type { RunAppTransaction } from "#src/utils/runAppTransaction.ts";
 
 import { AccountDeletionBlockedByPaidOrders } from "./account.errors.ts";
 
@@ -34,18 +43,14 @@ const throwBadAccountItemWrite = (
     missingTarget: string;
   },
 ) => {
-  if (!(error instanceof PrismaClientKnownRequestError)) {
-    throw error;
-  }
-
-  if (error.code === "P2002") {
+  if (isUniqueViolation(error)) {
     throw new RouteError("BAD_REQUEST", {
       status: 400,
       message: messages.duplicate,
     });
   }
 
-  if (error.code === "P2003") {
+  if (isForeignKeyViolation(error)) {
     throw new RouteError("BAD_REQUEST", {
       status: 400,
       message: messages.missingTarget,
@@ -71,7 +76,7 @@ const assertUniqueProductIds = (items: Array<{ productId: number }>) => {
 };
 
 const finalizeLocalAccountDeletion = async (
-  runAppTransaction: RunAppTransaction,
+  db: Db,
   {
     clerkId,
     customerId,
@@ -80,9 +85,9 @@ const finalizeLocalAccountDeletion = async (
     customerId: number;
   },
 ) =>
-  runAppTransaction(async ({ tx }) => {
-    await tx.$executeRaw(sql`
-			UPDATE "Order"
+  db.transaction(async (tx) => {
+    await tx.execute(sql`
+			UPDATE ${orderTable}
 			SET order_details = order_details::jsonb
 				|| jsonb_build_object(
 					'customer',
@@ -102,11 +107,7 @@ const finalizeLocalAccountDeletion = async (
 			WHERE customer_id = ${customerId}
 		`);
 
-    await tx.user.deleteMany({
-      where: {
-        clerk_id: clerkId,
-      },
-    });
+    await tx.delete(userTable).where(eq(userTable.clerk_id, clerkId));
   });
 
 export const accountRoutes = {
@@ -116,12 +117,12 @@ export const accountRoutes = {
     .handler(async ({ context }) => {
       const { authContext, db, auth } = context;
 
-      const paidOrder = await db.order.findFirst({
+      const paidOrder = await db.query.order.findFirst({
         where: {
           customer_id: authContext.customerId,
           status: "PAID",
         },
-        select: {
+        columns: {
           id: true,
         },
       });
@@ -133,7 +134,7 @@ export const accountRoutes = {
       await auth.deleteUser(authContext.clerkId);
 
       try {
-        await finalizeLocalAccountDeletion(context.runAppTransaction, {
+        await finalizeLocalAccountDeletion(db, {
           clerkId: authContext.clerkId,
           customerId: authContext.customerId,
         });
@@ -162,12 +163,12 @@ export const accountRoutes = {
     }),
 
   getSavedCart: accountRoute.get("/users/account/saved-cart").handler(async ({ context }) => {
-    const cartItems = await context.db.customerSavedCartItem.findMany({
+    const cartItems = await context.db.query.customerSavedCartItem.findMany({
       where: {
         customer_account_id: context.authContext.customerId,
         product: activeStorefrontProductWhere(),
       },
-      select: {
+      columns: {
         product_id: true,
         quantity: true,
         added_at: true,
@@ -201,20 +202,18 @@ export const accountRoutes = {
       assertUniqueProductIds(items);
 
       try {
-        await db.customerSavedCartItem.deleteMany({
-          where: {
-            customer_account_id: authContext.customerId,
-          },
-        });
+        await db
+          .delete(customerSavedCartItemTable)
+          .where(eq(customerSavedCartItemTable.customer_account_id, authContext.customerId));
 
         if (items.length > 0) {
-          await db.customerSavedCartItem.createMany({
-            data: items.map((item) => ({
+          await db.insert(customerSavedCartItemTable).values(
+            items.map((item) => ({
               customer_account_id: authContext.customerId,
               product_id: item.productId,
               quantity: item.quantity,
             })),
-          });
+          );
         }
       } catch (error) {
         throwBadAccountItemWrite(error, {
@@ -227,12 +226,12 @@ export const accountRoutes = {
   getFavoriteProducts: accountRoute
     .get("/users/account/favorite-products")
     .handler(async ({ context }) => {
-      const products = await context.db.customerFavoriteProduct.findMany({
+      const products = await context.db.query.customerFavoriteProduct.findMany({
         where: {
           customer_account_id: context.authContext.customerId,
           product: activeStorefrontProductWhere(),
         },
-        select: {
+        columns: {
           product_id: true,
           added_at: true,
         },
@@ -255,11 +254,9 @@ export const accountRoutes = {
     .params(idParams)
     .handler(async ({ params, context }) => {
       try {
-        await context.db.customerFavoriteProduct.create({
-          data: {
-            customer_account_id: context.authContext.customerId,
-            product_id: params.id,
-          },
+        await context.db.insert(customerFavoriteProductTable).values({
+          customer_account_id: context.authContext.customerId,
+          product_id: params.id,
         });
       } catch (error) {
         throwBadAccountItemWrite(error, {
@@ -273,23 +270,25 @@ export const accountRoutes = {
     .delete("/users/account/favorite-products/:id")
     .params(idParams)
     .handler(async ({ params, context }) => {
-      await context.db.customerFavoriteProduct.deleteMany({
-        where: {
-          customer_account_id: context.authContext.customerId,
-          product_id: params.id,
-        },
-      });
+      await context.db
+        .delete(customerFavoriteProductTable)
+        .where(
+          and(
+            eq(customerFavoriteProductTable.customer_account_id, context.authContext.customerId),
+            eq(customerFavoriteProductTable.product_id, params.id),
+          ),
+        );
     }),
 
   getFavoriteVendors: accountRoute
     .get("/users/account/favorite-vendors")
     .handler(async ({ context }) => {
-      const vendors = await context.db.customerFavoriteVendor.findMany({
+      const vendors = await context.db.query.customerFavoriteVendor.findMany({
         where: {
           customer_account_id: context.authContext.customerId,
           vendor: activeStorefrontVendorWhere(),
         },
-        select: {
+        columns: {
           vendor_id: true,
           added_at: true,
         },
@@ -312,11 +311,9 @@ export const accountRoutes = {
     .params(idParams)
     .handler(async ({ params, context }) => {
       try {
-        await context.db.customerFavoriteVendor.create({
-          data: {
-            customer_account_id: context.authContext.customerId,
-            vendor_id: params.id,
-          },
+        await context.db.insert(customerFavoriteVendorTable).values({
+          customer_account_id: context.authContext.customerId,
+          vendor_id: params.id,
         });
       } catch (error) {
         throwBadAccountItemWrite(error, {
@@ -330,19 +327,23 @@ export const accountRoutes = {
     .delete("/users/account/favorite-vendors/:id")
     .params(idParams)
     .handler(async ({ params, context }) => {
-      await context.db.customerFavoriteVendor.deleteMany({
-        where: {
-          customer_account_id: context.authContext.customerId,
-          vendor_id: params.id,
-        },
-      });
+      await context.db
+        .delete(customerFavoriteVendorTable)
+        .where(
+          and(
+            eq(customerFavoriteVendorTable.customer_account_id, context.authContext.customerId),
+            eq(customerFavoriteVendorTable.vendor_id, params.id),
+          ),
+        );
     }),
 
   getPreferences: accountRoute.get("/users/account/preferences").handler(async ({ context }) => {
-    const account = await context.db.customerAccount.findUniqueOrThrow({
-      where: { id: context.authContext.customerId },
-      select: { preferred_locale: true },
-    });
+    const account = orNotFound(
+      await context.db.query.customerAccount.findFirst({
+        where: { id: context.authContext.customerId },
+        columns: { preferred_locale: true },
+      }),
+    );
 
     return toResponse({ preferredLocale: account.preferred_locale }, context.locale);
   }),
@@ -355,9 +356,9 @@ export const accountRoutes = {
       }),
     )
     .handler(async ({ body, context }) => {
-      await context.db.customerAccount.update({
-        where: { id: context.authContext.customerId },
-        data: { preferred_locale: body.preferredLocale },
-      });
+      await context.db
+        .update(customerAccountTable)
+        .set({ preferred_locale: body.preferredLocale })
+        .where(eq(customerAccountTable.id, context.authContext.customerId));
     }),
 };

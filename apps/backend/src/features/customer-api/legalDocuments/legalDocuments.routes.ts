@@ -1,5 +1,6 @@
 import z from "zod";
 
+import { orNotFound } from "#src/db/errors.ts";
 import { customerRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
 
@@ -15,9 +16,9 @@ export const legalDocumentsRoutes = {
     .get("/legal-documents/:key")
     .params(z.object({ key: LegalDocumentKeySchema }))
     .handler(async ({ params, context }) => {
-      const document = await context.db.legalDocument.findUniqueOrThrow({
-        where: { key: params.key },
-      });
+      const document = orNotFound(
+        await context.db.query.legalDocument.findFirst({ where: { key: params.key } }),
+      );
 
       return toResponse(
         {

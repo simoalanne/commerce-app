@@ -1,10 +1,18 @@
 import { randomUUID } from "node:crypto";
 
 import { RouteError } from "@rest-rpc/server";
+import { inArray } from "drizzle-orm";
 
 import envConfig from "#src/config.ts";
+import { db } from "#src/db/client.ts";
+import {
+  categoryTable,
+  orderTable,
+  productTable,
+  reviewTable,
+  vendorTable,
+} from "#src/db/schema.ts";
 import { createOrderCapabilityJwt } from "#src/features/customer-api/orders/orderCapabilities.ts";
-import prismaClient from "#src/prisma.ts";
 import { customerRouter } from "#src/routes.ts";
 import type { AppContext } from "#src/routing/base.ts";
 import { createTestClient } from "#src/tests/createTestClient.ts";
@@ -25,37 +33,27 @@ const createdReviewIds = new Set<number>();
 
 afterEach(async () => {
   if (createdReviewIds.size > 0) {
-    await prismaClient.review.deleteMany({
-      where: { id: { in: [...createdReviewIds] } },
-    });
+    await db.delete(reviewTable).where(inArray(reviewTable.id, [...createdReviewIds]));
     createdReviewIds.clear();
   }
 
   if (createdOrderIds.size > 0) {
-    await prismaClient.order.deleteMany({
-      where: { id: { in: [...createdOrderIds] } },
-    });
+    await db.delete(orderTable).where(inArray(orderTable.id, [...createdOrderIds]));
     createdOrderIds.clear();
   }
 
   if (createdProductSkus.size > 0) {
-    await prismaClient.product.deleteMany({
-      where: { sku: { in: [...createdProductSkus] } },
-    });
+    await db.delete(productTable).where(inArray(productTable.sku, [...createdProductSkus]));
     createdProductSkus.clear();
   }
 
   if (createdVendorIds.size > 0) {
-    await prismaClient.vendor.deleteMany({
-      where: { id: { in: [...createdVendorIds] } },
-    });
+    await db.delete(vendorTable).where(inArray(vendorTable.id, [...createdVendorIds]));
     createdVendorIds.clear();
   }
 
   if (createdCategoryIds.size > 0) {
-    await prismaClient.category.deleteMany({
-      where: { id: { in: [...createdCategoryIds] } },
-    });
+    await db.delete(categoryTable).where(inArray(categoryTable.id, [...createdCategoryIds]));
     createdCategoryIds.clear();
   }
 });
@@ -96,11 +94,6 @@ const createOrderReviewScenario = async ({
       customer_id: null,
       claim_token: claimToken,
       order_details: {
-        items: [
-          { sku: productOne.sku, quantity: 1, unitPrice: 9.9 },
-          { sku: productTwo.sku, quantity: 2, unitPrice: 5.5 },
-          { sku: productThree.sku, quantity: 1, unitPrice: 12.5 },
-        ],
         customer: {
           name: "Review Guest",
           email: "review@example.com",
@@ -112,40 +105,38 @@ const createOrderReviewScenario = async ({
           instructions: {},
         },
       },
-      order_items: {
-        create: [
-          {
-            sku: productOne.sku,
-            name: productOne.name.en,
-            quantity: 1,
-            unit_cost_price_cents: productOne.cost_price_cents,
-            unit_sales_price_cents: 990,
-            product_id: productOne.id,
-            vendor_id: vendorOne.id,
-            vendor_name: vendorOne.name,
-          },
-          {
-            sku: productTwo.sku,
-            name: productTwo.name.en,
-            quantity: 2,
-            unit_cost_price_cents: productTwo.cost_price_cents,
-            unit_sales_price_cents: 550,
-            product_id: productTwo.id,
-            vendor_id: vendorOne.id,
-            vendor_name: vendorOne.name,
-          },
-          {
-            sku: productThree.sku,
-            name: productThree.name.en,
-            quantity: 1,
-            unit_cost_price_cents: productThree.cost_price_cents,
-            unit_sales_price_cents: 1250,
-            product_id: productThree.id,
-            vendor_id: vendorTwo.id,
-            vendor_name: vendorTwo.name,
-          },
-        ],
-      },
+      order_items: [
+        {
+          sku: productOne.sku,
+          name: productOne.name.en ?? "",
+          quantity: 1,
+          unit_cost_price_cents: productOne.cost_price_cents,
+          unit_sales_price_cents: 990,
+          product_id: productOne.id,
+          vendor_id: vendorOne.id,
+          vendor_name: vendorOne.name,
+        },
+        {
+          sku: productTwo.sku,
+          name: productTwo.name.en ?? "",
+          quantity: 2,
+          unit_cost_price_cents: productTwo.cost_price_cents,
+          unit_sales_price_cents: 550,
+          product_id: productTwo.id,
+          vendor_id: vendorOne.id,
+          vendor_name: vendorOne.name,
+        },
+        {
+          sku: productThree.sku,
+          name: productThree.name.en ?? "",
+          quantity: 1,
+          unit_cost_price_cents: productThree.cost_price_cents,
+          unit_sales_price_cents: 1250,
+          product_id: productThree.id,
+          vendor_id: vendorTwo.id,
+          vendor_name: vendorTwo.name,
+        },
+      ],
     },
     status,
   );
@@ -164,7 +155,7 @@ const createOrderReviewScenario = async ({
 
 const createReviewAccessToken = async (claimToken: string) => {
   const capability = await createOrderCapabilityJwt(
-    { db: prismaClient, config: envConfig },
+    { db, config: envConfig },
     { token: claimToken, scope: "order:review" },
   );
 
@@ -175,39 +166,28 @@ describe("customerApi.orderReviews integration", () => {
   it("returns flat reviewables and existing saved reviews for a delivered order", async () => {
     const scenario = await createOrderReviewScenario();
 
-    const productReview = await prismaClient.review.create({
-      data: {
-        kind: "PRODUCT",
-        order: {
-          connect: {
-            id: scenario.order.id,
-          },
+    const [productReview, storeReview] = await db
+      .insert(reviewTable)
+      .values([
+        {
+          kind: "PRODUCT",
+          order_id: scenario.order.id,
+          product_id: scenario.productOne.id,
+          reviewer_name: "Review Guest",
+          show_reviewer_name: false,
+          rating: 5,
+          comment: "Great apples",
         },
-        product: {
-          connect: {
-            id: scenario.productOne.id,
-          },
+        {
+          kind: "STORE_EXPERIENCE",
+          order_id: scenario.order.id,
+          reviewer_name: "Review Guest",
+          show_reviewer_name: false,
+          rating: 4,
+          comment: "Smooth delivery",
         },
-        reviewer_name: "Review Guest",
-        show_reviewer_name: false,
-        rating: 5,
-        comment: "Great apples",
-      },
-    });
-    const storeReview = await prismaClient.review.create({
-      data: {
-        kind: "STORE_EXPERIENCE",
-        order: {
-          connect: {
-            id: scenario.order.id,
-          },
-        },
-        reviewer_name: "Review Guest",
-        show_reviewer_name: false,
-        rating: 4,
-        comment: "Smooth delivery",
-      },
-    });
+      ])
+      .returning();
     createdReviewIds.add(productReview.id);
     createdReviewIds.add(storeReview.id);
 
@@ -307,9 +287,9 @@ describe("customerApi.orderReviews integration", () => {
       },
     });
 
-    const storedReviews = await prismaClient.review.findMany({
+    const storedReviews = await db.query.review.findMany({
       where: { order_id: scenario.order.id },
-      orderBy: [{ product_id: "asc" }, { id: "asc" }],
+      orderBy: { product_id: "asc", id: "asc" },
     });
 
     expect(storedReviews.length).toBe(4);
@@ -362,7 +342,7 @@ describe("customerApi.orderReviews integration", () => {
     const scenario = await createOrderReviewScenario();
     const unrelatedProduct = await createProduct({
       vendor_id: scenario.vendorOne.id,
-      categoryIds: [createdCategoryIds.values().next().value],
+      categoryIds: [...createdCategoryIds].slice(0, 1),
     });
     createdProductSkus.add(unrelatedProduct.sku);
 

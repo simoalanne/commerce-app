@@ -14,7 +14,7 @@ Not deployed. The next steps, starting with running locally without any accounts
 
 ## Workspaces
 
-- `apps/backend`: Bun API on rest-rpc, Prisma and PostgreSQL, Clerk auth, Stripe and Paytrail payments
+- `apps/backend`: Bun API on rest-rpc, Drizzle and PostgreSQL, pg-boss jobs, Clerk auth, Stripe and Paytrail payments
 - `apps/dashboard`: React 19 + Vite admin dashboard
 - `apps/online-store`: Next.js storefront
 - `packages/shared`: form schemas and pure utilities shared across apps
@@ -24,7 +24,7 @@ Not deployed. The next steps, starting with running locally without any accounts
 ```bash
 pnpm install                   # also installs the Git hooks and extracts the API contract
 docker compose up -d           # development and test databases
-pnpm db:push                   # apply the Prisma schema to the development database
+pnpm db:push                   # apply the Drizzle schema to the development database
 pnpm seed                      # demo catalog (replaces catalog, orders and content)
 pnpm dev                       # API on :3001, storefront on :3000, dashboard on Vite's port
 pnpm check                     # format check, lint and typecheck: the same as CI

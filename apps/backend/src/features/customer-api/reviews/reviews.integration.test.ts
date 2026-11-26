@@ -1,4 +1,13 @@
-import prismaClient from "#src/prisma.ts";
+import { eq, inArray } from "drizzle-orm";
+
+import { db } from "#src/db/client.ts";
+import {
+  categoryTable,
+  productTable,
+  reviewTable,
+  userTable,
+  vendorTable,
+} from "#src/db/schema.ts";
 import { customerRouter } from "#src/routes.ts";
 import { createTestClient } from "#src/tests/createTestClient.ts";
 import {
@@ -19,37 +28,27 @@ const createdUserIds = new Set<string>();
 
 afterEach(async () => {
   if (createdReviewIds.size > 0) {
-    await prismaClient.review.deleteMany({
-      where: { id: { in: [...createdReviewIds] } },
-    });
+    await db.delete(reviewTable).where(inArray(reviewTable.id, [...createdReviewIds]));
     createdReviewIds.clear();
   }
 
   if (createdProductIds.size > 0) {
-    await prismaClient.product.deleteMany({
-      where: { id: { in: [...createdProductIds] } },
-    });
+    await db.delete(productTable).where(inArray(productTable.id, [...createdProductIds]));
     createdProductIds.clear();
   }
 
   if (createdVendorIds.size > 0) {
-    await prismaClient.vendor.deleteMany({
-      where: { id: { in: [...createdVendorIds] } },
-    });
+    await db.delete(vendorTable).where(inArray(vendorTable.id, [...createdVendorIds]));
     createdVendorIds.clear();
   }
 
   if (createdCategoryIds.size > 0) {
-    await prismaClient.category.deleteMany({
-      where: { id: { in: [...createdCategoryIds] } },
-    });
+    await db.delete(categoryTable).where(inArray(categoryTable.id, [...createdCategoryIds]));
     createdCategoryIds.clear();
   }
 
   if (createdUserIds.size > 0) {
-    await prismaClient.user.deleteMany({
-      where: { clerk_id: { in: [...createdUserIds] } },
-    });
+    await db.delete(userTable).where(inArray(userTable.clerk_id, [...createdUserIds]));
     createdUserIds.clear();
   }
 });
@@ -103,14 +102,14 @@ describe("customerApi.reviews", () => {
     createdReviewIds.add(anonymousReview.id);
     createdReviewIds.add(unrelatedReview.id);
 
-    await prismaClient.review.update({
-      where: { id: namedReview.id },
-      data: { updated_at: new Date("2026-02-01T10:00:00.000Z") },
-    });
-    await prismaClient.review.update({
-      where: { id: anonymousReview.id },
-      data: { updated_at: new Date("2026-02-02T10:00:00.000Z") },
-    });
+    await db
+      .update(reviewTable)
+      .set({ updated_at: new Date("2026-02-01T10:00:00.000Z") })
+      .where(eq(reviewTable.id, namedReview.id));
+    await db
+      .update(reviewTable)
+      .set({ updated_at: new Date("2026-02-02T10:00:00.000Z") })
+      .where(eq(reviewTable.id, anonymousReview.id));
 
     const { body: result } = await client.reviews.getByProduct({
       params: { productId: requestedProduct.id },

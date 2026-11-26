@@ -6,7 +6,9 @@ describe("tryDeleteEntity", () => {
   it("translates expected foreign key errors into EntityInUse", async () => {
     await expect(
       tryDeleteEntity(async () => {
-        throw { name: "DriverAdapterError", cause: { code: "23001" } };
+        throw new Error("Failed query", {
+          cause: Object.assign(new Error("violates foreign key constraint"), { code: "23503" }),
+        });
       }),
     ).rejects.toBeInstanceOf(EntityInUse);
   });

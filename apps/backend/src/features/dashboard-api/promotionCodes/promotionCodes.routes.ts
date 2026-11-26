@@ -1,6 +1,9 @@
 import { PromotionCodeFormSchema } from "@acme/shared/schemas/promotionCodes";
+import { eq } from "drizzle-orm";
 import z from "zod";
 
+import { orNotFound } from "#src/db/errors.ts";
+import { promotionCodeTable } from "#src/db/schema.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { EntityInUse } from "#src/routing/errors.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
@@ -34,8 +37,8 @@ const toPromotionCodeWriteData = <
 export const promotionCodesRoutes = {
   getAll: promotionCodeRoute.get("/promotion-codes").handler(async ({ context }) =>
     toResponse(
-      await context.db.promotionCode.findMany({
-        orderBy: [{ created_at: "desc" }, { id: "desc" }],
+      await context.db.query.promotionCode.findMany({
+        orderBy: { created_at: "desc", id: "desc" },
       }),
       context.locale,
     ),
@@ -46,11 +49,13 @@ export const promotionCodesRoutes = {
     .params(idParams)
     .handler(async ({ params, context }) =>
       toResponse(
-        await context.db.promotionCode.findUniqueOrThrow({
-          where: {
-            id: params.id,
-          },
-        }),
+        orNotFound(
+          await context.db.query.promotionCode.findFirst({
+            where: {
+              id: params.id,
+            },
+          }),
+        ),
         context.locale,
       ),
     ),
@@ -59,9 +64,10 @@ export const promotionCodesRoutes = {
     .post("/promotion-codes")
     .body(PromotionCodeFormSchema)
     .handler(async ({ body, context }) => {
-      const promotionCode = await context.db.promotionCode.create({
-        data: toPromotionCodeWriteData(body),
-      });
+      const [promotionCode] = await context.db
+        .insert(promotionCodeTable)
+        .values(toPromotionCodeWriteData(body))
+        .returning();
 
       await logAdminAction(context.db, {
         actor: context.authContext,
@@ -79,14 +85,17 @@ export const promotionCodesRoutes = {
     .params(idParams)
     .body(PromotionCodeFormSchema)
     .handler(async ({ params, body, context }) => {
-      const existingPromotionCode = await context.db.promotionCode.findUniqueOrThrow({
-        where: { id: params.id },
-      });
+      const existingPromotionCode = orNotFound(
+        await context.db.query.promotionCode.findFirst({
+          where: { id: params.id },
+        }),
+      );
 
-      const updated = await context.db.promotionCode.update({
-        where: { id: params.id },
-        data: toPromotionCodeWriteData(body),
-      });
+      const [updated] = await context.db
+        .update(promotionCodeTable)
+        .set(toPromotionCodeWriteData(body))
+        .where(eq(promotionCodeTable.id, params.id))
+        .returning();
 
       await logAdminAction(context.db, {
         actor: context.authContext,
@@ -103,10 +112,15 @@ export const promotionCodesRoutes = {
     .params(idParams)
     .error(EntityInUse)
     .handler(async ({ params, context }) => {
-      const deleted = await tryDeleteEntity(() =>
-        context.db.promotionCode.delete({
-          where: { id: params.id },
-        }),
+      const deleted = await tryDeleteEntity(async () =>
+        orNotFound(
+          (
+            await context.db
+              .delete(promotionCodeTable)
+              .where(eq(promotionCodeTable.id, params.id))
+              .returning()
+          )[0],
+        ),
       );
 
       await logAdminAction(context.db, {
@@ -121,12 +135,12 @@ export const promotionCodesRoutes = {
   getOptionsForForm: promotionCodeRoute
     .get("/promotion-codes/options-for-form")
     .handler(async ({ context }) => {
-      const promotionCodes = await context.db.promotionCode.findMany({
-        select: {
+      const promotionCodes = await context.db.query.promotionCode.findMany({
+        columns: {
           id: true,
           code: true,
         },
-        orderBy: [{ code: "asc" }, { id: "asc" }],
+        orderBy: { code: "asc", id: "asc" },
       });
 
       return toResponse(

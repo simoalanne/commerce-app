@@ -42,11 +42,13 @@ const formatPayloadBlock = (payload: unknown) => {
   }
 };
 
-const statusBadgeClassName: Record<JobQueueEntry["status"], string> = {
-  PENDING: "bg-sky-100 text-sky-800 hover:bg-sky-100",
-  RUNNING: "bg-amber-100 text-amber-800 hover:bg-amber-100",
-  COMPLETED: "bg-emerald-100 text-emerald-800 hover:bg-emerald-100",
-  FAILED: "bg-rose-100 text-rose-800 hover:bg-rose-100",
+const stateBadgeClassName: Record<JobQueueEntry["state"], string> = {
+  created: "bg-sky-100 text-sky-800 hover:bg-sky-100",
+  retry: "bg-orange-100 text-orange-800 hover:bg-orange-100",
+  active: "bg-amber-100 text-amber-800 hover:bg-amber-100",
+  completed: "bg-emerald-100 text-emerald-800 hover:bg-emerald-100",
+  cancelled: "bg-zinc-100 text-zinc-800 hover:bg-zinc-100",
+  failed: "bg-rose-100 text-rose-800 hover:bg-rose-100",
 };
 
 const columns: DataTableColumn<JobQueueEntry>[] = [
@@ -63,27 +65,27 @@ const columns: DataTableColumn<JobQueueEntry>[] = [
     cell: ({ row }) => <span className="font-medium">{row.original.type}</span>,
   },
   {
-    accessorKey: "status",
-    header: "Status",
+    accessorKey: "state",
+    header: "State",
     cell: ({ row }) => (
-      <Badge className={statusBadgeClassName[row.original.status]}>{row.original.status}</Badge>
+      <Badge className={stateBadgeClassName[row.original.state]}>{row.original.state}</Badge>
     ),
   },
   {
-    id: "attempts",
-    header: "Attempts",
-    accessorFn: (row) => `${row.attempts}/${row.maxAttempts}`,
+    id: "retries",
+    header: "Retries",
+    accessorFn: (row) => `${row.retryCount}/${row.retryLimit}`,
     cell: ({ row }) => (
       <span className="whitespace-nowrap">
-        {row.original.attempts}/{row.original.maxAttempts}
+        {row.original.retryCount}/{row.original.retryLimit}
       </span>
     ),
   },
   {
-    accessorKey: "nextRunAt",
-    header: "Next run",
+    accessorKey: "startAfter",
+    header: "Start after",
     cell: ({ row }) => (
-      <span className="whitespace-nowrap">{formatDateTime(row.original.nextRunAt)}</span>
+      <span className="whitespace-nowrap">{formatDateTime(row.original.startAfter)}</span>
     ),
   },
   {
@@ -147,9 +149,7 @@ function JobQueueContent() {
       <div className="flex flex-col gap-3 px-4 sm:flex-row sm:items-end sm:justify-between lg:px-6">
         <div className="flex flex-col gap-1">
           <h1 className="text-xl font-semibold">Job Queue</h1>
-          <p className="text-sm text-muted-foreground">
-            Showing the latest {jobs.length} persisted jobs.
-          </p>
+          <p className="text-sm text-muted-foreground">Showing the latest {jobs.length} jobs.</p>
         </div>
         <Button
           type="button"
@@ -167,7 +167,7 @@ function JobQueueContent() {
         columns={columns}
         getRowId={(job) => job.id}
         searchPlaceholder="Search jobs"
-        searchableColumnIds={["type", "status", "attempts", "payload", "lastError", "id"]}
+        searchableColumnIds={["type", "state", "retries", "payload", "lastError", "id"]}
         emptyMessage="No jobs found."
         initialSorting={[{ id: "createdAt", desc: true }]}
         initialPageSize={25}
@@ -201,15 +201,17 @@ function JobDetailsDialog({
               <code className="text-sm break-all">{job.id}</code>
             </JobDetail>
             <JobDetail label="Type">{job.type}</JobDetail>
-            <JobDetail label="Status">
-              <Badge className={statusBadgeClassName[job.status]}>{job.status}</Badge>
+            <JobDetail label="State">
+              <Badge className={stateBadgeClassName[job.state]}>{job.state}</Badge>
             </JobDetail>
-            <JobDetail label="Attempts">
-              {job.attempts}/{job.maxAttempts}
+            <JobDetail label="Retries">
+              {job.retryCount}/{job.retryLimit}
             </JobDetail>
             <JobDetail label="Created">{formatDateTime(job.createdAt)}</JobDetail>
-            <JobDetail label="Updated">{formatDateTime(job.updatedAt)}</JobDetail>
-            <JobDetail label="Next run">{formatDateTime(job.nextRunAt)}</JobDetail>
+            <JobDetail label="Completed">
+              {job.completedAt ? formatDateTime(job.completedAt) : "-"}
+            </JobDetail>
+            <JobDetail label="Start after">{formatDateTime(job.startAfter)}</JobDetail>
             <JobDetail label="Payload">
               <pre className="max-h-72 overflow-auto rounded-md bg-muted p-3 text-xs break-words whitespace-pre-wrap">
                 {formatPayloadBlock(job.payload)}

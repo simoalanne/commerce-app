@@ -1,6 +1,8 @@
 import { slugify } from "@acme/shared";
 
-export type LocalizedSlug = PrismaJson.LocalizedString;
+import type { LocalizedString } from "#src/db/json.ts";
+
+export type LocalizedSlug = LocalizedString;
 
 const isObjectLike = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -13,9 +15,7 @@ export const buildLocalizedSlug = (value: string, locale: string) =>
     [locale]: slugify(value),
   }) as LocalizedSlug;
 
-export const buildLocalizedSlugFromLocalizedText = (
-  value: PrismaJson.LocalizedString,
-): LocalizedSlug => {
+export const buildLocalizedSlugFromLocalizedText = (value: LocalizedString): LocalizedSlug => {
   const result: Record<string, string> = {};
 
   for (const [locale, localizedValue] of Object.entries(value)) {

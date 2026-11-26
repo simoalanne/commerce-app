@@ -1,5 +1,6 @@
 import z from "zod";
 
+import { contactSubmissionTable } from "#src/db/schema.ts";
 import { customerRoute } from "#src/routing/base.ts";
 import { MINUTE_MS, type RateLimitPolicy } from "#src/routing/rateLimit.ts";
 
@@ -26,15 +27,13 @@ export const contactSubmissionsRoutes = {
     .meta({ rateLimit: contactSubmissionRateLimit })
     .body(ContactSubmissionSchema)
     .handler(async ({ body, context }) => {
-      await context.db.contactSubmission.create({
-        data: {
-          topic: "CONTACT",
-          name: body.name,
-          email: body.email,
-          phone: body.phone,
-          message: body.message,
-          locale: context.locale,
-        },
+      await context.db.insert(contactSubmissionTable).values({
+        topic: "CONTACT",
+        name: body.name,
+        email: body.email,
+        phone: body.phone,
+        message: body.message,
+        locale: context.locale,
       });
     }),
 
@@ -43,15 +42,13 @@ export const contactSubmissionsRoutes = {
     .meta({ rateLimit: contactSubmissionRateLimit })
     .body(ContactSubmissionSchema)
     .handler(async ({ body, context }) => {
-      await context.db.contactSubmission.create({
-        data: {
-          topic: "VENDOR_APPLICATION",
-          name: body.name,
-          email: body.email,
-          phone: body.phone,
-          message: body.message,
-          locale: context.locale,
-        },
+      await context.db.insert(contactSubmissionTable).values({
+        topic: "VENDOR_APPLICATION",
+        name: body.name,
+        email: body.email,
+        phone: body.phone,
+        message: body.message,
+        locale: context.locale,
       });
     }),
 };

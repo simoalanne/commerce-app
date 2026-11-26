@@ -1,4 +1,6 @@
-import type { Prisma } from "@prisma/client";
+import { sql } from "drizzle-orm";
+
+import type { Db } from "#src/db/client.ts";
 
 import { InsufficientStock } from "./checkout.errors.ts";
 
@@ -12,32 +14,32 @@ type ProductStockAdjustment = {
   quantity: number | null;
 };
 
-// Helper to build the (sku, quantity) rows
+// The (sku, quantity) rows of a VALUES list.
 export const buildValues = (items: StockAdjustment[]) =>
-  items
-    .map((i) => {
-      const safeSku = i.sku.replace(/'/g, "''");
-      return `('${safeSku}'::text, ${i.quantity}::int)`;
-    })
-    .join(", ");
+  sql.join(
+    items.map((item) => sql`(${item.sku}::text, ${item.quantity}::int)`),
+    sql`, `,
+  );
 
 type StockAdjustmentParams = {
   items: StockAdjustment[];
-  transaction: Prisma.TransactionClient;
+  transaction: Db;
 };
 
 type ProductStockAdjustmentParams = {
   items: ProductStockAdjustment[];
-  transaction: Prisma.TransactionClient;
+  transaction: Db;
 };
 
 export const reserveStockOrThrow = async ({ items, transaction }: StockAdjustmentParams) => {
   if (!items.length) return;
 
   const values = buildValues(items);
-  const stockResults = await transaction.$queryRawUnsafe<
-    { sku: string; availableStock: number; adjusted: boolean }[]
-  >(`
+  const { rows: stockResults } = await transaction.execute<{
+    sku: string;
+    availableStock: number;
+    adjusted: boolean;
+  }>(sql`
 			WITH requested(sku, quantity) AS (
 				VALUES ${values}
 			),
@@ -71,7 +73,7 @@ export const reserveStockOrThrow = async ({ items, transaction }: StockAdjustmen
 export const commitReservedStock = async ({ items, transaction }: StockAdjustmentParams) => {
   if (!items.length) return;
 
-  await transaction.$executeRawUnsafe(`
+  await transaction.execute(sql`
 		UPDATE "Product" p
 		SET current_stock = p.current_stock - s.quantity,
 				reserved_stock = p.reserved_stock - s.quantity
@@ -83,7 +85,7 @@ export const commitReservedStock = async ({ items, transaction }: StockAdjustmen
 export const releaseReservedStock = async ({ items, transaction }: StockAdjustmentParams) => {
   if (!items.length) return;
 
-  await transaction.$executeRawUnsafe(`
+  await transaction.execute(sql`
 		UPDATE "Product" p
 		SET reserved_stock = p.reserved_stock - s.quantity
 		FROM (VALUES ${buildValues(items)}) AS s(sku, quantity)
@@ -98,13 +100,14 @@ export const restockProductStock = async ({ items, transaction }: ProductStockAd
   );
   if (!restockItems.length) return;
 
-  await transaction.$executeRawUnsafe(`
+  await transaction.execute(sql`
 		UPDATE "Product" p
 		SET current_stock = p.current_stock + s.quantity
 		FROM (
-			VALUES ${restockItems
-        .map((item) => `(${item.product_id}::int, ${item.quantity}::int)`)
-        .join(", ")}
+			VALUES ${sql.join(
+        restockItems.map((item) => sql`(${item.product_id}::int, ${item.quantity}::int)`),
+        sql`, `,
+      )}
 		) AS s(product_id, quantity)
 		WHERE p.id = s.product_id;
 	`);
@@ -117,7 +120,7 @@ export const commitAsMuchStockAsPossible = async ({
   if (!items.length) return [];
 
   const values = buildValues(items);
-  return await transaction.$queryRawUnsafe<{ sku: string; uncommittedQuantity: number }[]>(`
+  const { rows } = await transaction.execute<{ sku: string; uncommittedQuantity: number }>(sql`
 		WITH requested(sku, quantity) AS (
 			VALUES ${values}
 		),
@@ -146,4 +149,5 @@ export const commitAsMuchStockAsPossible = async ({
 		FROM updated
 		WHERE updated."uncommittedQuantity" > 0
 	`);
+  return rows;
 };

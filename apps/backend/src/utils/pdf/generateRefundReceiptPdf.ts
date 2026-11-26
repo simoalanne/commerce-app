@@ -1,7 +1,8 @@
-import type { Prisma } from "@prisma/client";
 import type { TableCell } from "pdfmake";
 
 import type { EnvConfig } from "#src/config.ts";
+import type { Db } from "#src/db/client.ts";
+import { orNotFound } from "#src/db/errors.ts";
 import {
   findRelevantOrderById,
   type RelevantOrder,
@@ -22,7 +23,7 @@ import {
 } from "./financialPdf.shared.ts";
 
 type PdfDependencies = {
-  db: Prisma.TransactionClient;
+  db: Db;
   config: EnvConfig;
 };
 
@@ -37,30 +38,40 @@ type GenerateRefundReceiptPdfInput =
   | { access: "admin"; orderId: number; refundId: number; locale?: string }
   | { access: "internal"; refundId: number; locale?: string };
 
-const refundReceiptSelect = {
-  id: true,
-  order_id: true,
-  provider_refund_id: true,
-  total_amount_cents: true,
-  reason: true,
-  created_at: true,
-  refund_items: {
-    orderBy: { id: "asc" },
-    select: {
-      quantity: true,
-      amount_cents: true,
-      order_item: {
-        select: {
-          name: true,
+const findRefundForReceipt = (db: Db, refundId: number, orderId: number) =>
+  db.query.refund.findFirst({
+    where: {
+      id: refundId,
+      order_id: orderId,
+      status: "SUCCEEDED",
+    },
+    columns: {
+      id: true,
+      order_id: true,
+      provider_refund_id: true,
+      total_amount_cents: true,
+      reason: true,
+      created_at: true,
+    },
+    with: {
+      refund_items: {
+        orderBy: { id: "asc" },
+        columns: {
+          quantity: true,
+          amount_cents: true,
+        },
+        with: {
+          order_item: {
+            columns: {
+              name: true,
+            },
+          },
         },
       },
     },
-  },
-} satisfies Prisma.RefundSelect;
+  });
 
-type RefundReceiptRefund = Prisma.RefundGetPayload<{
-  select: typeof refundReceiptSelect;
-}>;
+type RefundReceiptRefund = NonNullable<Awaited<ReturnType<typeof findRefundForReceipt>>>;
 
 const translations = {
   en: {
@@ -263,28 +274,23 @@ export const generateRefundReceiptPdf = async (
 ) => {
   const refundForOrder =
     input.access === "internal"
-      ? await db.refund.findFirstOrThrow({
-          where: {
-            id: input.refundId,
-            status: "SUCCEEDED",
-          },
-          select: {
-            order_id: true,
-          },
-        })
+      ? orNotFound(
+          await db.query.refund.findFirst({
+            where: {
+              id: input.refundId,
+              status: "SUCCEEDED",
+            },
+            columns: {
+              order_id: true,
+            },
+          }),
+        )
       : { order_id: input.orderId };
   const order = await findRelevantOrderById(db, {
     orderId: refundForOrder.order_id,
     ...(input.access === "customer" ? { customerId: input.customerId } : {}),
   });
-  const refund = await db.refund.findFirstOrThrow({
-    where: {
-      id: input.refundId,
-      order_id: order.id,
-      status: "SUCCEEDED",
-    },
-    select: refundReceiptSelect,
-  });
+  const refund = orNotFound(await findRefundForReceipt(db, input.refundId, order.id));
 
   return renderRefundReceiptPdf({
     config,

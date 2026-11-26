@@ -2,6 +2,7 @@ import { RouteError } from "@rest-rpc/server";
 import * as Sentry from "@sentry/node";
 import z from "zod";
 
+import { refundItemTable, refundTable } from "#src/db/schema.ts";
 import {
   buildOrderPricing,
   findRelevantOrderById,
@@ -392,24 +393,25 @@ export const ordersRoutes = {
         });
       }
 
-      const refund = await context.db.refund.create({
-        data: {
+      const [refund] = await context.db
+        .insert(refundTable)
+        .values({
           order_id: id,
           status: "PENDING",
           total_amount_cents: totalAmountCents,
           reason,
           internal_notes: internalNotes,
-          refund_items: {
-            create: items.map((item) => ({
-              order_item_id: item.orderItemId,
-              quantity: item.quantity,
-              restock_quantity: item.restockQuantity,
-              amount_cents: item.amountCents,
-            })),
-          },
-        },
-        select: { id: true },
-      });
+        })
+        .returning({ id: refundTable.id });
+      await context.db.insert(refundItemTable).values(
+        items.map((item) => ({
+          refund_id: refund.id,
+          order_item_id: item.orderItemId,
+          quantity: item.quantity,
+          restock_quantity: item.restockQuantity,
+          amount_cents: item.amountCents,
+        })),
+      );
 
       await logAdminAction(context.db, {
         actor: context.authContext,

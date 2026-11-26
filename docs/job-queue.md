@@ -1,247 +1,54 @@
-# Job Queue Architecture
+# Job Queue
 
-Last updated: 2026-07-12
+Last updated: 2026-11-26
 
 ## Purpose
 
-This document explains the backend job queue used by `apps/backend`.
+Background work that must not be lost (order expiry, emails, webhook deliveries, storefront cache and search index invalidation) runs as jobs on [pg-boss](https://github.com/timgit/pg-boss), a Postgres-backed queue that runs inside the backend process. Its tables live in their own `pgboss` schema in the app database; pg-boss creates and migrates them on start.
 
-The current queue is a practical middle point between:
+The code is `apps/backend/src/jobs/`:
 
-- simple fire-and-forget async work that can be lost if the process exits
-- a proper distributed queue with workers, polling, leases, visibility timeouts, and operational overhead
-
-It is not intended to be a forever architecture. It exists because the current product needs more reliability than in-process fire-and-forget work, but does not yet need the cost and complexity of a dedicated queue system due to running a single persistent backend instance deployment with low job volume.
-
-## Current Model
-
-The queue is implemented by `PersistentInMemoryJobQueue`.
-
-It has two parts:
-
-- persistent job state in the Postgres `Job` table
-- in-memory timers in the backend process for scheduling when jobs should run
-
-Creating a job writes a row to the database. Running a job updates that row through normal statuses:
-
-- `PENDING`
-- `RUNNING`
-- `COMPLETED`
-- `FAILED`
-
-The database is the durable record of what jobs exist and what happened to them. The Node process memory is only used to avoid repeatedly asking the database which job should run next.
-
-## Why Not Simple Fire And Forget?
-
-Fire-and-forget work is the simplest option:
-
-```ts
-void doSomethingInBackground();
-```
-
-That is fine for best-effort behavior where losing the work is acceptable.
-
-It is not a good fit for work that should survive:
-
-- process restarts
-- deploys
-- crashes while a handler is running
-- short-lived server instances
-- transient third-party failures
-
-Important examples include:
-
-- expiring pending orders
-- invalidating storefront cache after stock changes
-- sending emails
-- delivering webhook events
-
-For those cases, the system should be able to say "this work exists" before the handler actually runs. That is why jobs are persisted in the database first.
-
-## Why Not A Proper Distributed Queue Yet?
-
-A proper queue system would be more robust.
-
-Typical features would include:
-
-- separate worker processes
-- polling or blocking reads
-- leases or visibility timeouts
-- dead-letter queues
-- better concurrency control across multiple instances
-- queue-specific observability and tooling
-
-That is the right direction if job volume grows, if multiple backend instances need to process jobs concurrently, or if background work becomes operationally important enough to deserve its own infrastructure.
-
-The current app does not need all of that yet.
-
-The goal for now is to get closer to normal queue semantics while keeping the deployment model simple.
-
-## Why In-Memory Scheduling?
-
-The in-memory scheduling is not used because polling would be difficult.
-
-Polling would actually be simpler in some ways:
-
-- run a loop
-- query for due `PENDING` jobs
-- claim one or more rows
-- sleep
-- repeat
-
-The reason we avoid polling is cost and deployment behavior.
-
-The project uses serverless database hosting. If the backend polls the database continuously, the database can never scale to zero. More aggressive polling also means more database requests, which increases cost even when the product is idle.
-
-That is especially wasteful for this application because background jobs are expected to be low volume. Most of the time there may be no job due at all, so polling would mostly pay to confirm that nothing changed.
-
-The current queue therefore does this instead:
-
-- persist jobs in Postgres
-- schedule due times in memory with timers
-- hydrate pending jobs on process startup
-- repair known startup gaps before scheduling
-
-This keeps idle database traffic much lower while still giving jobs a durable record.
-
-## Startup Hydration
-
-Because timers live only in process memory, startup hydration is important.
-
-When the backend starts, it:
-
-1. requeues any jobs left in `RUNNING`
-2. creates missing pending-order expiry jobs for existing `PENDING` orders
-3. loads `PENDING` jobs from the database
-4. schedules them in memory
-
-This is the main compensation for not polling.
-
-The startup repair is intentionally simple. It is not trying to become a general recovery framework. It only handles the cases this lightweight queue model can otherwise miss:
-
-- a process crashed or deployed while a job was marked `RUNNING`
-- pending orders already existed before an expiry job was created for them
+- `jobDefinitions.ts`: one entry per job type, with a Zod schema for the payload and the handler. A pg-boss queue is created for each type.
+- `queue.ts`: the `JobQueue` the app uses (`enqueue`, `listRecent`, `start`, `work`, `stop`), built on one `PgBoss` instance.
+- `handlers/`: the handlers.
 
 ## Transactional Enqueue
 
-Some backend work needs to create database changes and jobs together.
-
-Route handlers get this from the transactional builders (`customerTxRoute` / `dashboardTxRoute` in `src/routing/base.ts`); jobs and webhooks use `runAppTransaction(...)` from `apps/backend/src/utils/runAppTransaction.ts` directly. The pattern is:
-
-- open a Prisma transaction
-- make the domain change
-- create any follow-up jobs through the transaction context
-- optionally write admin action logs through the same transaction context
-- commit
-- schedule the newly created jobs in memory after commit
-
-This matters because the system should not enqueue follow-up work for a transaction that later rolls back.
-
-In a transactional route handler, the shape is:
+A job is a row, written through the database connection the caller passes:
 
 ```ts
-await context.db.someModel.update(...);
-
-await logAdminAction(context.db, {
-	actor: context.authContext,
-	action: "OTHER",
-	entity: "someEntity",
-	entityId,
-	details: { operation: "some.operation" },
-});
-
-await context.enqueueJob({
-	type: "invalidateStorefrontCache",
-	payload: { tags },
+await db.transaction(async (tx) => {
+  await tx.update(orderTable).set({ status: "EXPIRED" }).where(eq(orderTable.id, orderId));
+  await jobQueue.enqueue(tx, { type: "invalidateSearchIndex", payload: { productIds } });
 });
 ```
 
-`enqueueJob(...)` writes the job row using the transaction client. The transaction wrapper records the created job ids and schedules them only after the database transaction commits successfully.
+Given a transaction, the job exists only if the transaction commits, and workers see it after the commit. A rolled-back change leaves no follow-up jobs, and a committed one cannot lose them.
 
-This means:
+Route handlers built with `customerTxRoute` / `dashboardTxRoute` get `context.enqueueJob(job)`, which enqueues in the handler's transaction. Plain routes that open their own transactions, jobs and webhooks call `jobQueue.enqueue(tx, job)`; job handlers get the queue from their handler context, and webhooks import it.
 
-- rolled back domain changes do not leave scheduled follow-up jobs behind
-- committed domain changes have their coupled job rows persisted atomically
-- in-memory scheduling still happens outside the transaction, after commit
-- admin action logs can be committed atomically with the same domain change
+Options per job: `delayMs` (pg-boss `startAfter`) and `maxAttempts` (pg-boss `retryLimit`, one less).
 
-Examples:
+## Running Jobs
 
-- checkout reserves stock and creates an expiry job
-- payment reconciliation updates order state and enqueues stock cache invalidation
-- pending-order expiry releases stock and enqueues stock cache invalidation
-- dashboard content updates enqueue storefront cache invalidation and write admin action logs
+`index.ts` calls `jobQueue.start()` before serving requests, since enqueueing looks queues up through pg-boss, then `jobQueue.work({ jobQueue })` to run the handlers in the same process. pg-boss claims jobs with `SELECT ... FOR UPDATE SKIP LOCKED`, so several backend instances can run workers against the same database without running a job twice.
 
-## Handler Context
+Each worker validates the payload with the job's schema, runs the handler, and reports a failure to the log and Sentry before rethrowing it to pg-boss.
 
-Job handlers can receive a small handler context.
+Workers poll their queue (every 2 seconds by default). Unlike the earlier in-memory scheduler, this keeps the database awake, which matters only for a database that scales to zero; raise pg-boss's polling interval if that becomes a cost.
 
-The main current use is giving handlers access to `runAppTransaction(...)`.
+## Retries
 
-That lets a job make domain changes, enqueue follow-up jobs, and write any needed transactional side effects without importing the queue singleton directly.
+Every queue uses the same policy (`queueOptions` in `queue.ts`): two retries with exponential backoff starting at 5 minutes, capped at an hour. Most jobs succeed on the first attempt, and the rare failure is unlikely to clear up immediately. Jobs that must not repeat, such as refunds, enqueue with `maxAttempts: 1`.
 
-This avoids circular dependencies while keeping the queue API explicit. It should stay small. If the handler context starts growing into a service locator, that is a sign the queue design is drifting.
+A job that exhausts its retries is `failed` and stays in pg-boss's table. Pending-order expiry has no extra safety net: if `expirePendingOrder` fails three times, the order's stock stays reserved until the job is retried.
 
-## Failure And Retry Behavior
+Handlers should be idempotent where practical: a worker can crash after the work but before pg-boss records completion, and the job then runs again.
 
-When a job is claimed, it moves from `PENDING` to `RUNNING` and increments its attempt count.
+## Dashboard
 
-If the handler succeeds, the job becomes `COMPLETED`.
+The admin job queue page lists the latest jobs of every type from `pgboss.job` (`jobQueue.listRecent`), with pg-boss's states (`created`, `retry`, `active`, `completed`, `cancelled`, `failed`), retry counts, start time, payload and the last error, which pg-boss stores as the job's output.
 
-If the handler fails, the job either:
+## Tests
 
-- returns to `PENDING` with a retry delay if attempts remain
-- becomes `FAILED` if attempts are exhausted
-
-The retry delays are intentionally simple and fixed. This is enough for rare transient failures without adding a full retry policy system.
-
-## Known Tradeoffs
-
-This model is more reliable than fire-and-forget work because jobs are persisted before they run.
-
-It is cheaper at idle than polling because the backend does not constantly query the database for due jobs.
-
-But it is less robust than a real distributed queue.
-
-Important limitations:
-
-- it assumes a single backend instance is the normal deployment shape
-- in-memory timers are lost on process exit and must be reconstructed on startup
-- there is no continuous polling safety net
-- there is no real lease or visibility-timeout model
-- there is no separate worker process
-- queue state and app data share the same database
-- advanced queue operations need manual database inspection
-
-These are acceptable tradeoffs only while job volume is low and the operational model is simple.
-
-## When To Replace It
-
-This queue should be revisited if any of these become true:
-
-- backend runs multiple instances that should all process jobs
-- job volume grows enough that in-memory timers become awkward
-- delayed jobs become business-critical at high volume
-- failed jobs need richer dead-letter or replay tooling
-- queue observability becomes important for operations
-- polling cost becomes acceptable compared to reliability needs
-- a managed queue becomes easy to add in the deployment environment
-
-Likely replacements include:
-
-- a managed queue service
-- a Redis-backed queue
-- a database-backed queue with real polling, leases, and worker processes
-
-## Decision Rule For Now
-
-For the current stage:
-
-- use persisted jobs for work that should not be lost
-- keep handlers idempotent where practical
-- use transactional enqueue when jobs are coupled to database changes
-- avoid adding broad queue abstractions before they are needed
-- keep startup hydration simple and explicit
-- move to a real queue when production behavior justifies it
-
-The queue should solve today's reliability and cost problem, not pretend to be permanent infrastructure.
+The integration test setup (`src/tests/`) installs pg-boss's schema and queues in the test database and clears its jobs before a run, and starts the queue without workers in each test file, so tests can enqueue and inspect jobs without running them.

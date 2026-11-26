@@ -4,7 +4,7 @@ import { errorResponse, interceptor, onError, RouteError } from "@rest-rpc/serve
 import * as Sentry from "@sentry/node";
 
 import logger from "#src/logger.ts";
-import { isNotFoundError } from "#src/utils/isNotFoundError.ts";
+import { NotFoundError } from "#src/utils/notFoundError.ts";
 import {
   getClientRequestId,
   getRequestId,
@@ -61,12 +61,12 @@ export const cors = interceptor(async ({ request, next }) => {
 
 /**
  * Sends thrown errors as responses, so the interceptors before it (CORS, request
- * id) see them. A Prisma not-found is a 404.
+ * id) see them. A NotFoundError is a 404.
  */
 export const sendErrors = interceptor(({ next }) =>
   next().catch((error) =>
     errorResponse(
-      isNotFoundError(error)
+      error instanceof NotFoundError
         ? new RouteError("NOT_FOUND", {
             status: 404,
             message: "Resource not found",

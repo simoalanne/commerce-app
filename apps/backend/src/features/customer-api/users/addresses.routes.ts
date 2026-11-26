@@ -1,7 +1,9 @@
 import { DeliveryInstructionsSchema } from "@acme/shared/schemas";
-import type { CustomerAddress } from "@prisma/client";
+import { and, eq } from "drizzle-orm";
 import z from "zod";
 
+import { orNotFound } from "#src/db/errors.ts";
+import { customerAddressTable } from "#src/db/schema.ts";
 import { customerRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
 
@@ -44,7 +46,7 @@ const toAddressData = (body: z.output<typeof addressBody>) => ({
   },
 });
 
-const toAddressResponse = (address: CustomerAddress) => ({
+const toAddressResponse = (address: typeof customerAddressTable.$inferSelect) => ({
   id: address.id,
   street: address.street,
   streetNumber: address.street_number,
@@ -57,9 +59,12 @@ const toAddressResponse = (address: CustomerAddress) => ({
   deliveryInstructions: address.delivery_details.deliveryInstructions ?? {},
 });
 
+const ownAddress = (addressId: number, customerId: number) =>
+  and(eq(customerAddressTable.id, addressId), eq(customerAddressTable.customer_id, customerId));
+
 export const addressesRoutes = {
   list: addressRoute.get("/users/address").handler(async ({ context }) => {
-    const addresses = await context.db.customerAddress.findMany({
+    const addresses = await context.db.query.customerAddress.findMany({
       where: { customer_id: context.authContext.customerId },
       orderBy: { id: "desc" },
     });
@@ -71,12 +76,13 @@ export const addressesRoutes = {
     .post("/users/address")
     .body(addressBody)
     .handler(async ({ body, context }) => {
-      const address = await context.db.customerAddress.create({
-        data: {
+      const [address] = await context.db
+        .insert(customerAddressTable)
+        .values({
           customer_id: context.authContext.customerId,
           ...toAddressData(body),
-        },
-      });
+        })
+        .returning();
 
       return toResponse(toAddressResponse(address), context.locale);
     }),
@@ -86,23 +92,23 @@ export const addressesRoutes = {
     .params(addressIdParams)
     .body(addressBody)
     .handler(async ({ params, body, context }) => {
-      const address = await context.db.customerAddress.update({
-        where: { id: params.addressId, customer_id: context.authContext.customerId },
-        data: toAddressData(body),
-      });
+      const [address] = await context.db
+        .update(customerAddressTable)
+        .set(toAddressData(body))
+        .where(ownAddress(params.addressId, context.authContext.customerId))
+        .returning();
 
-      return toResponse(toAddressResponse(address), context.locale);
+      return toResponse(toAddressResponse(orNotFound(address)), context.locale);
     }),
 
   delete: addressRoute
     .delete("/users/address/:addressId")
     .params(addressIdParams)
     .handler(async ({ params, context }) => {
-      await context.db.customerAddress.delete({
-        where: {
-          id: params.addressId,
-          customer_id: context.authContext.customerId,
-        },
-      });
+      const [deleted] = await context.db
+        .delete(customerAddressTable)
+        .where(ownAddress(params.addressId, context.authContext.customerId))
+        .returning({ id: customerAddressTable.id });
+      orNotFound(deleted);
     }),
 };

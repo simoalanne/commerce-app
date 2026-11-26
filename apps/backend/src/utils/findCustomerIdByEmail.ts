@@ -1,9 +1,8 @@
-import type { Prisma } from "@prisma/client";
-
+import type { Db } from "#src/db/client.ts";
 import type { AuthProvider } from "#src/integrations/auth/auth.provider.ts";
 
 export const findCustomerIdByEmail = async (
-  { db, auth }: { db: Prisma.TransactionClient; auth: AuthProvider },
+  { db, auth }: { db: Db; auth: AuthProvider },
   email: string,
 ) => {
   const normalizedEmail = email.trim().toLowerCase();
@@ -12,9 +11,9 @@ export const findCustomerIdByEmail = async (
 
   if (!authUser) return null;
 
-  const account = await db.customerAccount.findUnique({
+  const account = await db.query.customerAccount.findFirst({
     where: { user_id: authUser.id },
-    select: { id: true },
+    columns: { id: true },
   });
 
   return account?.id ?? null;

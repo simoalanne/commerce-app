@@ -4,6 +4,7 @@ import {
 } from "@acme/shared/schemas/legalDocuments";
 import z from "zod";
 
+import { legalDocumentTable } from "#src/db/schema.ts";
 import { legalDocumentsRoutes as customerLegalDocumentsRoutes } from "#src/features/customer-api/legalDocuments/legalDocuments.routes.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
@@ -19,7 +20,7 @@ export const legalDocumentsRoutes = {
     .get("/legal-documents")
     .query(z.object({ key: LegalDocumentKeySchema }))
     .handler(async ({ query, context }) => {
-      const document = await context.db.legalDocument.findUnique({
+      const document = await context.db.query.legalDocument.findFirst({
         where: { key: query.key },
       });
 
@@ -41,32 +42,37 @@ export const legalDocumentsRoutes = {
     .put("/legal-documents")
     .body(LegalDocumentUpsertSchema)
     .handler(async ({ body, context }) => {
-      const existingDocument = await context.db.legalDocument.findUnique({
+      const existingDocument = await context.db.query.legalDocument.findFirst({
         where: { key: body.key },
-        select: {
+        columns: {
           title: true,
           content: true,
         },
       });
 
-      const document = await context.db.legalDocument.upsert({
-        where: {
-          key: body.key,
-        },
-        update: {
-          title: mergeLocalizedString(existingDocument?.title ?? null, body.title, context.locale),
-          content: mergeLocalizedString(
-            existingDocument?.content ?? null,
-            body.content,
-            context.locale,
-          ),
-        },
-        create: {
+      const [document] = await context.db
+        .insert(legalDocumentTable)
+        .values({
           key: body.key,
           title: toLocalizedString(body.title, context.locale),
           content: toLocalizedString(body.content, context.locale),
-        },
-      });
+        })
+        .onConflictDoUpdate({
+          target: legalDocumentTable.key,
+          set: {
+            title: mergeLocalizedString(
+              existingDocument?.title ?? null,
+              body.title,
+              context.locale,
+            ),
+            content: mergeLocalizedString(
+              existingDocument?.content ?? null,
+              body.content,
+              context.locale,
+            ),
+          },
+        })
+        .returning();
 
       await logAdminAction(context.db, {
         actor: context.authContext,

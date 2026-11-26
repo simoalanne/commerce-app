@@ -16,7 +16,7 @@ A page can render dynamically (for example, checkout reads the cart cookie) and 
 
 - The store's server-side API client tags reads automatically from the route path and its path parameters. The backend builds the same tags with `buildTag` when it changes the underlying data.
 - The store exposes an internal route, `/api/internal/cache/invalidate`, protected by a shared secret.
-- Backend handlers never call that route directly. They enqueue an `invalidateStorefrontCache` job, usually inside `runAppTransaction(...)`, so the mutation commits before the invalidation HTTP call runs.
+- Backend handlers never call that route directly. They enqueue an `invalidateStorefrontCache` job, in the same transaction as the change, so the invalidation HTTP call runs only after the mutation commits.
 - Invalidation is asynchronous, so a job can fail or exhaust its retries. The TTL covers that case.
 
 Configuration: the backend and the store need the same `INTERNAL_API_KEY` (a random string of at least 32 characters). The backend also needs `ONLINE_STORE_URL` to reach the store.

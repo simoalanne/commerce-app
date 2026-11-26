@@ -1,5 +1,7 @@
+import { and, avg, count, eq } from "drizzle-orm";
 import z from "zod";
 
+import { reviewTable } from "#src/db/schema.ts";
 import { customerRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
 
@@ -15,30 +17,32 @@ export const reviewsRoutes = {
       kind: "PRODUCT" as const,
     };
 
-    const [summaryAggregate, reviews] = await Promise.all([
-      context.db.review.aggregate({
+    const [[summaryAggregate], reviews] = await Promise.all([
+      context.db
+        .select({ avgRating: avg(reviewTable.rating), reviewCount: count() })
+        .from(reviewTable)
+        .where(and(eq(reviewTable.status, where.status), eq(reviewTable.kind, where.kind))),
+      context.db.query.review.findMany({
         where,
-        _avg: { rating: true },
-        _count: { _all: true },
-      }),
-      context.db.review.findMany({
-        where,
-        orderBy: [{ created_at: "desc" }, { id: "desc" }],
-        take: LANDING_REVIEWS_FETCH_WINDOW,
-        include: {
+        orderBy: { created_at: "desc", id: "desc" },
+        limit: LANDING_REVIEWS_FETCH_WINDOW,
+        with: {
           images: {
-            select: {
+            columns: {
               storage_key: true,
             },
           },
           product: {
-            select: {
+            columns: {
               name: true,
               slug: true,
               storefront_visibility: true,
+            },
+            with: {
               images: {
-                take: 1,
-                select: { image: { select: { storage_key: true } } },
+                limit: 1,
+                columns: {},
+                with: { image: { columns: { storage_key: true } } },
               },
             },
           },
@@ -87,10 +91,10 @@ export const reviewsRoutes = {
       {
         summary: {
           avgRating:
-            summaryAggregate._avg.rating != null
-              ? Number(summaryAggregate._avg.rating.toFixed(1))
+            summaryAggregate.avgRating != null
+              ? Number(Number(summaryAggregate.avgRating).toFixed(1))
               : 0,
-          reviewCount: summaryAggregate._count._all,
+          reviewCount: summaryAggregate.reviewCount,
         },
         reviews: publicReviews,
       },
@@ -108,13 +112,13 @@ export const reviewsRoutes = {
     .handler(async ({ params, context }) => {
       const [summary, reviews] = await Promise.all([
         getProductReviewSummaryByProductId(context.db, params.productId),
-        context.db.review.findMany({
+        context.db.query.review.findMany({
           where: {
             kind: "PRODUCT",
             status: "APPROVED",
             product_id: params.productId,
           },
-          orderBy: [{ created_at: "desc" }, { id: "desc" }],
+          orderBy: { created_at: "desc", id: "desc" },
         }),
       ]);
 

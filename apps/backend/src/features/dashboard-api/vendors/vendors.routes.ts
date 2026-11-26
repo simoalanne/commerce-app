@@ -1,7 +1,11 @@
 import { slugify } from "@acme/shared";
 import { VendorFormSchema } from "@acme/shared/schemas/vendors";
+import { eq } from "drizzle-orm";
 import z from "zod";
 
+import type { Db } from "#src/db/client.ts";
+import { orNotFound } from "#src/db/errors.ts";
+import { productTable, vendorImageTable, vendorTable } from "#src/db/schema.ts";
 import { productsRoutes as customerProductsRoutes } from "#src/features/customer-api/products/products.routes.ts";
 import { reviewsRoutes as customerReviewsRoutes } from "#src/features/customer-api/reviews/reviews.routes.ts";
 import { storefrontRoutes } from "#src/features/customer-api/storefront/storefront.routes.ts";
@@ -11,7 +15,6 @@ import { EntityInUse } from "#src/routing/errors.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
 import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import { buildTag } from "#src/utils/buildTags.ts";
-import { buildCreateImageLinks, buildReplaceImageLinks } from "#src/utils/imageLinks.ts";
 import { mergeLocalizedString, toLocalizedString } from "#src/utils/localizedObject.ts";
 import tryDeleteEntity from "#src/utils/tryDeleteEntity.ts";
 
@@ -39,23 +42,37 @@ const buildVendorInvalidationTags = (vendorId: number, productIds: number[] = []
   ]),
 ];
 
-const vendorMutationAuditInclude = {
-  images: {
-    select: {
-      image_id: true,
-    },
-    orderBy: {
-      image_id: "asc",
-    },
-  },
-} as const;
+const findVendorForAudit = async (db: Db, id: number) =>
+  orNotFound(
+    await db.query.vendor.findFirst({
+      where: { id },
+      with: { images: { columns: { image_id: true }, orderBy: { image_id: "asc" } } },
+    }),
+  );
+
+const findVendorProductIds = async (db: Db, vendorId: number) =>
+  (
+    await db
+      .select({ id: productTable.id })
+      .from(productTable)
+      .where(eq(productTable.vendor_id, vendorId))
+  ).map((product) => product.id);
+
+const replaceVendorImages = async (db: Db, vendorId: number, imageIds: number[]) => {
+  await db.delete(vendorImageTable).where(eq(vendorImageTable.vendor_id, vendorId));
+  if (imageIds.length > 0) {
+    await db
+      .insert(vendorImageTable)
+      .values(imageIds.map((imageId) => ({ vendor_id: vendorId, image_id: imageId })));
+  }
+};
 
 export const vendorsRoutes = {
   getAll: vendorRoute.get("/vendors").handler(async ({ context }) => {
-    const vendors = await context.db.vendor.findMany({
-      include: {
+    const vendors = await context.db.query.vendor.findMany({
+      with: {
         images: {
-          select: {
+          columns: {
             image_id: true,
           },
         },
@@ -69,16 +86,18 @@ export const vendorsRoutes = {
     .get("/vendors/:id")
     .params(idParams)
     .handler(async ({ params, context }) => {
-      const vendor = await context.db.vendor.findUniqueOrThrow({
-        where: { id: params.id },
-        include: {
-          images: {
-            select: {
-              image_id: true,
+      const vendor = orNotFound(
+        await context.db.query.vendor.findFirst({
+          where: { id: params.id },
+          with: {
+            images: {
+              columns: {
+                image_id: true,
+              },
             },
           },
-        },
-      });
+        }),
+      );
 
       return toResponse(mapVendor(vendor), context.locale);
     }),
@@ -89,17 +108,18 @@ export const vendorsRoutes = {
     .handler(async ({ body, context }) => {
       const { images, ...data } = body;
 
-      const vendor = await context.db.vendor.create({
-        data: {
+      const [{ id }] = await context.db
+        .insert(vendorTable)
+        .values({
           ...data,
           slug: slugify(data.name),
           slogan: toLocalizedString(data.slogan, context.locale),
           story: toLocalizedString(data.story, context.locale),
           tags: toLocalizedString(data.tags, context.locale),
-          images: buildCreateImageLinks(images),
-        },
-        include: vendorMutationAuditInclude,
-      });
+        })
+        .returning({ id: vendorTable.id });
+      await replaceVendorImages(context.db, id, images);
+      const vendor = await findVendorForAudit(context.db, id);
 
       await logAdminAction(context.db, {
         actor: context.authContext,
@@ -124,22 +144,12 @@ export const vendorsRoutes = {
     .handler(async ({ params, body, context }) => {
       const { id } = params;
       const { images, ...data } = body;
-      const existingVendor = await context.db.vendor.findUniqueOrThrow({
-        where: { id },
-        include: {
-          ...vendorMutationAuditInclude,
-          products: {
-            select: {
-              id: true,
-            },
-          },
-        },
-      });
-      const affectedProductIds = existingVendor.products.map((product) => product.id);
+      const existingVendor = await findVendorForAudit(context.db, id);
+      const affectedProductIds = await findVendorProductIds(context.db, id);
 
-      const updated = await context.db.vendor.update({
-        where: { id },
-        data: {
+      await context.db
+        .update(vendorTable)
+        .set({
           slug: slugify(data.name),
           name: data.name,
           storefront_visibility: data.storefront_visibility,
@@ -147,10 +157,10 @@ export const vendorsRoutes = {
           slogan: mergeLocalizedString(existingVendor.slogan, data.slogan, context.locale),
           story: mergeLocalizedString(existingVendor.story, data.story, context.locale),
           tags: mergeLocalizedString(existingVendor.tags, data.tags, context.locale),
-          images: buildReplaceImageLinks(images),
-        },
-        include: vendorMutationAuditInclude,
-      });
+        })
+        .where(eq(vendorTable.id, id));
+      await replaceVendorImages(context.db, id, images);
+      const updated = await findVendorForAudit(context.db, id);
 
       await logAdminAction(context.db, {
         actor: context.authContext,
@@ -181,23 +191,10 @@ export const vendorsRoutes = {
     .error(EntityInUse)
     .handler(async ({ params, context }) => {
       const { id } = params;
-      const vendor = await context.db.vendor.findUniqueOrThrow({
-        where: { id },
-        select: {
-          products: {
-            select: {
-              id: true,
-            },
-          },
-        },
-      });
+      const deleted = await findVendorForAudit(context.db, id);
+      const productIds = await findVendorProductIds(context.db, id);
 
-      const deleted = await tryDeleteEntity(() =>
-        context.db.vendor.delete({
-          where: { id },
-          include: vendorMutationAuditInclude,
-        }),
-      );
+      await tryDeleteEntity(() => context.db.delete(vendorTable).where(eq(vendorTable.id, id)));
 
       await logAdminAction(context.db, {
         actor: context.authContext,
@@ -210,23 +207,20 @@ export const vendorsRoutes = {
       await context.enqueueJob({
         type: "invalidateStorefrontCache",
         payload: {
-          tags: buildVendorInvalidationTags(
-            id,
-            vendor.products.map((product) => product.id),
-          ),
+          tags: buildVendorInvalidationTags(id, productIds),
         },
       });
       await context.enqueueJob({
         type: "invalidateSearchIndex",
         payload: {
-          productIds: vendor.products.map((product) => product.id),
+          productIds,
         },
       });
     }),
 
   getOptionsForForm: vendorRoute.get("/vendors/options-for-form").handler(async ({ context }) => {
-    const result = await context.db.vendor.findMany({
-      select: { id: true, name: true },
+    const result = await context.db.query.vendor.findMany({
+      columns: { id: true, name: true },
     });
 
     return toResponse(

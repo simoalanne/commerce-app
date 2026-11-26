@@ -1,5 +1,6 @@
 import z from "zod";
 
+import { orNotFound } from "#src/db/errors.ts";
 import type { ObjectStorageProvider } from "#src/integrations/object-storage/objectStorage.provider.ts";
 import { customerRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
@@ -167,16 +168,16 @@ export const ordersRoutes = {
         throw new NotFoundError();
       }
 
-      await context.db.order.findFirstOrThrow({
-        where: {
-          id: orderId,
-          customer_id: authContext.customerId,
-          status: scope === "order:review" ? "DELIVERED" : { in: [...relevantOrderStatuses] },
-        },
-        select: {
-          id: true,
-        },
-      });
+      orNotFound(
+        await context.db.query.order.findFirst({
+          where: {
+            id: orderId,
+            customer_id: authContext.customerId,
+            status: scope === "order:review" ? "DELIVERED" : { in: [...relevantOrderStatuses] },
+          },
+          columns: { id: true },
+        }),
+      );
 
       return toResponse(
         await createOrderCapabilityJwt(

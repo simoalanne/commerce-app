@@ -1,5 +1,3 @@
-import type { Prisma } from "@prisma/client";
-
 import { supportedLocales } from "#src/locales.ts";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -17,13 +15,12 @@ export const getSummaryWindowBounds = (now: Date, days: number) => {
   };
 };
 
-type NumericLike = number | Prisma.Decimal;
-
-const toNumber = (value: NumericLike) => (typeof value === "number" ? value : value.toNumber());
+// Postgres numeric values arrive as strings.
+type NumericLike = number | string;
 
 export const getDeltaPercent = (current: NumericLike, previous: NumericLike) => {
-  const currentNumber = toNumber(current);
-  const previousNumber = toNumber(previous);
+  const currentNumber = Number(current);
+  const previousNumber = Number(previous);
 
   if (previousNumber === 0) {
     return currentNumber === 0 ? 0 : 100;
@@ -52,8 +49,8 @@ export const normalizeRevenueByDay = (chart: ChartItem[]) =>
   }));
 
 export type OrderQueryRow = {
-  current_revenue: Prisma.Decimal;
-  previous_revenue: Prisma.Decimal;
+  current_revenue: string;
+  previous_revenue: string;
   current_paid_orders: number;
   previous_paid_orders: number;
   chart: ChartItem[];
@@ -89,7 +86,7 @@ export const buildSummaryResponse = ({
     generatedAt: now,
     windowDays: days,
     kpis: {
-      totalRevenueCents: currentRevenue,
+      totalRevenueCents: Number(currentRevenue),
       revenueDeltaPct: getDeltaPercent(orderRow.current_revenue, orderRow.previous_revenue),
       paidOrders: currentPaidOrders,
       paidOrdersDeltaPct: getDeltaPercent(currentPaidOrders, previousPaidOrders),

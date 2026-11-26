@@ -1,12 +1,14 @@
 import { createApp, route } from "@rest-rpc/server";
 
+import { NotFoundError } from "#src/utils/notFoundError.ts";
+
 import { cors, requestContext, sendErrors } from "./interceptors.ts";
 
 const app = createApp(
   {
     ok: route.get("/ok").handler(() => "ok"),
     missing: route.get("/missing").handler(() => {
-      throw { code: "P2025", message: "Record to update not found." };
+      throw new NotFoundError();
     }),
   },
   { interceptors: [requestContext, cors, sendErrors] },
@@ -36,7 +38,7 @@ describe("api interceptors", () => {
     );
   });
 
-  it("maps a Prisma not-found to 404, with CORS headers", async () => {
+  it("maps a NotFoundError to 404, with CORS headers", async () => {
     const response = await get("/missing");
 
     expect(response.status).toBe(404);

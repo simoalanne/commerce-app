@@ -1,9 +1,8 @@
+import { db } from "#src/db/client.ts";
+import { orNotFound } from "#src/db/errors.ts";
 import { ObjectStorage } from "#src/integrations/object-storage/objectStorage.provider.ts";
-import prismaClient from "#src/prisma.ts";
 import { FIRST_LINKED_IMAGE_SELECT, getFirstLinkedImageUrl } from "#src/utils/imageUrl.ts";
 import { getLocalizedValue } from "#src/utils/localizedObject.ts";
-
-type OrderDetails = PrismaJson.OrderDetails;
 
 export type OrderRefundedPayload = {
   orderId: number;
@@ -26,39 +25,45 @@ export type OrderRefundedPayload = {
 export const buildOrderRefundedPayload = async (
   refundId: number,
 ): Promise<OrderRefundedPayload> => {
-  const refund = await prismaClient.refund.findUniqueOrThrow({
-    where: { id: refundId },
-    select: {
-      total_amount_cents: true,
-      order: {
-        select: {
-          id: true,
-          preferred_locale: true,
-          order_details: true,
-        },
+  const refund = orNotFound(
+    await db.query.refund.findFirst({
+      where: { id: refundId },
+      columns: {
+        total_amount_cents: true,
       },
-      refund_items: {
-        orderBy: { id: "asc" },
-        select: {
-          quantity: true,
-          amount_cents: true,
-          order_item: {
-            include: {
-              product: {
-                select: {
-                  name: true,
-                  images: FIRST_LINKED_IMAGE_SELECT,
+      with: {
+        order: {
+          columns: {
+            id: true,
+            preferred_locale: true,
+            order_details: true,
+          },
+        },
+        refund_items: {
+          orderBy: { id: "asc" },
+          columns: {
+            quantity: true,
+            amount_cents: true,
+          },
+          with: {
+            order_item: {
+              with: {
+                product: {
+                  columns: {
+                    name: true,
+                  },
+                  with: { images: FIRST_LINKED_IMAGE_SELECT },
                 },
               },
             },
           },
         },
       },
-    },
-  });
+    }),
+  );
 
   const order = refund.order;
-  const orderDetails = order.order_details as OrderDetails;
+  const orderDetails = order.order_details;
   const locale = order.preferred_locale ?? "en";
   const recipientName = orderDetails.customer.name;
 

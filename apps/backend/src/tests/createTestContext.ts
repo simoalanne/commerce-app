@@ -19,8 +19,5 @@ export const createTestContext = (overrides: Partial<AppContext> = {}): AppConte
   storage: unstubbed("storage"),
   search: unstubbed("search"),
   jobQueue: unstubbed("jobQueue"),
-  runAppTransaction: () => {
-    throw new Error("Test used runAppTransaction without stubbing it");
-  },
   ...overrides,
 });

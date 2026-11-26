@@ -15,16 +15,16 @@ export const customersRoutes = {
       }),
     )
     .handler(async ({ query, context }) => {
-      const customers = await context.db.customerAccount.findMany({
-        where: query.customerId ? { id: query.customerId } : undefined,
-        include: {
+      const customers = await context.db.query.customerAccount.findMany({
+        ...(query.customerId && { where: { id: query.customerId } }),
+        with: {
           user: {
-            select: {
+            columns: {
               clerk_id: true,
             },
           },
           orders: {
-            select: {
+            columns: {
               charged_total_cents: true,
               order_details: true,
               created_at: true,

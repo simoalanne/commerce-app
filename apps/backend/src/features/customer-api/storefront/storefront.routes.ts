@@ -12,21 +12,21 @@ export const storefrontRoutes = {
   getContext: customerRoute.get("/storefront/context").handler(async ({ context }) => {
     const { db } = context;
     const [vendors, categories, products] = await Promise.all([
-      db.vendor.findMany({
+      db.query.vendor.findMany({
         where: activeStorefrontVendorWhere(),
-        select: {
+        columns: {
           id: true,
           slug: true,
           name: true,
           is_featured: true,
           updated_at: true,
-          images: FIRST_LINKED_IMAGE_SELECT,
         },
+        with: { images: FIRST_LINKED_IMAGE_SELECT },
         orderBy: { id: "asc" },
       }),
-      db.category.findMany({
-        where: { products: { some: activeStorefrontProductWhere() } },
-        select: {
+      db.query.category.findMany({
+        where: { products: activeStorefrontProductWhere() },
+        columns: {
           id: true,
           slug: true,
           name: true,
@@ -34,9 +34,9 @@ export const storefrontRoutes = {
         },
         orderBy: { id: "asc" },
       }),
-      db.product.findMany({
+      db.query.product.findMany({
         where: activeStorefrontProductWhere(),
-        select: {
+        columns: {
           id: true,
           slug: true,
           name: true,
@@ -44,8 +44,8 @@ export const storefrontRoutes = {
           vendor_id: true,
           category_id: true,
           updated_at: true,
-          images: FIRST_LINKED_IMAGE_SELECT,
         },
+        with: { images: FIRST_LINKED_IMAGE_SELECT },
         orderBy: { id: "asc" },
       }),
     ]);

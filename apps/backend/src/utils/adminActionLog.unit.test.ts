@@ -1,5 +1,3 @@
-import { Prisma } from "@prisma/client";
-
 import { getChangedFields, toSafeJsonValue } from "./adminActionLog.ts";
 
 describe("adminActionLog utils", () => {
@@ -11,11 +9,10 @@ describe("adminActionLog utils", () => {
       expect(toSafeJsonValue(null)).toBe(null);
     });
 
-    it("serializes dates and Prisma decimals", () => {
+    it("serializes dates", () => {
       const date = new Date("2026-07-12T15:53:38.105Z");
 
       expect(toSafeJsonValue(date)).toBe("2026-07-12T15:53:38.105Z");
-      expect(toSafeJsonValue(new Prisma.Decimal("12.5"))).toBe(12.5);
     });
 
     it("discards unsupported non-object values", () => {
@@ -40,7 +37,7 @@ describe("adminActionLog utils", () => {
           name: {
             de: "Gemuese",
           },
-          prices: [new Prisma.Decimal("4.5")],
+          prices: [4.5],
           created_at: date,
         }),
       ).toEqual({

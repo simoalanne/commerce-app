@@ -1,6 +1,7 @@
-import type { Prisma } from "@prisma/client";
 import z from "zod";
 
+import type { Db } from "#src/db/client.ts";
+import { orNotFound } from "#src/db/errors.ts";
 import { activeStorefrontProductWhere } from "#src/domain/storefrontVisibility.ts";
 import type { ObjectStorageProvider } from "#src/integrations/object-storage/objectStorage.provider.ts";
 import { customerRoute } from "#src/routing/base.ts";
@@ -10,27 +11,29 @@ import {
   FIRST_LINKED_IMAGE_SELECT,
   getFirstLinkedImageUrl,
   getLinkedImageUrls,
-  type IMAGE_LINK_WITH_STORAGE_KEY_SELECT,
 } from "#src/utils/imageUrl.ts";
 
-const productInclude = {
-  vendor: { select: { name: true } },
-  category: { select: { name: true } },
+const productWith = {
+  vendor: { columns: { name: true } },
+  category: { columns: { name: true } },
   tags: {
     orderBy: { tag_id: "asc" },
-    select: { tag: { select: { name: true, color: true } } },
+    columns: {},
+    with: { tag: { columns: { name: true, color: true } } },
   },
   reviews: {
     where: { kind: "PRODUCT" },
-    select: { rating: true },
+    columns: { rating: true },
   },
 } as const;
 
-type ProductWithRelations = Prisma.ProductGetPayload<{
-  include: typeof productInclude & {
-    images: { select: typeof IMAGE_LINK_WITH_STORAGE_KEY_SELECT };
-  };
-}>;
+const findProduct = (db: Db, id: number) =>
+  db.query.product.findFirst({
+    where: activeStorefrontProductWhere({ productId: id }),
+    with: { ...productWith, images: ALL_LINKED_IMAGES_SELECT },
+  });
+
+type ProductWithRelations = NonNullable<Awaited<ReturnType<typeof findProduct>>>;
 
 const getProductReviewSummary = (product: ProductWithRelations) => {
   if (product.reviews.length === 0) {
@@ -71,10 +74,7 @@ export const productsRoutes = {
     .get("/products/:id")
     .params(z.object({ id: z.coerce.number<number>().int().positive() }))
     .handler(async ({ params, context }) => {
-      const product = await context.db.product.findFirstOrThrow({
-        where: activeStorefrontProductWhere({ productId: params.id }),
-        include: { ...productInclude, images: ALL_LINKED_IMAGES_SELECT },
-      });
+      const product = orNotFound(await findProduct(context.db, params.id));
 
       return toResponse(
         {
@@ -95,12 +95,12 @@ export const productsRoutes = {
       }),
     )
     .handler(async ({ query, context }) => {
-      const products = await context.db.product.findMany({
+      const products = await context.db.query.product.findMany({
         where: activeStorefrontProductWhere({
           categoryId: query.categoryId,
           vendorId: query.vendorId,
         }),
-        include: { ...productInclude, images: FIRST_LINKED_IMAGE_SELECT },
+        with: { ...productWith, images: FIRST_LINKED_IMAGE_SELECT },
       });
 
       return toResponse(

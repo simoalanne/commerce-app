@@ -12,9 +12,9 @@ Dashboard users should be able to decide whether an entity is visible on the cus
 
 Storefront-visible entities use:
 
-```prisma
-storefront_visibility StorefrontVisibility @default(ACTIVE)
-is_featured           Boolean             @default(false)
+```ts
+storefront_visibility: storefrontVisibilityEnum().notNull().default("ACTIVE"),
+is_featured: boolean().notNull().default(false),
 ```
 
 `StorefrontVisibility` has two values:

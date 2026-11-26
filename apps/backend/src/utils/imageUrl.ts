@@ -2,22 +2,14 @@ import type { ObjectStorageProvider } from "#src/integrations/object-storage/obj
 
 export const IMAGE_PLACEHOLDER_URL = "https://placehold.co";
 
-export const IMAGE_LINK_WITH_STORAGE_KEY_SELECT = {
-  image: {
-    select: {
-      storage_key: true,
-    },
-  },
-} as const;
-
-export const FIRST_LINKED_IMAGE_SELECT = {
-  take: 1,
-  select: IMAGE_LINK_WITH_STORAGE_KEY_SELECT,
-} as const;
-
+// For `with: { images: ... }` on products and vendors, whose image links
+// carry the image.
 export const ALL_LINKED_IMAGES_SELECT = {
-  select: IMAGE_LINK_WITH_STORAGE_KEY_SELECT,
+  columns: {},
+  with: { image: { columns: { storage_key: true } } },
 } as const;
+
+export const FIRST_LINKED_IMAGE_SELECT = { ...ALL_LINKED_IMAGES_SELECT, limit: 1 } as const;
 
 export type ImageLinkWithUrl = {
   image: {

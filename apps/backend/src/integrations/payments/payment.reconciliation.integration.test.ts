@@ -1,4 +1,8 @@
-import prismaClient from "#src/prisma.ts";
+import { inArray } from "drizzle-orm";
+
+import { db } from "#src/db/client.ts";
+import { orNotFound } from "#src/db/errors.ts";
+import { categoryTable, orderTable, productTable, userTable, vendorTable } from "#src/db/schema.ts";
 import { assertOrderStatus, assertStock } from "#src/tests/asserts.ts";
 import {
   createCategory,
@@ -18,37 +22,27 @@ const createdUserIds = new Set<string>();
 
 afterEach(async () => {
   if (createdOrderIds.size > 0) {
-    await prismaClient.order.deleteMany({
-      where: { id: { in: [...createdOrderIds] } },
-    });
+    await db.delete(orderTable).where(inArray(orderTable.id, [...createdOrderIds]));
     createdOrderIds.clear();
   }
 
   if (createdProductSkus.size > 0) {
-    await prismaClient.product.deleteMany({
-      where: { sku: { in: [...createdProductSkus] } },
-    });
+    await db.delete(productTable).where(inArray(productTable.sku, [...createdProductSkus]));
     createdProductSkus.clear();
   }
 
   if (createdVendorIds.size > 0) {
-    await prismaClient.vendor.deleteMany({
-      where: { id: { in: [...createdVendorIds] } },
-    });
+    await db.delete(vendorTable).where(inArray(vendorTable.id, [...createdVendorIds]));
     createdVendorIds.clear();
   }
 
   if (createdCategoryIds.size > 0) {
-    await prismaClient.category.deleteMany({
-      where: { id: { in: [...createdCategoryIds] } },
-    });
+    await db.delete(categoryTable).where(inArray(categoryTable.id, [...createdCategoryIds]));
     createdCategoryIds.clear();
   }
 
   if (createdUserIds.size > 0) {
-    await prismaClient.user.deleteMany({
-      where: { clerk_id: { in: [...createdUserIds] } },
-    });
+    await db.delete(userTable).where(inArray(userTable.clerk_id, [...createdUserIds]));
     createdUserIds.clear();
   }
 });
@@ -61,7 +55,7 @@ const createReconciliationScenario = async ({
   quantity = 2,
 }: {
   provider?: "STRIPE" | "PAYTRAIL";
-  orderStatus?: "PENDING" | "PAID" | "EXPIRED" | "AWAITING_REFUND" | "DELIVERED";
+  orderStatus?: "PENDING" | "PAID" | "EXPIRED" | "DELIVERED";
   currentStock?: number;
   reservedStock?: number;
   quantity?: number;
@@ -93,7 +87,6 @@ const createReconciliationScenario = async ({
     payment_id: null,
     payment_provider: provider,
     order_details: {
-      items: [{ sku: product.sku, quantity, unitPrice: 9.9 }],
       customer: {
         name: "Webhook Customer",
         email: "customer@example.com",
@@ -105,20 +98,18 @@ const createReconciliationScenario = async ({
         instructions: {},
       },
     },
-    order_items: {
-      create: [
-        {
-          sku: product.sku,
-          name: product.name.en,
-          quantity,
-          unit_cost_price_cents: product.cost_price_cents,
-          unit_sales_price_cents: 990,
-          product_id: product.id,
-          vendor_id: vendor.id,
-          vendor_name: vendor.name,
-        },
-      ],
-    },
+    order_items: [
+      {
+        sku: product.sku,
+        name: product.name.en ?? "",
+        quantity,
+        unit_cost_price_cents: product.cost_price_cents,
+        unit_sales_price_cents: 990,
+        product_id: product.id,
+        vendor_id: vendor.id,
+        vendor_name: vendor.name,
+      },
+    ],
   });
   createdOrderIds.add(order.id);
 
@@ -142,10 +133,10 @@ describe("payment reconciliation integration", () => {
       result: "paid",
     });
 
-    const updatedOrder = await prismaClient.order.findUnique({
+    const updatedOrder = await db.query.order.findFirst({
       where: { id: order.id },
     });
-    const updatedProduct = await prismaClient.product.findUnique({
+    const updatedProduct = await db.query.product.findFirst({
       where: { sku: product.sku },
     });
 
@@ -171,10 +162,10 @@ describe("payment reconciliation integration", () => {
       result: "paid",
     });
 
-    const updatedOrder = await prismaClient.order.findUnique({
+    const updatedOrder = await db.query.order.findFirst({
       where: { id: order.id },
     });
-    const updatedProduct = await prismaClient.product.findUnique({
+    const updatedProduct = await db.query.product.findFirst({
       where: { sku: product.sku },
     });
 
@@ -203,10 +194,10 @@ describe("payment reconciliation integration", () => {
       result: "canceled",
     });
 
-    const updatedOrder = await prismaClient.order.findUnique({
+    const updatedOrder = await db.query.order.findFirst({
       where: { id: order.id },
     });
-    const updatedProduct = await prismaClient.product.findUnique({
+    const updatedProduct = await db.query.product.findFirst({
       where: { sku: product.sku },
     });
 
@@ -234,15 +225,17 @@ describe("payment reconciliation integration", () => {
       result: "paid",
     });
 
-    const updatedOrder = await prismaClient.order.findUnique({
+    const updatedOrder = await db.query.order.findFirst({
       where: { id: order.id },
     });
-    const updatedProduct = await prismaClient.product.findUnique({
+    const updatedProduct = await db.query.product.findFirst({
       where: { sku: product.sku },
     });
-    const updatedOrderItem = await prismaClient.orderItem.findFirstOrThrow({
-      where: { order_id: order.id },
-    });
+    const updatedOrderItem = orNotFound(
+      await db.query.orderItem.findFirst({
+        where: { order_id: order.id },
+      }),
+    );
 
     expect(result, "Expected late payment to recover the order").toBeTruthy();
     assertOrderStatus(updatedOrder, "PAID");

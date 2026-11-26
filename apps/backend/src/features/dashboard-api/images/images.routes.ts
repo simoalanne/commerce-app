@@ -1,6 +1,10 @@
 import { ImageMetadataSchema } from "@acme/shared/schemas/images";
+import { and, eq } from "drizzle-orm";
 import z from "zod";
 
+import { orNotFound } from "#src/db/errors.ts";
+import type { LocalizedString } from "#src/db/json.ts";
+import { imageTable } from "#src/db/schema.ts";
 import { type AppContext, dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { ImageUploadInvalidContentType, ImageUploadTooLarge } from "#src/routing/errors.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
@@ -21,7 +25,7 @@ const toImageResponse = (
     id: number;
     storage_key: string;
     name?: string | null;
-    alt?: PrismaJson.LocalizedString | null;
+    alt?: LocalizedString | null;
     created_at: Date;
   },
 ) => ({
@@ -31,8 +35,8 @@ const toImageResponse = (
 
 export const imagesRoutes = {
   getAll: imageRoute.get("/images").handler(async ({ context }) => {
-    const images = await context.db.image.findMany({
-      select: {
+    const images = await context.db.query.image.findMany({
+      columns: {
         id: true,
         storage_key: true,
         name: true,
@@ -41,7 +45,7 @@ export const imagesRoutes = {
       where: {
         kind: "CMS",
       },
-      orderBy: [{ created_at: "desc" }, { id: "desc" }],
+      orderBy: { created_at: "desc", id: "desc" },
     });
     return toResponse(
       images.map((img) => ({
@@ -58,9 +62,11 @@ export const imagesRoutes = {
     .get("/images/:id")
     .params(idParams)
     .handler(async ({ params, context }) => {
-      const image = await context.db.image.findFirstOrThrow({
-        where: { id: params.id, kind: "CMS" },
-      });
+      const image = orNotFound(
+        await context.db.query.image.findFirst({
+          where: { id: params.id, kind: "CMS" },
+        }),
+      );
       return toResponse(toImageResponse(context.storage, image), context.locale);
     }),
 
@@ -69,17 +75,20 @@ export const imagesRoutes = {
     .params(idParams)
     .body(ImageMetadataSchema)
     .handler(async ({ params, body, context }) => {
-      const existingImage = await context.db.image.findUniqueOrThrow({
-        where: { id: params.id, kind: "CMS" },
-      });
+      const existingImage = orNotFound(
+        await context.db.query.image.findFirst({
+          where: { id: params.id, kind: "CMS" },
+        }),
+      );
 
-      const updated = await context.db.image.update({
-        where: { id: params.id, kind: "CMS" },
-        data: {
+      const [updated] = await context.db
+        .update(imageTable)
+        .set({
           name: body.name,
           alt: mergeLocalizedString(existingImage.alt, body.alt, context.locale),
-        },
-      });
+        })
+        .where(and(eq(imageTable.id, params.id), eq(imageTable.kind, "CMS")))
+        .returning();
 
       await logAdminAction(context.db, {
         actor: context.authContext,
@@ -97,13 +106,16 @@ export const imagesRoutes = {
     .delete("/images/:id")
     .params(idParams)
     .handler(async ({ params, context }) => {
-      const image = await context.db.image.findFirstOrThrow({
-        where: { id: params.id, kind: "CMS" },
-      });
+      const image = orNotFound(
+        await context.db.query.image.findFirst({
+          where: { id: params.id, kind: "CMS" },
+        }),
+      );
 
-      const deleted = await context.db.image.delete({
-        where: { id: image.id, kind: "CMS" },
-      });
+      const [deleted] = await context.db
+        .delete(imageTable)
+        .where(and(eq(imageTable.id, image.id), eq(imageTable.kind, "CMS")))
+        .returning();
 
       await logAdminAction(context.db, {
         actor: context.authContext,
@@ -158,14 +170,15 @@ export const imagesRoutes = {
       }),
     )
     .handler(async ({ body, context }) => {
-      const image = await context.db.image.create({
-        data: {
+      const [image] = await context.db
+        .insert(imageTable)
+        .values({
           name: body.name,
           alt: toLocalizedString(body.alt, context.locale),
           storage_key: body.objectKey,
           kind: "CMS",
-        },
-      });
+        })
+        .returning();
 
       await logAdminAction(context.db, {
         actor: context.authContext,

@@ -1,4 +1,7 @@
-import type { Prisma } from "@prisma/client";
+import { and, avg, count, eq, inArray } from "drizzle-orm";
+
+import type { Db } from "#src/db/client.ts";
+import { reviewTable } from "#src/db/schema.ts";
 
 export type ProductReviewSummary = {
   avgRating: number;
@@ -10,52 +13,45 @@ const EMPTY_PRODUCT_REVIEW_SUMMARY: ProductReviewSummary = {
   reviewCount: 0,
 };
 
-export const getProductReviewSummaryMap = async (
-  db: Prisma.TransactionClient,
-  productIds: number[],
-) => {
+export const getProductReviewSummaryMap = async (db: Db, productIds: number[]) => {
   const summaryMap = new Map<number, ProductReviewSummary>();
 
   if (productIds.length === 0) {
     return summaryMap;
   }
 
-  const groupedReviews = await db.review.groupBy({
-    by: ["product_id"],
-    where: {
-      kind: "PRODUCT",
-      status: "APPROVED",
-      product_id: {
-        in: productIds,
-      },
-    },
-    _avg: {
-      rating: true,
-    },
-    _count: {
-      id: true,
-    },
-  });
+  const groupedReviews = await db
+    .select({
+      productId: reviewTable.product_id,
+      avgRating: avg(reviewTable.rating),
+      reviewCount: count(),
+    })
+    .from(reviewTable)
+    .where(
+      and(
+        eq(reviewTable.kind, "PRODUCT"),
+        eq(reviewTable.status, "APPROVED"),
+        inArray(reviewTable.product_id, productIds),
+      ),
+    )
+    .groupBy(reviewTable.product_id);
 
   for (const groupedReview of groupedReviews) {
-    if (groupedReview.product_id == null) {
+    if (groupedReview.productId == null) {
       continue;
     }
 
-    summaryMap.set(groupedReview.product_id, {
+    summaryMap.set(groupedReview.productId, {
       avgRating:
-        groupedReview._avg.rating == null ? 0 : Number(groupedReview._avg.rating.toFixed(1)),
-      reviewCount: groupedReview._count.id,
+        groupedReview.avgRating == null ? 0 : Number(Number(groupedReview.avgRating).toFixed(1)),
+      reviewCount: groupedReview.reviewCount,
     });
   }
 
   return summaryMap;
 };
 
-export const getProductReviewSummaryByProductId = async (
-  db: Prisma.TransactionClient,
-  productId: number,
-) => {
+export const getProductReviewSummaryByProductId = async (db: Db, productId: number) => {
   const summaryMap = await getProductReviewSummaryMap(db, [productId]);
 
   return summaryMap.get(productId) ?? EMPTY_PRODUCT_REVIEW_SUMMARY;

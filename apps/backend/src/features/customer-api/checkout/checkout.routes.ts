@@ -1,16 +1,20 @@
 import { calculateOrderPricing } from "@acme/shared";
 import { DeliveryInstructionsSchema } from "@acme/shared/schemas";
 import { isValidPhoneNumber } from "@acme/shared/utils/addressValidation";
-import type { Prisma } from "@prisma/client";
 import * as Sentry from "@sentry/node";
 import { isAfter, isBefore } from "date-fns";
+import { eq, sql } from "drizzle-orm";
 import z from "zod";
 
+import type { Db } from "#src/db/client.ts";
+import type { OrderDetails } from "#src/db/json.ts";
+import { orderItemTable, orderTable } from "#src/db/schema.ts";
 import { getCompanyDetails } from "#src/domain/getCompanyDetails.ts";
 import { verifyOrderCapabilityJwt } from "#src/features/customer-api/orders/orderCapabilities.ts";
 import type { PaymentProviderName } from "#src/integrations/payments/payment.provider.ts";
 import { getCachedPaytrailPaymentMethods } from "#src/integrations/payments/paytrail.paymentMethods.ts";
 import { enqueueProductStockInvalidationJobs } from "#src/jobs/handlers/jobAggregrates.ts";
+import type { EnqueueJob } from "#src/jobs/queue.ts";
 import type { SupportedLocale } from "#src/locales.ts";
 import type { AuthContext } from "#src/routing/auth.ts";
 import { type AppContext, customerRoute } from "#src/routing/base.ts";
@@ -154,18 +158,19 @@ const createPaymentInternal = async (
     discountValue: validatedPromoCode?.discountValue,
   });
 
-  const orderDetails: PrismaJson.OrderDetails = buildOrderDetails({
+  const orderDetails: OrderDetails = buildOrderDetails({
     deliveryAddress,
     recipient,
   });
 
-  const order = await context.runAppTransaction(async ({ tx, enqueueJob }) => {
+  const order = await db.transaction(async (tx) => {
     await reserveStockOrThrow({
       items: orderItems,
       transaction: tx,
     });
-    const order = await tx.order.create({
-      data: {
+    const [order] = await tx
+      .insert(orderTable)
+      .values({
         customer_id: customerId,
         has_been_linked_to_customer_account: customerId != null,
         items_subtotal_cents: pricingSnapshot.itemsSubtotalCents,
@@ -182,22 +187,23 @@ const createPaymentInternal = async (
           0,
         ),
         preferred_locale: context.locale,
-        order_items: {
-          create: orderItems.map((item) => ({
-            sku: item.sku,
-            name: item.productName,
-            quantity: item.quantity,
-            unit_cost_price_cents: item.unitCostPriceCents,
-            unit_sales_price_cents: item.unitPriceCents,
-            product_id: item.productId,
-            vendor_id: item.vendorId,
-            vendor_name: item.vendorName,
-          })),
-        },
-      },
-    });
+      })
+      .returning();
+    await tx.insert(orderItemTable).values(
+      orderItems.map((item) => ({
+        order_id: order.id,
+        sku: item.sku,
+        name: item.productName,
+        quantity: item.quantity,
+        unit_cost_price_cents: item.unitCostPriceCents,
+        unit_sales_price_cents: item.unitPriceCents,
+        product_id: item.productId,
+        vendor_id: item.vendorId,
+        vendor_name: item.vendorName,
+      })),
+    );
 
-    await enqueueJob({
+    await context.jobQueue.enqueue(tx, {
       type: "expirePendingOrder",
       payload: { orderId: order.id },
       delayMs: config.PENDING_ORDER_EXPIRY_MINUTES * 60 * 1000,
@@ -228,11 +234,12 @@ const createPaymentInternal = async (
       paymentId: payment.paymentId,
     });
 
-    await context.runAppTransaction(async ({ tx, enqueueJob }) => {
-      await tx.order.update({
-        where: { id: order.id },
-        data: { payment_id: payment.paymentId },
-      });
+    await db.transaction(async (tx) => {
+      await tx
+        .update(orderTable)
+        .set({ payment_id: payment.paymentId })
+        .where(eq(orderTable.id, order.id));
+      const enqueueJob: EnqueueJob = (job) => context.jobQueue.enqueue(tx, job);
 
       // Stock can be consired stale once stock is reserved AND payment is successfully created.
       // Technically theres a small window where stock is reserved but payment creation fails,
@@ -259,10 +266,8 @@ const createPaymentInternal = async (
       amountCents: payment.amountCents,
     };
   } catch (error) {
-    await context.runAppTransaction(async ({ tx }) => {
-      await tx.order.delete({
-        where: { id: order.id },
-      });
+    await db.transaction(async (tx) => {
+      await tx.delete(orderTable).where(eq(orderTable.id, order.id));
 
       await releaseReservedStock({
         items: orderItems,
@@ -274,7 +279,7 @@ const createPaymentInternal = async (
 };
 
 const getValidatedPromoCodeForPayment = async (
-  db: Prisma.TransactionClient,
+  db: Db,
   {
     promoCode,
     itemsSubtotalCents,
@@ -295,7 +300,7 @@ const getValidatedPromoCodeForPayment = async (
 };
 
 const getValidatedPromoCode = async (
-  db: Prisma.TransactionClient,
+  db: Db,
   {
     promoCode,
     itemsSubtotalCents,
@@ -304,8 +309,8 @@ const getValidatedPromoCode = async (
     itemsSubtotalCents: number;
   },
 ) => {
-  const promo = await db.promotionCode.findFirst({
-    where: { code: { equals: promoCode, mode: "insensitive" } },
+  const promo = await db.query.promotionCode.findFirst({
+    where: { RAW: (t) => sql`lower(${t.code}) = lower(${promoCode})` },
   });
 
   if (!promo) {
@@ -423,9 +428,9 @@ export const checkoutRoutes = {
         token: query.token,
         scope: "order:read",
       });
-      const order = await context.db.order.findFirst({
+      const order = await context.db.query.order.findFirst({
         where: { id: capability.orderId },
-        select: { status: true, payment_id: true },
+        columns: { status: true, payment_id: true },
       });
 
       if (!order) {

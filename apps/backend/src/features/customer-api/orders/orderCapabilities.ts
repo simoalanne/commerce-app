@@ -1,7 +1,7 @@
-import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 import type { EnvConfig } from "#src/config.ts";
+import type { Db } from "#src/db/client.ts";
 import { createSignedJwt, verifyJwtToken } from "#src/utils/jwtUtils.ts";
 import { NotFoundError } from "#src/utils/notFoundError.ts";
 
@@ -39,13 +39,13 @@ type CreateOrderCapabilityParams = { scope: "order:read" | "order:review" } & (
 );
 
 export const createOrderCapabilityJwt = async (
-  { db, config }: { db: Prisma.TransactionClient; config: EnvConfig },
+  { db, config }: { db: Db; config: EnvConfig },
   { token, orderId, customerId, scope }: CreateOrderCapabilityParams,
 ) => {
   const whereClause = orderId ? { id: orderId, customer_id: customerId } : { claim_token: token };
-  const order = await db.order.findFirst({
+  const order = await db.query.order.findFirst({
     where: whereClause,
-    select: {
+    columns: {
       id: true,
     },
   });

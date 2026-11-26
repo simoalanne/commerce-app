@@ -1,5 +1,8 @@
+import { eq } from "drizzle-orm";
 import z from "zod";
 
+import { orNotFound } from "#src/db/errors.ts";
+import { reviewTable } from "#src/db/schema.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
 import { logAdminAction } from "#src/utils/adminActionLog.ts";
@@ -21,10 +24,10 @@ export const reviewsRoutes = {
       }),
     )
     .handler(async ({ query, context }) => {
-      const reviews = await context.db.review.findMany({
+      const reviews = await context.db.query.review.findMany({
         where: query.status ? { status: query.status } : {},
-        orderBy: [{ updated_at: "desc" }, { id: "desc" }],
-        select: {
+        orderBy: { updated_at: "desc", id: "desc" },
+        columns: {
           id: true,
           kind: true,
           status: true,
@@ -33,19 +36,21 @@ export const reviewsRoutes = {
           order_id: true,
           created_at: true,
           updated_at: true,
+        },
+        with: {
           images: {
-            select: {
+            columns: {
               id: true,
               storage_key: true,
             },
           },
           vendor: {
-            select: {
+            columns: {
               name: true,
             },
           },
           product: {
-            select: {
+            columns: {
               name: true,
             },
           },
@@ -110,25 +115,27 @@ export const reviewsRoutes = {
     .params(z.object({ id: z.coerce.number<number>().int().positive() }))
     .body(z.object({ status: reviewStatusSchema }))
     .handler(async ({ params, body, context }) => {
-      const existingReview = await context.db.review.findUniqueOrThrow({
-        where: { id: params.id },
-        select: {
-          status: true,
-          kind: true,
-          product_id: true,
-          vendor_id: true,
-        },
-      });
+      const existingReview = orNotFound(
+        await context.db.query.review.findFirst({
+          where: { id: params.id },
+          columns: {
+            status: true,
+            kind: true,
+            product_id: true,
+            vendor_id: true,
+          },
+        }),
+      );
 
-      const review = await context.db.review.update({
-        where: { id: params.id },
-        data: { status: body.status },
-        select: {
-          kind: true,
-          product_id: true,
-          vendor_id: true,
-        },
-      });
+      const [review] = await context.db
+        .update(reviewTable)
+        .set({ status: body.status })
+        .where(eq(reviewTable.id, params.id))
+        .returning({
+          kind: reviewTable.kind,
+          product_id: reviewTable.product_id,
+          vendor_id: reviewTable.vendor_id,
+        });
 
       await logAdminAction(context.db, {
         actor: context.authContext,

@@ -1,6 +1,8 @@
-import type { Prisma, Product } from "@prisma/client";
 import type z from "zod";
 
+import type { Db } from "#src/db/client.ts";
+import type { DeliveryInstructions, LocalizedString, OrderDetails } from "#src/db/json.ts";
+import type { productTable } from "#src/db/schema.ts";
 import { activeStorefrontProductWhere } from "#src/domain/storefrontVisibility.ts";
 import type { SupportedLocale } from "#src/locales.ts";
 
@@ -15,7 +17,7 @@ export type DeliveryAddressInput = {
   entrance: string | null;
   floor: string | null;
   apartment: string | null;
-  deliveryInstructions: PrismaJson.DeliveryInstructions;
+  deliveryInstructions: DeliveryInstructions;
 };
 
 export type RecipientInput = {
@@ -25,9 +27,9 @@ export type RecipientInput = {
   lastName: string;
 };
 
-type PurchasableProduct = Prisma.ProductGetPayload<{
-  include: { vendor: { select: { name: true } } };
-}>;
+type Product = typeof productTable.$inferSelect;
+
+type PurchasableProduct = Awaited<ReturnType<typeof fetchPurchasableProducts>>[number];
 
 const formatRecipientName = ({ firstName, lastName }: RecipientInput) => `${firstName} ${lastName}`;
 
@@ -51,7 +53,7 @@ export const buildOrderDetails = ({
 }: {
   deliveryAddress: DeliveryAddressInput;
   recipient: RecipientInput;
-}): PrismaJson.OrderDetails => ({
+}): OrderDetails => ({
   customer: {
     name: formatRecipientName(recipient),
     email: recipient.email.trim().toLowerCase(),
@@ -64,10 +66,10 @@ export const buildOrderDetails = ({
   },
 });
 
-export const fetchPurchasableProducts = (db: Prisma.TransactionClient, skus: string[]) =>
-  db.product.findMany({
+export const fetchPurchasableProducts = (db: Db, skus: string[]) =>
+  db.query.product.findMany({
     where: activeStorefrontProductWhere({ skus }),
-    include: { vendor: { select: { name: true } } },
+    with: { vendor: { columns: { name: true } } },
   });
 
 export const buildOrderItemsFromProducts = (
@@ -94,7 +96,7 @@ export const buildOrderItemsFromProducts = (
   }));
 };
 
-const resolveLocalizedSnapshotName = (value: PrismaJson.LocalizedString, locale: SupportedLocale) =>
+const resolveLocalizedSnapshotName = (value: LocalizedString, locale: SupportedLocale) =>
   value[locale] ?? value.en ?? Object.values(value)[0] ?? "";
 
 export const validateCartPurchaseLimits = (

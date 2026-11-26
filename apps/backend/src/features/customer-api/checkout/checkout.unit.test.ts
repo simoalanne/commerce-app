@@ -1,4 +1,8 @@
 import { calculateOrderPricing } from "@acme/shared";
+import type { SQL } from "drizzle-orm";
+import { PgDialect } from "drizzle-orm/pg-core";
+
+import type { Db } from "#src/db/client.ts";
 
 import {
   buildValues,
@@ -13,6 +17,7 @@ import {
   validateCartUnitPrices,
 } from "./checkout.utils.ts";
 
+const dialect = new PgDialect();
 const normalizeSql = (sql: string) => sql.replace(/\s+/g, " ").trim();
 const assertRouteError = (
   error: unknown,
@@ -23,102 +28,81 @@ const assertRouteError = (
   expect(error).toHaveProperty("data", data);
 };
 
+// Records the queries a stock command runs, as SQL text and parameters.
+const recordingTransaction = (rows: unknown[] = []) => {
+  const queries: { sql: string; params: unknown[] }[] = [];
+  const transaction = {
+    execute: async (query: SQL) => {
+      const { sql, params } = dialect.sqlToQuery(query);
+      queries.push({ sql: normalizeSql(sql), params });
+      return { rows };
+    },
+  };
+  // A stub of the one method the stock commands use.
+  return { queries, transaction: transaction as unknown as Db };
+};
+
 describe("checkout.adjustStock", () => {
   describe("buildValues", () => {
-    it("builds SQL values for multiple items", () => {
+    it("builds parameterized SQL values for multiple items", () => {
       const items = [
         { sku: "SKU123", quantity: 5 },
         { sku: "SKU456", quantity: 10 },
       ];
 
-      expect(buildValues(items)).toBe("('SKU123'::text, 5::int), ('SKU456'::text, 10::int)");
-    });
-
-    it("escapes single quotes in sku values", () => {
-      const items = [{ sku: "SKU WITH 'QUOTE", quantity: 3 }];
-
-      expect(buildValues(items)).toBe("('SKU WITH ''QUOTE'::text, 3::int)");
-    });
-
-    it("returns an empty string for empty items", () => {
-      expect(buildValues([])).toBe("");
+      expect(dialect.sqlToQuery(buildValues(items))).toEqual({
+        sql: "($1::text, $2::int), ($3::text, $4::int)",
+        params: ["SKU123", 5, "SKU456", 10],
+      });
     });
   });
 
   describe("stock adjustment commands", () => {
     it("builds reserve SQL that increments reserved stock only when available stock is sufficient", async () => {
-      const sqlCalls: string[] = [];
-      const transaction = {
-        $queryRawUnsafe: async (sql: string) => {
-          sqlCalls.push(sql);
-          return [];
-        },
-      };
+      const { queries, transaction } = recordingTransaction();
 
-      await reserveStockOrThrow({
-        items: [{ sku: "SKU1", quantity: 2 }],
-        transaction: transaction as any,
-      });
+      await reserveStockOrThrow({ items: [{ sku: "SKU1", quantity: 2 }], transaction });
 
-      expect(sqlCalls.length).toBe(1);
-      const sql = normalizeSql(sqlCalls[0]);
+      expect(queries.length).toBe(1);
+      const { sql, params } = queries[0];
       expect(sql).toMatch(/WITH requested\(sku, quantity\) AS/);
       expect(sql).toMatch(/SET reserved_stock = p\.reserved_stock \+ r\.quantity/);
       expect(sql).toMatch(/AND \(p\.current_stock - p\.reserved_stock\) >= r\.quantity/);
       expect(sql).toMatch(/u\.sku IS NOT NULL AS adjusted/);
+      expect(params).toEqual(["SKU1", 2]);
     });
 
     it("builds commit SQL that decrements both current and reserved stock", async () => {
-      const sqlCalls: string[] = [];
-      const transaction = {
-        $executeRawUnsafe: async (sql: string) => {
-          sqlCalls.push(sql);
-          return 0;
-        },
-      };
+      const { queries, transaction } = recordingTransaction();
 
-      await commitReservedStock({
-        items: [{ sku: "SKU1", quantity: 2 }],
-        transaction: transaction as any,
-      });
+      await commitReservedStock({ items: [{ sku: "SKU1", quantity: 2 }], transaction });
 
-      expect(sqlCalls.length).toBe(1);
-      const sql = normalizeSql(sqlCalls[0]);
+      expect(queries.length).toBe(1);
+      const { sql, params } = queries[0];
       expect(sql).toMatch(/SET current_stock = p\.current_stock - s\.quantity,/);
       expect(sql).toMatch(/reserved_stock = p\.reserved_stock - s\.quantity/);
-      expect(sql).toMatch(/FROM \(VALUES \('SKU1'::text, 2::int\)\) AS s\(sku, quantity\)/);
+      expect(sql).toMatch(/FROM \(VALUES \(\$1::text, \$2::int\)\) AS s\(sku, quantity\)/);
+      expect(params).toEqual(["SKU1", 2]);
     });
 
     it("builds release SQL that decrements only reserved stock", async () => {
-      const sqlCalls: string[] = [];
-      const transaction = {
-        $executeRawUnsafe: async (sql: string) => {
-          sqlCalls.push(sql);
-          return 0;
-        },
-      };
+      const { queries, transaction } = recordingTransaction();
 
-      await releaseReservedStock({
-        items: [{ sku: "SKU1", quantity: 2 }],
-        transaction: transaction as any,
-      });
+      await releaseReservedStock({ items: [{ sku: "SKU1", quantity: 2 }], transaction });
 
-      expect(sqlCalls.length).toBe(1);
-      const sql = normalizeSql(sqlCalls[0]);
+      expect(queries.length).toBe(1);
+      const { sql } = queries[0];
       expect(sql).toMatch(/SET reserved_stock = p\.reserved_stock - s\.quantity/);
       expect(sql).not.toMatch(/current_stock =/);
     });
 
     it("throws a domain error when reserve query reports failed rows", async () => {
-      const transaction = {
-        $queryRawUnsafe: async () => [{ sku: "SKU1", availableStock: 0, adjusted: false }],
-      };
+      const { transaction } = recordingTransaction([
+        { sku: "SKU1", availableStock: 0, adjusted: false },
+      ]);
 
       try {
-        await reserveStockOrThrow({
-          items: [{ sku: "SKU1", quantity: 2 }],
-          transaction: transaction as any,
-        });
+        await reserveStockOrThrow({ items: [{ sku: "SKU1", quantity: 2 }], transaction });
         expect.unreachable("Expected reserveStockOrThrow to throw");
       } catch (error) {
         assertRouteError(error, InsufficientStock, [{ sku: "SKU1", availableStock: 0 }]);

@@ -1,7 +1,9 @@
 import "dotenv/config";
 import { createClerkClient } from "@clerk/backend";
+import { eq } from "drizzle-orm";
 
-import prismaClient from "#src/prisma.ts";
+import { db } from "#src/db/client.ts";
+import { adminAccountTable, userTable } from "#src/db/schema.ts";
 
 const identifier = process.argv[2]?.trim();
 
@@ -44,22 +46,10 @@ try {
   process.exit(1);
 }
 
-await prismaClient.$transaction(async (tx) => {
-  await tx.user.upsert({
-    where: { clerk_id: clerkId },
-    update: {},
-    create: { clerk_id: clerkId },
-  });
-
-  await tx.adminAccount.deleteMany({
-    where: { user_id: clerkId },
-  });
-
-  await tx.adminAccount.create({
-    data: {
-      user_id: clerkId,
-    },
-  });
+await db.transaction(async (tx) => {
+  await tx.insert(userTable).values({ clerk_id: clerkId }).onConflictDoNothing();
+  await tx.delete(adminAccountTable).where(eq(adminAccountTable.user_id, clerkId));
+  await tx.insert(adminAccountTable).values({ user_id: clerkId });
 });
 
-await prismaClient.$disconnect();
+await db.$client.end();

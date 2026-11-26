@@ -1,5 +1,13 @@
+import { eq, inArray, sql } from "drizzle-orm";
+
+import { db } from "#src/db/client.ts";
+import {
+  categoryTable,
+  productSearchDocumentTable,
+  productTable,
+  vendorTable,
+} from "#src/db/schema.ts";
 import { supportedLocales } from "#src/locales.ts";
-import prismaClient from "#src/prisma.ts";
 import { createCategory, createVendor, createProduct } from "#src/tests/factories.ts";
 
 import postgresSearchProvider from "./postgresSearch.provider.ts";
@@ -9,31 +17,25 @@ const createdVendorIds = new Set<number>();
 const createdProductIds = new Set<number>();
 
 beforeAll(async () => {
-  await prismaClient.$executeRaw`CREATE EXTENSION IF NOT EXISTS pg_trgm`;
+  await db.execute(sql`CREATE EXTENSION IF NOT EXISTS pg_trgm`);
 });
 
 afterEach(async () => {
   if (createdProductIds.size > 0) {
-    await prismaClient.productSearchDocument.deleteMany({
-      where: { product_id: { in: [...createdProductIds] } },
-    });
-    await prismaClient.product.deleteMany({
-      where: { id: { in: [...createdProductIds] } },
-    });
+    await db
+      .delete(productSearchDocumentTable)
+      .where(inArray(productSearchDocumentTable.product_id, [...createdProductIds]));
+    await db.delete(productTable).where(inArray(productTable.id, [...createdProductIds]));
     createdProductIds.clear();
   }
 
   if (createdVendorIds.size > 0) {
-    await prismaClient.vendor.deleteMany({
-      where: { id: { in: [...createdVendorIds] } },
-    });
+    await db.delete(vendorTable).where(inArray(vendorTable.id, [...createdVendorIds]));
     createdVendorIds.clear();
   }
 
   if (createdCategoryIds.size > 0) {
-    await prismaClient.category.deleteMany({
-      where: { id: { in: [...createdCategoryIds] } },
-    });
+    await db.delete(categoryTable).where(inArray(categoryTable.id, [...createdCategoryIds]));
     createdCategoryIds.clear();
   }
 });
@@ -132,9 +134,9 @@ const search = async (q: string) =>
 
 const listIndexedProductIds = async (productId: number) =>
   (
-    await prismaClient.productSearchDocument.findMany({
+    await db.query.productSearchDocument.findMany({
       where: { product_id: productId },
-      select: { product_id: true },
+      columns: { product_id: true },
     })
   ).map((document) => document.product_id);
 
@@ -207,10 +209,10 @@ describe("PostgresSearchProvider", () => {
     createdProductIds.add(product.id);
     await postgresSearchProvider.invalidateIndex({ productIds: [product.id] });
 
-    await prismaClient.product.update({
-      where: { id: product.id },
-      data: { storefront_visibility: "INACTIVE" },
-    });
+    await db
+      .update(productTable)
+      .set({ storefront_visibility: "INACTIVE" })
+      .where(eq(productTable.id, product.id));
     await postgresSearchProvider.invalidateIndex({ productIds: [product.id] });
 
     const documents = await listIndexedProductIds(product.id);

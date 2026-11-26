@@ -1,6 +1,15 @@
-import type { OrderStatus, Prisma } from "@prisma/client";
 import * as Sentry from "@sentry/node";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
+import { db, type Db } from "#src/db/client.ts";
+import type { OrderDetails } from "#src/db/json.ts";
+import {
+  type OrderStatus,
+  orderItemTable,
+  orderTable,
+  promotionCodeTable,
+  refundTable,
+} from "#src/db/schema.ts";
 import {
   commitAsMuchStockAsPossible,
   commitReservedStock,
@@ -10,16 +19,15 @@ import {
   enqueueOrderRefundSucceededSideEffectJobs,
   enqueueProductStockInvalidationJobs,
 } from "#src/jobs/handlers/jobAggregrates.ts";
-import type { TransactionalEnqueueJob } from "#src/jobs/queue.ts";
+import { type EnqueueJob, jobQueue } from "#src/jobs/queue.ts";
 import logger from "#src/logger.ts";
-import { runAppTransaction } from "#src/utils/runAppTransaction.ts";
 
 import type { PaymentProviderName } from "./payment.provider.ts";
 
 type PendingOrderState = {
   previousStatus: OrderStatus;
   updated: boolean;
-  orderDetails: PrismaJson.OrderDetails;
+  orderDetails: OrderDetails;
   appliedPromoCode: string | null;
 };
 
@@ -28,11 +36,11 @@ const getOrderStockAdjustments = async ({
   transaction,
 }: {
   orderId: number;
-  transaction: Prisma.TransactionClient;
+  transaction: Db;
 }) =>
-  transaction.orderItem.findMany({
+  transaction.query.orderItem.findMany({
     where: { order_id: orderId },
-    select: {
+    columns: {
       id: true,
       sku: true,
       quantity: true,
@@ -62,8 +70,8 @@ const enqueueOrderPaidJobs = async ({
   enqueueJob,
 }: {
   orderId: number;
-  transaction: Prisma.TransactionClient;
-  enqueueJob: TransactionalEnqueueJob;
+  transaction: Db;
+  enqueueJob: EnqueueJob;
 }) => {
   await enqueueJob({
     type: "sendOrderConfirmationEmail",
@@ -75,9 +83,9 @@ const enqueueOrderPaidJobs = async ({
     payload: { orderId },
   });
 
-  const subscribers = await transaction.webhookSubscription.findMany({
+  const subscribers = await transaction.query.webhookSubscription.findMany({
     where: { event: "order.paid" },
-    select: { url: true },
+    columns: { url: true },
   });
 
   for (const subscriber of subscribers) {
@@ -100,9 +108,11 @@ const updatePendingOrderStatus = async ({
   orderId: number;
   paymentId: string | null;
   status: OrderStatus;
-  transaction: Prisma.TransactionClient;
+  transaction: Db;
 }) => {
-  const [state] = await transaction.$queryRaw<PendingOrderState[]>`
+  const {
+    rows: [state],
+  } = await transaction.execute<PendingOrderState>(sql`
 		WITH current AS (
 			SELECT status, order_details, applied_promo_code
 			FROM "Order"
@@ -123,7 +133,7 @@ const updatePendingOrderStatus = async ({
 			current.order_details AS "orderDetails",
 			current.applied_promo_code AS "appliedPromoCode"
 		FROM current;
-	`;
+	`);
 
   return state;
 };
@@ -140,36 +150,29 @@ const recoverPaidOrderAfterPendingCancellation = async ({
   paymentId: string | null;
   previousStatus: Extract<OrderStatus, "EXPIRED">;
   logTag: string;
-  transaction: Prisma.TransactionClient;
-  enqueueJob: TransactionalEnqueueJob;
+  transaction: Db;
+  enqueueJob: EnqueueJob;
 }) => {
-  const recoveredOrder = await transaction.order.update({
-    where: { id: orderId },
-    data: {
+  const [recoveredOrder] = await transaction
+    .update(orderTable)
+    .set({
       status: "PAID",
       payment_id: paymentId,
       paid_at: new Date(),
-    },
-    select: {
-      order_details: true,
-      applied_promo_code: true,
-      order_items: {
-        select: {
-          id: true,
-          sku: true,
-          quantity: true,
-          product_id: true,
-        },
-      },
-    },
-  });
+    })
+    .where(eq(orderTable.id, orderId))
+    .returning({
+      order_details: orderTable.order_details,
+      applied_promo_code: orderTable.applied_promo_code,
+    });
+  const orderItems = await getOrderStockAdjustments({ orderId, transaction });
 
   const shortfalls = await commitAsMuchStockAsPossible({
-    items: recoveredOrder.order_items,
+    items: orderItems,
     transaction,
   });
 
-  for (const orderItem of recoveredOrder.order_items) {
+  for (const orderItem of orderItems) {
     const uncommittedQuantity = shortfalls.find(
       (shortfall) => shortfall.sku === orderItem.sku,
     )?.uncommittedQuantity;
@@ -178,10 +181,10 @@ const recoverPaidOrderAfterPendingCancellation = async ({
       continue;
     }
 
-    await transaction.orderItem.update({
-      where: { id: orderItem.id },
-      data: { uncommitted_quantity: uncommittedQuantity },
-    });
+    await transaction
+      .update(orderItemTable)
+      .set({ uncommitted_quantity: uncommittedQuantity })
+      .where(eq(orderItemTable.id, orderItem.id));
   }
 
   await incrementPromoCodeUsage({
@@ -189,9 +192,7 @@ const recoverPaidOrderAfterPendingCancellation = async ({
     transaction,
   });
   await enqueueProductStockInvalidationJobs({
-    productIds: recoveredOrder.order_items.flatMap((item) =>
-      item.product_id == null ? [] : [item.product_id],
-    ),
+    productIds: orderItems.flatMap((item) => (item.product_id == null ? [] : [item.product_id])),
     enqueueJob,
   });
   await enqueueOrderPaidJobs({
@@ -231,27 +232,24 @@ const incrementPromoCodeUsage = async ({
   transaction,
 }: {
   promoCode: string | null;
-  transaction: Prisma.TransactionClient;
+  transaction: Db;
 }) => {
   if (!promoCode) {
     return;
   }
 
-  await transaction.promotionCode.updateMany({
-    where: { code: promoCode },
-    data: {
-      times_used: {
-        increment: 1,
-      },
-    },
-  });
+  await transaction
+    .update(promotionCodeTable)
+    .set({ times_used: sql`${promotionCodeTable.times_used} + 1` })
+    .where(eq(promotionCodeTable.code, promoCode));
 };
 
 const expirePendingOrder = async ({ orderId, paymentId, provider }: PaymentReconciliationEvent) => {
   const targetStatus: OrderStatus = "EXPIRED";
   const logTag = `${provider.toLowerCase()}-payment-reconciliation`;
 
-  return await runAppTransaction(async ({ tx, enqueueJob }) => {
+  return await db.transaction(async (tx) => {
+    const enqueueJob: EnqueueJob = (job) => jobQueue.enqueue(tx, job);
     const state = await updatePendingOrderStatus({
       orderId,
       paymentId,
@@ -321,7 +319,8 @@ export const reconcileOrder = async ({
   const targetStatus: OrderStatus = "PAID";
   const logTag = `${provider.toLowerCase()}-payment-reconciliation`;
 
-  return await runAppTransaction(async ({ tx, enqueueJob }) => {
+  return await db.transaction(async (tx) => {
+    const enqueueJob: EnqueueJob = (job) => jobQueue.enqueue(tx, job);
     const state = await updatePendingOrderStatus({
       orderId,
       paymentId,
@@ -366,10 +365,7 @@ export const reconcileOrder = async ({
       return null;
     }
 
-    await tx.order.update({
-      where: { id: orderId },
-      data: { paid_at: new Date() },
-    });
+    await tx.update(orderTable).set({ paid_at: new Date() }).where(eq(orderTable.id, orderId));
 
     const orderItems = await getOrderStockAdjustments({
       orderId,
@@ -394,6 +390,12 @@ export const reconcileOrder = async ({
   });
 };
 
+const unreconciledRefund = (refundId: number) =>
+  and(
+    eq(refundTable.id, refundId),
+    inArray(refundTable.status, ["PENDING", "PROCESSING", "REQUIRES_MANUAL_REVIEW"]),
+  );
+
 export const reconcileRefund = async ({
   refundId,
   refundKey,
@@ -404,22 +406,26 @@ export const reconcileRefund = async ({
 }: RefundReconciliationEvent) => {
   const logTag = `${provider.toLowerCase()}-refund-reconciliation`;
 
-  return await runAppTransaction(async ({ tx, enqueueJob }) => {
-    const refund = await tx.refund.findFirst({
-      where: {
-        OR: [
-          ...(paymentId ? [{ provider_refund_id: paymentId }] : []),
-          ...(refundId ? [{ id: refundId }] : []),
-          ...(refundKey ? [{ idempotency_key: refundKey }] : []),
-        ],
-      },
-      select: {
-        id: true,
-        status: true,
-        total_amount_cents: true,
-        provider_refund_id: true,
-      },
-    });
+  return await db.transaction(async (tx) => {
+    const enqueueJob: EnqueueJob = (job) => jobQueue.enqueue(tx, job);
+    const refundMatches = [
+      ...(paymentId ? [{ provider_refund_id: paymentId }] : []),
+      ...(refundId ? [{ id: refundId }] : []),
+      ...(refundKey ? [{ idempotency_key: refundKey }] : []),
+    ];
+    // An empty OR throws in Drizzle; with nothing to match, there is no refund.
+    const refund =
+      refundMatches.length === 0
+        ? undefined
+        : await tx.query.refund.findFirst({
+            where: { OR: refundMatches },
+            columns: {
+              id: true,
+              status: true,
+              total_amount_cents: true,
+              provider_refund_id: true,
+            },
+          });
 
     if (!refund) {
       logger.error("Refund for provider callback was not found", {
@@ -445,32 +451,27 @@ export const reconcileRefund = async ({
     }
 
     if (result === "failed") {
-      await tx.refund.updateMany({
-        where: {
-          id: refund.id,
-          status: { in: ["PENDING", "PROCESSING", "REQUIRES_MANUAL_REVIEW"] },
-        },
-        data: {
+      await tx
+        .update(refundTable)
+        .set({
           status: "FAILED",
           ...(paymentId ? { provider_refund_id: paymentId } : {}),
           failure_reason: "Payment provider refund callback reported failure",
-        },
-      });
+        })
+        .where(unreconciledRefund(refund.id));
       return refund;
     }
 
-    const update = await tx.refund.updateMany({
-      where: {
-        id: refund.id,
-        status: { in: ["PENDING", "PROCESSING", "REQUIRES_MANUAL_REVIEW"] },
-      },
-      data: {
+    const updated = await tx
+      .update(refundTable)
+      .set({
         status: "SUCCEEDED",
         ...(paymentId ? { provider_refund_id: paymentId } : {}),
-      },
-    });
+      })
+      .where(unreconciledRefund(refund.id))
+      .returning({ id: refundTable.id });
 
-    if (update.count === 0) {
+    if (updated.length === 0) {
       logger.info("Received refund callback for already reconciled refund", {
         refundId: refund.id,
         paymentId,

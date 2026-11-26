@@ -1,4 +1,7 @@
-import prismaClient from "#src/prisma.ts";
+import { sql } from "drizzle-orm";
+
+import { db } from "#src/db/client.ts";
+import { jobQueue } from "#src/jobs/queue.ts";
 
 const truncateAllTablesSql = `
 TRUNCATE TABLE
@@ -10,7 +13,6 @@ TRUNCATE TABLE
 	"Product",
 	"Category",
 	"Vendor",
-	"Job",
 	"WebhookSubscription",
 	"User"
 RESTART IDENTITY CASCADE;
@@ -28,7 +30,12 @@ const isTestDatabaseConnectionFailure = (error: Record<string, unknown>) => {
 
 export const bootstrapTestDatabase = async () => {
   try {
-    await prismaClient.$executeRawUnsafe(truncateAllTablesSql);
+    await db.execute(sql.raw(truncateAllTablesSql));
+    // Installs or migrates pg-boss's schema and creates the queues, then
+    // clears jobs left by earlier runs.
+    await jobQueue.start();
+    await jobQueue.stop();
+    await db.execute(sql`TRUNCATE pgboss.job`);
   } catch (cause) {
     if (isTestDatabaseConnectionFailure(cause as Record<string, unknown>)) {
       throw new Error(
@@ -39,7 +46,7 @@ export const bootstrapTestDatabase = async () => {
     }
 
     throw new Error(
-      `Failed to bootstrap the test database. Try running pnpm test:db:init to sync with the latest prisma schema. 
+      `Failed to bootstrap the test database. Try running pnpm test:db:init to sync with the latest schema. 
 			If problem persists, check the raw error for more details.`,
       { cause },
     );

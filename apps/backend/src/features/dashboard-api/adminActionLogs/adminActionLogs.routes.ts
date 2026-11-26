@@ -7,11 +7,11 @@ const ADMIN_ACTION_LOG_ENTRY_LIMIT = 1000;
 
 export const adminActionLogsRoutes = {
   getAll: adminActionLogRoute.get("/admin-action-logs").handler(async ({ context }) => {
-    const logs = await context.db.adminActionLog.findMany({
+    const logs = await context.db.query.adminActionLog.findMany({
       orderBy: {
         created_at: "desc",
       },
-      take: ADMIN_ACTION_LOG_ENTRY_LIMIT,
+      limit: ADMIN_ACTION_LOG_ENTRY_LIMIT,
     });
 
     return toResponse(

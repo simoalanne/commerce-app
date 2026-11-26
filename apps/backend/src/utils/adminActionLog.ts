@@ -1,5 +1,6 @@
-import { Prisma } from "@prisma/client";
-
+import type { Db } from "#src/db/client.ts";
+import type { JsonObject, JsonValue } from "#src/db/json.ts";
+import { adminActionLogTable } from "#src/db/schema.ts";
 import AuthProvider from "#src/integrations/auth/auth.provider.ts";
 import type { AuthContext } from "#src/routing/auth.ts";
 
@@ -24,7 +25,7 @@ export type LogAdminActionInput = LogAdminActionInputBase &
       }
   );
 
-export const toSafeJsonValue = (value: unknown): Prisma.InputJsonValue | null | undefined => {
+export const toSafeJsonValue = (value: unknown): JsonValue | undefined => {
   if (value == null) {
     return null;
   }
@@ -37,12 +38,8 @@ export const toSafeJsonValue = (value: unknown): Prisma.InputJsonValue | null | 
     return value.toISOString();
   }
 
-  if (value instanceof Prisma.Decimal) {
-    return value.toNumber();
-  }
-
   if (Array.isArray(value)) {
-    return value.map((item) => toSafeJsonValue(item)) as Prisma.InputJsonArray;
+    return value.map((item) => toSafeJsonValue(item)) as JsonValue[];
   }
 
   if (typeof value !== "object") {
@@ -51,15 +48,15 @@ export const toSafeJsonValue = (value: unknown): Prisma.InputJsonValue | null | 
 
   return Object.fromEntries(
     Object.entries(value).map(([key, val]) => [key, toSafeJsonValue(val)]),
-  ) as Prisma.InputJsonObject;
+  ) as JsonObject;
 };
 
 export const getChangedFields = (
-  before: Record<string, Prisma.InputJsonValue | null>,
-  after: Record<string, Prisma.InputJsonValue | null>,
+  before: Record<string, JsonValue>,
+  after: Record<string, JsonValue>,
 ) => {
-  const changedBefore: Record<string, Prisma.InputJsonValue | null> = {};
-  const changedAfter: Record<string, Prisma.InputJsonValue | null> = {};
+  const changedBefore: Record<string, JsonValue> = {};
+  const changedAfter: Record<string, JsonValue> = {};
   const keys = Object.keys(before).filter((key) => key in after);
 
   for (const key of keys) {
@@ -96,8 +93,8 @@ export const getChangedFields = (
       typeof after[key] === "object"
     ) {
       const nestedChanges = getChangedFields(
-        before[key] as Record<string, Prisma.InputJsonValue | null>,
-        after[key] as Record<string, Prisma.InputJsonValue | null>,
+        before[key] as Record<string, JsonValue>,
+        after[key] as Record<string, JsonValue>,
       );
 
       if (
@@ -116,18 +113,18 @@ export const getChangedFields = (
   }
 
   return {
-    before: changedBefore as Prisma.InputJsonObject,
-    after: changedAfter as Prisma.InputJsonObject,
+    before: changedBefore as JsonObject,
+    after: changedAfter as JsonObject,
   };
 };
 
-export async function logAdminAction(db: Prisma.TransactionClient, input: LogAdminActionInput) {
+export async function logAdminAction(db: Db, input: LogAdminActionInput) {
   if (!input.actor.adminId) {
     throw new Error("Admin action logging requires an authenticated admin");
   }
   const identity = await AuthProvider.getUserById(input.actor.clerkId);
 
-  let details: Prisma.InputJsonValue | null = null;
+  let details: JsonValue = null;
 
   if (input.details) {
     details = toSafeJsonValue(input.details) ?? null;
@@ -139,25 +136,23 @@ export async function logAdminAction(db: Prisma.TransactionClient, input: LogAdm
 
     if (input.action === "UPDATE" && before && after) {
       details = getChangedFields(
-        before as Record<string, Prisma.InputJsonValue | null>,
-        after as Record<string, Prisma.InputJsonValue | null>,
+        before as Record<string, JsonValue>,
+        after as Record<string, JsonValue>,
       );
     } else {
       details = {
-        before: before ?? undefined,
-        after: after ?? undefined,
+        ...(before != null && { before }),
+        ...(after != null && { after }),
       };
     }
   }
 
-  await db.adminActionLog.create({
-    data: {
-      admin_account_id: input.actor.adminId,
-      admin_email: identity.email,
-      action: input.action,
-      entity: input.entity,
-      entity_id: input.entityId != null ? String(input.entityId) : null,
-      details: details ?? Prisma.JsonNull,
-    },
+  await db.insert(adminActionLogTable).values({
+    admin_account_id: input.actor.adminId,
+    admin_email: identity.email,
+    action: input.action,
+    entity: input.entity,
+    entity_id: input.entityId != null ? String(input.entityId) : null,
+    details,
   });
 }

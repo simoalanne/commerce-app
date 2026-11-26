@@ -1,7 +1,7 @@
-import type { Prisma } from "@prisma/client";
 import type { TableCell } from "pdfmake";
 
 import type { EnvConfig } from "#src/config.ts";
+import type { Db } from "#src/db/client.ts";
 import {
   findRelevantOrderById,
   type RelevantOrder,
@@ -22,7 +22,7 @@ import {
 } from "./financialPdf.shared.ts";
 
 type PdfDependencies = {
-  db: Prisma.TransactionClient;
+  db: Db;
   config: EnvConfig;
 };
 

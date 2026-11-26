@@ -22,7 +22,6 @@ jobs:
       # The backend's scripts, including the postinstall contract extraction, run on Bun.
       - uses: oven-sh/setup-bun@v2
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter backend exec prisma generate
       - run: pnpm check
       - run: pnpm --filter dashboard build
       - run: pnpm test:unit

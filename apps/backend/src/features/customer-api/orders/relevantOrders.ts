@@ -1,44 +1,46 @@
-import type { Prisma } from "@prisma/client";
-
+import type { Db } from "#src/db/client.ts";
+import { orNotFound } from "#src/db/errors.ts";
 import { FIRST_LINKED_IMAGE_SELECT } from "#src/utils/imageUrl.ts";
 import { type RelevantOrderStatus, relevantOrderStatuses } from "#src/utils/orderStatus.ts";
 
-const relevantOrderInclude = {
+const relevantOrderWith = {
   order_items: {
     orderBy: {
       id: "asc",
     },
-    include: {
+    with: {
       product: {
-        select: {
+        columns: {
           id: true,
           name: true,
-          images: FIRST_LINKED_IMAGE_SELECT,
         },
+        with: { images: FIRST_LINKED_IMAGE_SELECT },
       },
       vendor: {
-        select: {
+        columns: {
           id: true,
           name: true,
-          images: FIRST_LINKED_IMAGE_SELECT,
         },
+        with: { images: FIRST_LINKED_IMAGE_SELECT },
       },
     },
   },
   reviews: {
-    select: {
+    columns: {
       id: true,
     },
-    take: 1,
+    limit: 1,
   },
   refunds: {
-    select: {
+    columns: {
       id: true,
       status: true,
       total_amount_cents: true,
       created_at: true,
+    },
+    with: {
       refund_items: {
-        select: {
+        columns: {
           order_item_id: true,
           quantity: true,
           amount_cents: true,
@@ -46,11 +48,24 @@ const relevantOrderInclude = {
       },
     },
   },
-} satisfies Prisma.OrderInclude;
+} as const;
 
-type RelevantOrderRow = Prisma.OrderGetPayload<{
-  include: typeof relevantOrderInclude;
-}>;
+const findRelevantOrderRows = (
+  db: Db,
+  where: { customerId?: number; orderId?: number; token?: string },
+) =>
+  db.query.order.findMany({
+    where: {
+      ...(where.orderId != null && { id: where.orderId }),
+      ...(where.customerId != null && { customer_id: where.customerId }),
+      ...(where.token && { claim_token: where.token }),
+      status: { in: [...relevantOrderStatuses] },
+    },
+    orderBy: { created_at: "desc" },
+    with: relevantOrderWith,
+  });
+
+type RelevantOrderRow = Awaited<ReturnType<typeof findRelevantOrderRows>>[number];
 
 const parseRelevantOrder = (order: RelevantOrderRow) => {
   const succeededRefunds = order.refunds.filter((refund) => refund.status === "SUCCEEDED");
@@ -88,17 +103,7 @@ const parseRelevantOrder = (order: RelevantOrderRow) => {
       refundedQuantityByOrderItemId,
     },
     refundReceipts,
-    order_details: order.order_details as PrismaJson.OrderDetails,
-    invoice_details: order.invoice_details as PrismaJson.OrderInvoiceDetails,
-    orderItems: order.order_items.map((item) => ({
-      ...item,
-      product: item.product
-        ? {
-            ...item.product,
-            name: item.product.name as PrismaJson.LocalizedString,
-          }
-        : null,
-    })),
+    orderItems: order.order_items,
     hasSubmittedReview: (order.reviews?.length ?? 0) > 0,
   };
 };
@@ -116,24 +121,11 @@ export const buildOrderPricing = (order: RelevantOrder) => ({
   refundedCents: order.refundSummary.refundedCents,
 });
 
-export const findRelevantOrders = async (
-  db: Prisma.TransactionClient,
-  { customerId }: { customerId?: number } = {},
-) => {
-  const orders = await db.order.findMany({
-    where: {
-      ...(customerId != null ? { customer_id: customerId } : {}),
-      status: { in: [...relevantOrderStatuses] },
-    },
-    orderBy: { created_at: "desc" },
-    include: relevantOrderInclude,
-  });
-
-  return orders.map(parseRelevantOrder);
-};
+export const findRelevantOrders = async (db: Db, { customerId }: { customerId?: number } = {}) =>
+  (await findRelevantOrderRows(db, { customerId })).map(parseRelevantOrder);
 
 export const findRelevantOrderById = async (
-  db: Prisma.TransactionClient,
+  db: Db,
   {
     orderId,
     customerId,
@@ -144,15 +136,7 @@ export const findRelevantOrderById = async (
     token?: string;
   },
 ) => {
-  const order = await db.order.findFirstOrThrow({
-    where: {
-      id: orderId,
-      ...(customerId != null ? { customer_id: customerId } : {}),
-      ...(token ? { claim_token: token } : {}),
-      status: { in: [...relevantOrderStatuses] },
-    },
-    include: relevantOrderInclude,
-  });
+  const [order] = await findRelevantOrderRows(db, { orderId, customerId, token });
 
-  return parseRelevantOrder(order);
+  return parseRelevantOrder(orNotFound(order));
 };

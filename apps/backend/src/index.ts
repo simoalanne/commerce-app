@@ -4,6 +4,7 @@ import { renderApiReference } from "@scalar/client-side-rendering";
 import z from "zod";
 
 import envConfig from "./config.ts";
+import { db } from "./db/client.ts";
 import AuthProvider from "./integrations/auth/auth.provider.ts";
 import { EmailService } from "./integrations/email/email.provider.ts";
 import {
@@ -14,7 +15,6 @@ import { getWebhookRoutes, paymentProviders } from "./integrations/payments/paym
 import { searchProvider } from "./integrations/search/search.provider.ts";
 import { jobQueue } from "./jobs/queue.ts";
 import logger from "./logger.ts";
-import prismaClient from "./prisma.ts";
 import { customerRouter, dashboardRouter } from "./routes.ts";
 import type { AppContext } from "./routing/base.ts";
 import {
@@ -25,14 +25,13 @@ import {
   sendErrors,
 } from "./routing/interceptors.ts";
 import { rateLimit } from "./routing/rateLimit.ts";
-import { runAppTransaction } from "./utils/runAppTransaction.ts";
 
 const router = { customer: customerRouter, dashboard: dashboardRouter };
 
 // Route modules never import these at runtime (contract extraction imports
 // them without an environment), so they are provided as initial context.
 const deps: Omit<AppContext, "headers"> = {
-  db: prismaClient,
+  db,
   config: envConfig,
   auth: AuthProvider,
   payments: paymentProviders,
@@ -40,7 +39,6 @@ const deps: Omit<AppContext, "headers"> = {
   storage: ObjectStorage,
   search: searchProvider,
   jobQueue,
-  runAppTransaction,
 };
 
 const api = createApp(router, {
@@ -85,6 +83,9 @@ const docsRoutes: Record<string, Response> =
       }
     : {};
 
+// Routes enqueue jobs, which needs the queue started.
+await jobQueue.start();
+
 const server = Bun.serve({
   ...api,
   // The webhooks are third-party callers with their own signing, so they are
@@ -108,17 +109,12 @@ const server = Bun.serve({
 });
 logger.info(`Server running at ${server.url}`);
 
-void jobQueue.start({ runAppTransaction }).catch((error) => {
-  logger.error("Failed to start background job queue", {
-    tag: "job-queue",
-    error,
-  });
-});
+await jobQueue.work({ jobQueue });
 
 const shutdown = async (signal: string) => {
   logger.info(`Received ${signal}. Shutting down gracefully...`);
   await server.stop();
-  jobQueue.stop();
+  await jobQueue.stop();
   process.exit(0);
 };
 process.on("SIGINT", () => void shutdown("SIGINT"));

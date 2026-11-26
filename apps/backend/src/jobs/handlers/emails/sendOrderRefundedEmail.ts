@@ -1,9 +1,9 @@
 import envConfig from "#src/config.ts";
+import { db } from "#src/db/client.ts";
 import { getCompanyContactInformation } from "#src/domain/getCompanyDetails.ts";
 import { EmailService } from "#src/integrations/email/email.provider.ts";
 import { buildOrderRefundedPayload } from "#src/jobs/handlers/orders/buildOrderRefundedPayload.ts";
 import logger from "#src/logger.ts";
-import prismaClient from "#src/prisma.ts";
 import { generateRefundReceiptPdf } from "#src/utils/pdf/generateRefundReceiptPdf.ts";
 
 import { renderOrderRefundedEmail } from "./renderOrderRefundedEmail.tsx";
@@ -19,7 +19,7 @@ export async function sendOrderRefundedEmail({ refundId }: SendOrderRefundedEmai
     getCompanyContactInformation(envConfig).email,
   );
   const refundReceipt = await generateRefundReceiptPdf(
-    { db: prismaClient, config: envConfig },
+    { db, config: envConfig },
     {
       access: "internal",
       refundId,

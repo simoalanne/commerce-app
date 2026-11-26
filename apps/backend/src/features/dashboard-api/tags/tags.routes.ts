@@ -1,5 +1,8 @@
+import { eq } from "drizzle-orm";
 import z from "zod";
 
+import { orNotFound } from "#src/db/errors.ts";
+import { productTagTable, tagTable } from "#src/db/schema.ts";
 import { productsRoutes as customerProductsRoutes } from "#src/features/customer-api/products/products.routes.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { EntityInUse } from "#src/routing/errors.ts";
@@ -29,23 +32,20 @@ const tagInvalidationTags = () => [buildTag(customerProductsRoutes.getAll)];
 
 export const tagsRoutes = {
   getAll: tagRoute.get("/tags").handler(async ({ context }) => {
-    const tags = await context.db.tag.findMany({
-      select: {
+    const tags = await context.db.query.tag.findMany({
+      columns: {
         id: true,
         name: true,
         color: true,
-        _count: { select: { products: true } },
+      },
+      extras: {
+        productCount: (tag) =>
+          context.db.$count(productTagTable, eq(productTagTable.tag_id, tag.id)),
       },
       orderBy: { id: "asc" },
     });
 
-    return toResponse(
-      tags.map(({ _count, ...tag }) => ({
-        ...tag,
-        productCount: _count.products,
-      })),
-      context.locale,
-    );
+    return toResponse(tags, context.locale);
   }),
 
   getById: tagRoute
@@ -53,10 +53,12 @@ export const tagsRoutes = {
     .params(idParams)
     .handler(async ({ params, context }) =>
       toResponse(
-        await context.db.tag.findUniqueOrThrow({
-          where: { id: params.id },
-          select: { id: true, name: true, color: true },
-        }),
+        orNotFound(
+          await context.db.query.tag.findFirst({
+            where: { id: params.id },
+            columns: { id: true, name: true, color: true },
+          }),
+        ),
         context.locale,
       ),
     ),
@@ -65,12 +67,13 @@ export const tagsRoutes = {
     .post("/tags")
     .body(TagFormSchema)
     .handler(async ({ body, context }) => {
-      const tag = await context.db.tag.create({
-        data: {
+      const [tag] = await context.db
+        .insert(tagTable)
+        .values({
           name: toLocalizedString(body.name, context.locale),
           color: body.color,
-        },
-      });
+        })
+        .returning();
 
       await logAdminAction(context.db, {
         actor: context.authContext,
@@ -93,17 +96,20 @@ export const tagsRoutes = {
     .params(idParams)
     .body(TagFormSchema)
     .handler(async ({ params, body, context }) => {
-      const existingTag = await context.db.tag.findUniqueOrThrow({
-        where: { id: params.id },
-      });
+      const existingTag = orNotFound(
+        await context.db.query.tag.findFirst({
+          where: { id: params.id },
+        }),
+      );
 
-      const updated = await context.db.tag.update({
-        where: { id: params.id },
-        data: {
+      const [updated] = await context.db
+        .update(tagTable)
+        .set({
           name: mergeLocalizedString(existingTag.name, body.name, context.locale),
           color: body.color,
-        },
-      });
+        })
+        .where(eq(tagTable.id, params.id))
+        .returning();
 
       await logAdminAction(context.db, {
         actor: context.authContext,
@@ -128,8 +134,10 @@ export const tagsRoutes = {
       // Tags are a shared library: deleting one removes it from every product
       // that uses it (the dashboard confirms first). Unlink before deleting so
       // the ProductTag restrict constraint is satisfied.
-      await context.db.productTag.deleteMany({ where: { tag_id: params.id } });
-      const deleted = await context.db.tag.delete({ where: { id: params.id } });
+      await context.db.delete(productTagTable).where(eq(productTagTable.tag_id, params.id));
+      const deleted = orNotFound(
+        (await context.db.delete(tagTable).where(eq(tagTable.id, params.id)).returning())[0],
+      );
 
       await logAdminAction(context.db, {
         actor: context.authContext,
@@ -146,8 +154,8 @@ export const tagsRoutes = {
     }),
 
   getOptionsForForm: tagRoute.get("/tags/options-for-form").handler(async ({ context }) => {
-    const result = await context.db.tag.findMany({
-      select: { id: true, name: true },
+    const result = await context.db.query.tag.findMany({
+      columns: { id: true, name: true },
     });
     return toResponse(
       result.map(({ id, name }) => ({ id, name })),

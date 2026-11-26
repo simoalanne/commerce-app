@@ -1,8 +1,10 @@
-import type { Prisma } from "@prisma/client";
+import { and, eq, isNull, sql } from "drizzle-orm";
 
+import type { Db } from "#src/db/client.ts";
+import { isUniqueViolation } from "#src/db/errors.ts";
+import { customerAccountTable, orderTable, userTable } from "#src/db/schema.ts";
 import type { AuthProvider } from "#src/integrations/auth/auth.provider.ts";
 import logger from "#src/logger.ts";
-import type { RunAppTransaction } from "#src/utils/runAppTransaction.ts";
 
 import { Forbidden, Unauthorized } from "./errors.ts";
 
@@ -17,33 +19,27 @@ export type AuthContext = {
 
 type AuthDependencies = {
   headers: Headers;
-  db: Prisma.TransactionClient;
+  db: Db;
   auth: AuthProvider;
-  runAppTransaction: RunAppTransaction;
 };
 
-const userRecordSelect = {
-  clerk_id: true,
-  customer_account: { select: { id: true } },
-  admin_account: { select: { id: true } },
-} as const;
+const findUserRecord = (db: Db, userId: string) =>
+  db.query.user.findFirst({
+    where: { clerk_id: userId },
+    columns: { clerk_id: true },
+    with: {
+      customer_account: { columns: { id: true } },
+      admin_account: { columns: { id: true } },
+    },
+  });
 
-type LocalUserRecord = Prisma.UserGetPayload<{
-  select: typeof userRecordSelect;
-}>;
-
-// Checked by code so this module needs no Prisma runtime import.
-const isUniqueConstraintError = (error: unknown) =>
-  typeof error === "object" && error !== null && "code" in error && error.code === "P2002";
+type LocalUserRecord = NonNullable<Awaited<ReturnType<typeof findUserRecord>>>;
 
 const getOrCreateUserRecord = async (
-  { db, auth, runAppTransaction }: Omit<AuthDependencies, "headers">,
+  { db, auth }: Omit<AuthDependencies, "headers">,
   userId: string,
-) => {
-  const existingUser = await db.user.findUnique({
-    where: { clerk_id: userId },
-    select: userRecordSelect,
-  });
+): Promise<LocalUserRecord> => {
+  const existingUser = await findUserRecord(db, userId);
 
   if (existingUser) {
     return existingUser;
@@ -52,35 +48,33 @@ const getOrCreateUserRecord = async (
   const authUser = await auth.getUserById(userId);
 
   try {
-    const createdUser = await runAppTransaction(async ({ tx }) => {
-      const createdUser = await tx.user.create({
-        data: {
-          clerk_id: userId,
-          customer_account: { create: {} },
-        },
-        select: userRecordSelect,
-      });
+    const createdUser = await db.transaction(async (tx) => {
+      await tx.insert(userTable).values({ clerk_id: userId });
+      const [customerAccount] = await tx
+        .insert(customerAccountTable)
+        .values({ user_id: userId })
+        .returning({ id: customerAccountTable.id });
+      const createdUser = {
+        clerk_id: userId,
+        customer_account: customerAccount,
+        admin_account: null,
+      };
 
       const normalizedEmail = authUser.email?.trim().toLowerCase();
-      const customerAccountId = createdUser.customer_account?.id;
-      if (!normalizedEmail || !customerAccountId) {
+      if (!normalizedEmail) {
         return createdUser;
       }
 
-      await tx.order.updateMany({
-        where: {
-          customer_id: null,
-          has_been_linked_to_customer_account: false,
-          order_details: {
-            path: ["customer", "email"],
-            equals: normalizedEmail,
-          },
-        },
-        data: {
-          customer_id: customerAccountId,
-          has_been_linked_to_customer_account: true,
-        },
-      });
+      await tx
+        .update(orderTable)
+        .set({ customer_id: customerAccount.id, has_been_linked_to_customer_account: true })
+        .where(
+          and(
+            isNull(orderTable.customer_id),
+            eq(orderTable.has_been_linked_to_customer_account, false),
+            sql`${orderTable.order_details}->'customer'->>'email' = ${normalizedEmail}`,
+          ),
+        );
 
       return createdUser;
     });
@@ -92,11 +86,8 @@ const getOrCreateUserRecord = async (
 
     return createdUser;
   } catch (error) {
-    if (isUniqueConstraintError(error)) {
-      const userRecord = await db.user.findUnique({
-        where: { clerk_id: userId },
-        select: userRecordSelect,
-      });
+    if (isUniqueViolation(error)) {
+      const userRecord = await findUserRecord(db, userId);
 
       if (!userRecord) {
         throw new Error(
@@ -187,7 +178,7 @@ const createProxyAuthContext = () =>
  *   for authenticated users but does NOT throw if auth fails, allowing the handler to branch on `isAuthenticated`.
  */
 export const resolveAuthContext = async (
-  { headers, db, auth, runAppTransaction }: AuthDependencies,
+  { headers, db, auth }: AuthDependencies,
   accessLevel: AccessLevel | null,
 ): Promise<AuthContext> => {
   if (!accessLevel) {
@@ -206,7 +197,7 @@ export const resolveAuthContext = async (
     return createProxyAuthContext();
   }
 
-  const userRecord = await getOrCreateUserRecord({ db, auth, runAppTransaction }, userId);
+  const userRecord = await getOrCreateUserRecord({ db, auth }, userId);
   const authContext = tryBuildAuthContext(accessLevel, userRecord);
   const roles = {
     requiredRole: AccessLevelToRoleMap[accessLevel],

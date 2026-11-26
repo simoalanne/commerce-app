@@ -5,27 +5,31 @@ const jobQueueRoute = dashboardRoute.meta({ access: "ADMIN" });
 
 const JOB_QUEUE_ENTRY_LIMIT = 1000;
 
+// pg-boss stores a failed attempt's error as the job's output.
+const getLastError = (output: unknown) => {
+  if (typeof output !== "object" || output === null) return null;
+  if ("stack" in output && typeof output.stack === "string") return output.stack;
+  if ("message" in output && typeof output.message === "string") return output.message;
+  return null;
+};
+
 export const jobQueueRoutes = {
   getAll: jobQueueRoute.get("/job-queue").handler(async ({ context }) => {
-    const jobs = await context.db.job.findMany({
-      orderBy: {
-        created_at: "desc",
-      },
-      take: JOB_QUEUE_ENTRY_LIMIT,
-    });
+    const jobs = await context.jobQueue.listRecent(JOB_QUEUE_ENTRY_LIMIT);
 
     return toResponse(
       jobs.map((job) => ({
         id: job.id,
         type: job.type,
-        status: job.status,
-        attempts: job.attempts,
-        maxAttempts: job.max_attempts,
-        nextRunAt: job.next_run_at,
-        lastError: job.last_error,
+        state: job.state,
+        retryCount: job.retryCount,
+        retryLimit: job.retryLimit,
+        startAfter: job.startAfter,
+        createdAt: job.createdOn,
+        completedAt: job.completedOn,
         payload: job.payload,
-        createdAt: job.created_at,
-        updatedAt: job.updated_at,
+        lastError:
+          job.state === "failed" || job.state === "retry" ? getLastError(job.output) : null,
       })),
     );
   }),

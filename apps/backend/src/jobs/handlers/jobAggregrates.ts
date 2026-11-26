@@ -1,7 +1,6 @@
-import type { Prisma } from "@prisma/client";
-
+import type { Db } from "#src/db/client.ts";
 import { restockProductStock } from "#src/features/customer-api/checkout/checkout.adjustStock.ts";
-import type { TransactionalEnqueueJob } from "#src/jobs/queue.ts";
+import type { EnqueueJob } from "#src/jobs/queue.ts";
 import { buildProductStockInvalidationTags } from "#src/utils/productStockInvalidationTags.ts";
 
 export const enqueueProductStockInvalidationJobs = async ({
@@ -9,7 +8,7 @@ export const enqueueProductStockInvalidationJobs = async ({
   enqueueJob,
 }: {
   productIds: number[];
-  enqueueJob: TransactionalEnqueueJob;
+  enqueueJob: EnqueueJob;
 }) => {
   await enqueueJob({
     type: "invalidateStorefrontCache",
@@ -27,18 +26,20 @@ export const enqueueOrderRefundSucceededSideEffectJobs = async ({
   transaction,
 }: {
   refundId: number;
-  enqueueJob: TransactionalEnqueueJob;
-  transaction: Prisma.TransactionClient;
+  enqueueJob: EnqueueJob;
+  transaction: Db;
 }) => {
-  const restockItems = await transaction.refundItem.findMany({
+  const restockItems = await transaction.query.refundItem.findMany({
     where: {
       refund_id: refundId,
       restock_quantity: { gt: 0 },
     },
-    select: {
+    columns: {
       restock_quantity: true,
+    },
+    with: {
       order_item: {
-        select: {
+        columns: {
           product_id: true,
         },
       },
@@ -68,9 +69,9 @@ export const enqueueOrderRefundSucceededSideEffectJobs = async ({
     payload: { refundId },
   });
 
-  const subscribers = await transaction.webhookSubscription.findMany({
+  const subscribers = await transaction.query.webhookSubscription.findMany({
     where: { event: "order.refunded" },
-    select: { url: true },
+    columns: { url: true },
   });
 
   for (const subscriber of subscribers) {

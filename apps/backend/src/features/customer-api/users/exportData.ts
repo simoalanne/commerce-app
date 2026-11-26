@@ -1,3 +1,5 @@
+import { orNotFound } from "#src/db/errors.ts";
+import type { DeliveryInstructions } from "#src/db/json.ts";
 import type { AppContext } from "#src/routing/base.ts";
 
 const getFullName = (firstName: string | null, lastName: string | null) => {
@@ -5,7 +7,7 @@ const getFullName = (firstName: string | null, lastName: string | null) => {
   return fullName || null;
 };
 
-const toNullableInstructions = (instructions: PrismaJson.DeliveryInstructions | undefined) => {
+const toNullableInstructions = (instructions: DeliveryInstructions | undefined) => {
   if (!instructions) {
     return null;
   }
@@ -37,98 +39,105 @@ export const buildCustomerDataExport = async (
     lastName: string | null;
   },
 ) => {
-  const customerAccount = await db.customerAccount.findUniqueOrThrow({
-    where: {
-      id: customerId,
-    },
-    select: {
-      customerSavedCartItems: {
-        select: {
-          product_id: true,
-          quantity: true,
-          added_at: true,
-        },
-        orderBy: {
-          added_at: "desc",
-        },
+  const customerAccount = orNotFound(
+    await db.query.customerAccount.findFirst({
+      where: {
+        id: customerId,
       },
-      customerFavoriteProducts: {
-        select: {
-          product_id: true,
-          added_at: true,
+      columns: {},
+      with: {
+        customerSavedCartItems: {
+          columns: {
+            product_id: true,
+            quantity: true,
+            added_at: true,
+          },
+          orderBy: {
+            added_at: "desc",
+          },
         },
-        orderBy: {
-          added_at: "desc",
+        customerFavoriteProducts: {
+          columns: {
+            product_id: true,
+            added_at: true,
+          },
+          orderBy: {
+            added_at: "desc",
+          },
         },
-      },
-      customerFavoriteVendors: {
-        select: {
-          vendor_id: true,
-          added_at: true,
+        customerFavoriteVendors: {
+          columns: {
+            vendor_id: true,
+            added_at: true,
+          },
+          orderBy: {
+            added_at: "desc",
+          },
         },
-        orderBy: {
-          added_at: "desc",
+        addresses: {
+          columns: {
+            street: true,
+            street_number: true,
+            postal_code: true,
+            city: true,
+            delivery_details: true,
+          },
+          orderBy: {
+            id: "desc",
+          },
         },
-      },
-      addresses: {
-        select: {
-          street: true,
-          street_number: true,
-          postal_code: true,
-          city: true,
-          delivery_details: true,
-        },
-        orderBy: {
-          id: "desc",
-        },
-      },
-      orders: {
-        select: {
-          id: true,
-          items_subtotal_cents: true,
-          items_discount_cents: true,
-          charged_total_cents: true,
-          status: true,
-          created_at: true,
-          order_details: true,
-          reviews: {
-            select: {
-              id: true,
-              kind: true,
-              rating: true,
-              comment: true,
-              show_reviewer_name: true,
-              product_id: true,
-              vendor_id: true,
-              created_at: true,
-              images: {
-                select: {
-                  storage_key: true,
+        orders: {
+          columns: {
+            id: true,
+            items_subtotal_cents: true,
+            items_discount_cents: true,
+            charged_total_cents: true,
+            status: true,
+            created_at: true,
+            order_details: true,
+          },
+          with: {
+            reviews: {
+              columns: {
+                id: true,
+                kind: true,
+                rating: true,
+                comment: true,
+                show_reviewer_name: true,
+                product_id: true,
+                vendor_id: true,
+                created_at: true,
+              },
+              with: {
+                images: {
+                  columns: {
+                    storage_key: true,
+                  },
                 },
               },
+              orderBy: {
+                id: "asc",
+              },
             },
-            orderBy: {
-              id: "asc",
+            order_items: {
+              orderBy: {
+                id: "asc",
+              },
+              columns: {
+                name: true,
+                quantity: true,
+                unit_sales_price_cents: true,
+                vendor_name: true,
+              },
             },
           },
-          order_items: {
-            orderBy: {
-              id: "asc",
-            },
-            select: {
-              name: true,
-              quantity: true,
-              unit_sales_price_cents: true,
-              vendor_name: true,
-            },
+          orderBy: {
+            created_at: "desc",
           },
-        },
-        orderBy: {
-          created_at: "desc",
         },
       },
-    },
-  });
+    }),
+  );
 
   const { firstName, lastName, email } = identity;
 

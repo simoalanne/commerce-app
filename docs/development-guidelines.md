@@ -57,7 +57,7 @@ chore/tooling-update
 
 ## Database
 
-The backend uses PostgreSQL through Prisma, selected with `DATABASE_URL`. There are no migrations: schema changes are applied with `prisma db push`, and the client is regenerated with `prisma generate`. Agents may try generation, but if it fails in a sandbox they should report the error and move on.
+The backend uses PostgreSQL through Drizzle, selected with `DATABASE_URL` (see `database.md`). There are no migrations: schema changes are applied with `drizzle-kit push` (`pnpm db:push`). Search needs the `pg_trgm` extension, which `db:push` does not create.
 
 `compose.yaml` in the repo root runs two local databases:
 

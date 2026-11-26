@@ -1,13 +1,13 @@
 # AGENTS.md
 
-Last updated: 2026-11-22
+Last updated: 2026-11-26
 
 ## Project State And Direction
 
 - The project is a general commerce core built on contracts and data it owns, meant to grow features off-the-shelf stacks don't give out of the box (still to be decided). `Acme` is a placeholder name. It also serves as a proving ground for rest-rpc and for agent-driven development. See `README.md`.
 - Nothing is deployed. Backward compatibility is unnecessary unless the user explicitly asks for it. Prefer direct cleanup over compatibility layers, migration bridges, or preserving stale behavior.
-- The plan is `docs/roadmap.md`. Parts it replaces (Next-only caching machinery, the in-memory job queue) shouldn't be extended.
-- Prefer in-process libraries over platforms that own the data model or the API. Planned swaps: Prisma → Drizzle (with integer cents and pg-boss), later Clerk → Better Auth.
+- The plan is `docs/roadmap.md`. Parts it replaces (Next-only caching machinery) shouldn't be extended.
+- Prefer in-process libraries over platforms that own the data model or the API. The data layer is Drizzle with pg-boss for jobs; the planned swap is Clerk → Better Auth.
 - Payments: the backend supports Stripe and Paytrail through one provider interface; the online store currently implements only the Paytrail flow.
 
 ## Architecture Posture
@@ -15,11 +15,11 @@ Last updated: 2026-11-22
 The API is server-first, built with [rest-rpc](https://rest-rpc.vercel.app/llms.txt). The backend owns the routes, and the frontends call them through clients built from an extracted contract. Bring this up when it is relevant to the task, especially when changing backend API behavior, frontend API usage, request/response shapes, auth requirements, errors, or localization behavior.
 
 - Routes live in `apps/backend/src/features/<api>/<feature>/<feature>.routes.ts`, built with `customerRoute` / `dashboardRoute` from `src/routing/base.ts`. The handler is the implementation: there is no service layer. Single-use logic stays inline. Logic shared by several handlers, jobs or webhooks, or that names a real domain concept (pricing, stock reservation), becomes a helper next to the feature that takes its dependencies as arguments.
-- Response types are inferred from handlers. Every JSON handler returns `toResponse(value, context.locale)` (`src/routing/toResponse.ts`), which converts Decimal to `number`, Date to an ISO string and localized objects to the requested locale, and types the result as what JSON delivers. Handlers that return nothing or a binary `respond(...)` are the exceptions.
+- Response types are inferred from handlers. Every JSON handler returns `toResponse(value, context.locale)` (`src/routing/toResponse.ts`), which converts Date to an ISO string and localized objects to the requested locale, and types the result as what JSON delivers. Handlers that return nothing or a binary `respond(...)` are the exceptions.
 - Auth is route metadata: `.meta({ access: "ADMIN" })`. The base builder's middleware enforces it and provides `context.authContext` and `context.locale`.
-- Dependencies come through context (`AppContext` in `src/routing/base.ts`): `db`, `config`, `auth`, `payments`, `email`, `storage`, `search`, `jobQueue`, `runAppTransaction`. `index.ts` constructs them and passes them as the `createApp` context.
-- Transactions are a choice of builder. Handlers that write more than once, enqueue jobs or log admin actions use `customerTxRoute` / `dashboardTxRoute`: the whole handler runs in one transaction, `context.db` is that transaction and `context.enqueueJob(...)` enqueues jobs that become visible on commit. Log admin actions with `logAdminAction(context.db, {...})`. The plain builders are for reads, single-statement writes, and handlers that call external services (checkout payment creation, account deletion), which must not hold a transaction open; those open explicit ones with `context.runAppTransaction`. Jobs and webhooks, which are not routes, use `runAppTransaction` directly.
-- Route modules must be side-effect free at import time, because contract extraction (`pnpm --filter backend contract`, run with `NODE_ENV=production` and no secrets) imports them. They may import at runtime only `@rest-rpc/*`, `zod`, `@acme/shared`, `logger.ts`, `@prisma/client/runtime/client` and other side-effect-free helpers. `config.ts`, `prisma.ts`, integration providers and the generated Prisma client are `import type` only; use `context.*` instead. Jobs and payment webhook routers are not imported by route modules and may import them directly.
+- Dependencies come through context (`AppContext` in `src/routing/base.ts`): `db`, `config`, `auth`, `payments`, `email`, `storage`, `search`, `jobQueue`. `index.ts` constructs them and passes them as the `createApp` context.
+- Transactions are a choice of builder. Handlers that write more than once, enqueue jobs or log admin actions use `customerTxRoute` / `dashboardTxRoute`: the whole handler runs in one transaction, `context.db` is that transaction and `context.enqueueJob(...)` enqueues jobs that become visible on commit. Log admin actions with `logAdminAction(context.db, {...})`. The plain builders are for reads, single-statement writes, and handlers that call external services (checkout payment creation, account deletion), which must not hold a transaction open; those open explicit ones with `context.db.transaction(async (tx) => ...)` and enqueue with `context.jobQueue.enqueue(tx, job)`. Jobs and webhooks, which are not routes, use `db.transaction` and `jobQueue.enqueue(tx, job)` directly.
+- Route modules must be side-effect free at import time, because contract extraction (`pnpm --filter backend contract`, run with `NODE_ENV=production` and no secrets) imports them. They may import at runtime only `@rest-rpc/*`, `zod`, `@acme/shared`, `drizzle-orm`, `logger.ts`, `src/db/schema.ts`, `src/db/json.ts`, `src/db/errors.ts` and other side-effect-free helpers. `config.ts`, `src/db/client.ts`, `src/jobs/queue.ts` and integration providers are `import type` only; use `context.*` instead. Jobs and payment webhook routers are not imported by route modules and may import them directly.
 - Expected business failures are `routeError("CODE", { status, data? })` definitions in `<feature>.errors.ts` (shared ones in `src/routing/errors.ts`), declared on every route that can throw them with `.error(Def)`, including errors thrown from helpers. Use a plain `RouteError` only for developer-facing failures.
 - Rate limits are route metadata: `.meta({ rateLimit: { name, windowMs, max } })`, enforced by an interceptor in `src/routing/rateLimit.ts`.
 - Frontends call routes through the rest-rpc clients: the dashboard through `queryUtils` from `context/ApiClientContext.tsx`, the store through `useApiClient()` in client components and `createServerSideApiClient()` in server code. Response types come from `InferClientResponse`, not hand-written types. Wire data is plain JSON: dates are ISO strings, so call `new Date(value)` where a `Date` is needed.
@@ -31,7 +31,7 @@ The API is server-first, built with [rest-rpc](https://rest-rpc.vercel.app/llms.
 
 This is a `pnpm` monorepo with these main workspaces:
 
-- `apps/backend` - Bun (fetch-standard) API, Prisma/Postgres, Clerk, Paytrail, Stripe, and other core backend services
+- `apps/backend` - Bun (fetch-standard) API, Drizzle/Postgres, pg-boss, Clerk, Paytrail, Stripe, and other core backend services
 - `apps/dashboard` - React 19 + Vite admin/dashboard app
 - `apps/online-store` - Next.js customer-facing web storefront
 - `packages/shared` - form schemas the dashboard uses, and pure utilities shared across apps (pricing, slugify, cache tags, phone validation)
@@ -54,11 +54,9 @@ Do not hand-write parallel types or ad hoc fetch wrappers unless there is a stro
 
 ## Database Workflow
 
-- The project currently does not use Prisma migrations.
-- Database schema changes are handled with `prisma db push`; the user will run this when needed.
-- Prisma client/schema generation is handled with `prisma generate`.
-- Agents can try generation if it is directly useful, but if it fails in the agent environment, capture the error and move on instead of spending a long time fighting it. The user is ready to fix generation locally.
-- If `prisma generate` fails, note whether the failure looks like sandbox permissions, pnpm symlink resolution, missing generated directories, or another concrete cause so it can be traced later.
+- Drizzle 1.0 with node-postgres. Schema in `apps/backend/src/db/schema.ts`, relations in `src/db/relations.ts`. Query conventions and the Prisma-to-Drizzle translation are in `docs/database.md`; read it before writing queries.
+- The trap TypeScript does not catch: in relational queries, an `undefined` filter value (or `where: undefined`) throws at runtime, and `null` is not `IS NULL`.
+- There are no migrations. Schema changes are applied with `drizzle-kit push` (`pnpm --filter backend db:push`; `test:db:init` for the test database); the user will run this when needed.
 
 ## Commands And Permissions
 
@@ -120,6 +118,7 @@ For deeper context, read only what you need:
 
 - Plan: `docs/roadmap.md`
 - Design notes: `docs/*.md` (checkout and payments, job queue, admin action logs, token handling, storefront visibility, online store caching and metadata)
+- Database conventions: `docs/database.md`
 - Backend route builders and context: `apps/backend/src/routing/base.ts`
 - Route registration: `apps/backend/src/routes.ts`
 - Backend server wiring: `apps/backend/src/index.ts`

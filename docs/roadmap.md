@@ -17,7 +17,7 @@ The project is a general commerce core: catalog, cart, checkout, orders, refunds
 5. **Payment provider registry.**
 6. **Integer cents**, on Prisma, so the Drizzle port only translates queries.
 7. **Transactional route builders**, on Prisma: `customerTxRoute` / `dashboardTxRoute` replace `runAppTransaction` in handlers.
-8. **Drizzle**, with pg-boss.
+8. **Drizzle**, with pg-boss. Done: conventions and the translation guide are in `database.md`, the queue in `job-queue.md`.
 
 Deferred, not scheduled: Clerk → Better Auth, the TanStack Start store, the search documents review.
 
@@ -35,7 +35,9 @@ The sections below are input for these steps.
 
 Each is its own commit series on `main`. The job queue and `runAppTransaction` changes from the abstraction review belong with the Drizzle port, since they touch the same call sites.
 
-### Prisma → Drizzle
+### Prisma → Drizzle (done)
+
+Ported on Drizzle `1.0.0-rc.6` and pg-boss 12, with what was learned recorded in `database.md`: relational `where` throws on `undefined` instead of ignoring it, `uuid(7)` defaults moved to Postgres 18's `uuidv7()`, `numeric` reads as `number`, raw rows need a UTC parser for `timestamp`, and drizzle-kit does not manage the `pg_trgm` extension search needs. The plan as written before the port:
 
 Target Drizzle 1.0 (currently `1.0.0-rc`). Its relational queries (`where`, `with`, `columns`) are close to Prisma's `where`, `include` and `select`, which makes most reads translate directly.
 
@@ -86,7 +88,7 @@ After the Bun move: Node's type stripping can't run `.tsx`, and route modules th
 
 Each of the repo's own abstractions has to earn its place in a general commerce core: keep it only if it's the design you'd recommend, not just one that works. The questions for each: does it solve a problem generic commerce actually has, would a library do it better, and does it hide complexity or only move it?
 
-### Job queue: replace with pg-boss
+### Job queue: replace with pg-boss (done)
 
 `PersistentInMemoryJobQueue` stores jobs in the database but schedules them with in-process timers:
 
@@ -98,11 +100,11 @@ Keep the good parts: the transactional enqueue (jobs are rows written in the sam
 
 `docs/job-queue.md` gets rewritten with the swap. The admin job queue page stays if pg-boss exposes the job state it needs.
 
-### `runAppTransaction`: replaced by transactional builders
+### `runAppTransaction`: replaced by transactional builders (done)
 
 Handlers no longer call it. A route that writes is built with `customerTxRoute` / `dashboardTxRoute`, whose middleware runs the whole handler in one transaction and provides it as `context.db`, with `context.enqueueJob` for jobs. `logAdminAction(db, entry)` is a plain helper. `AppContext.db` is typed as a transaction client, so handlers cannot open nested transactions.
 
-What remains of `runAppTransaction` is plumbing: the builders' middleware, jobs, webhooks, and the few plain routes that must keep an external call outside a transaction (checkout payment creation, account deletion, and auth's user creation). Its only extra job is handing enqueued job ids to the in-memory queue after commit. With pg-boss that step disappears and it becomes `db.transaction`; the builders and `context.enqueueJob` stay.
+What remains of `runAppTransaction` is plumbing: the builders' middleware, jobs, webhooks, and the few plain routes that must keep an external call outside a transaction (checkout payment creation, account deletion, and auth's user creation). Its only extra job is handing enqueued job ids to the in-memory queue after commit. With pg-boss that step disappears and it becomes `db.transaction`; the builders and `context.enqueueJob` stay. Done: `runAppTransaction` is gone, and code outside the builders calls `db.transaction` and `jobQueue.enqueue(tx, job)`.
 
 ### Payment provider registry: simplify
 

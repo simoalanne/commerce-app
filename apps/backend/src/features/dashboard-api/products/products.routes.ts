@@ -1,6 +1,10 @@
 import { ProductFormSchema } from "@acme/shared/schemas/products";
+import { eq } from "drizzle-orm";
 import z from "zod";
 
+import type { Db } from "#src/db/client.ts";
+import { orNotFound } from "#src/db/errors.ts";
+import { productImageTable, productTable, productTagTable } from "#src/db/schema.ts";
 import { categoriesRoutes as customerCategoriesRoutes } from "#src/features/customer-api/categories/categories.routes.ts";
 import { productsRoutes as customerProductsRoutes } from "#src/features/customer-api/products/products.routes.ts";
 import { reviewsRoutes as customerReviewsRoutes } from "#src/features/customer-api/reviews/reviews.routes.ts";
@@ -10,14 +14,12 @@ import { EntityInUse } from "#src/routing/errors.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
 import { logAdminAction } from "#src/utils/adminActionLog.ts";
 import { buildTag } from "#src/utils/buildTags.ts";
-import { buildCreateImageLinks, buildReplaceImageLinks } from "#src/utils/imageLinks.ts";
 import {
   mergeLocalizedSlug,
   mergeLocalizedString,
   toLocalizedSlug,
   toLocalizedString,
 } from "#src/utils/localizedObject.ts";
-import { buildCreateTagLinks, buildReplaceTagLinks } from "#src/utils/tagLinks.ts";
 import tryDeleteEntity from "#src/utils/tryDeleteEntity.ts";
 
 const productRoute = dashboardRoute.meta({ access: "ADMIN" });
@@ -55,59 +57,45 @@ const buildProductInvalidationTags = (productId: number) => [
   buildTag(storefrontRoutes.getContext),
 ];
 
-const productMutationAuditInclude = {
-  category: {
-    select: {
-      id: true,
-      name: true,
-    },
-  },
-  vendor: {
-    select: {
-      id: true,
-      name: true,
-    },
-  },
-  tags: {
-    select: {
-      tag_id: true,
-    },
-    orderBy: {
-      tag_id: "asc",
-    },
-  },
-  images: {
-    select: {
-      image_id: true,
-    },
-    orderBy: {
-      image_id: "asc",
-    },
-  },
+const productLinksWith = {
+  images: { columns: { image_id: true }, orderBy: { image_id: "asc" } },
+  tags: { columns: { tag_id: true }, orderBy: { tag_id: "asc" } },
 } as const;
+
+const findProductForAudit = async (db: Db, id: number) =>
+  orNotFound(
+    await db.query.product.findFirst({
+      where: { id },
+      with: {
+        ...productLinksWith,
+        category: { columns: { id: true, name: true } },
+        vendor: { columns: { id: true, name: true } },
+      },
+    }),
+  );
+
+const replaceProductLinks = async (
+  db: Db,
+  productId: number,
+  { images, tags }: { images: number[]; tags: number[] },
+) => {
+  await db.delete(productImageTable).where(eq(productImageTable.product_id, productId));
+  await db.delete(productTagTable).where(eq(productTagTable.product_id, productId));
+  if (images.length > 0) {
+    await db
+      .insert(productImageTable)
+      .values(images.map((imageId) => ({ product_id: productId, image_id: imageId })));
+  }
+  if (tags.length > 0) {
+    await db
+      .insert(productTagTable)
+      .values(tags.map((tagId) => ({ product_id: productId, tag_id: tagId })));
+  }
+};
 
 export const productsRoutes = {
   getAll: productRoute.get("/products").handler(async ({ context }) => {
-    const products = await context.db.product.findMany({
-      include: {
-        images: {
-          select: {
-            image_id: true,
-          },
-          orderBy: {
-            image_id: "asc",
-          },
-        },
-        tags: {
-          select: {
-            tag_id: true,
-          },
-          orderBy: {
-            tag_id: "asc",
-          },
-        },
-      },
-    });
+    const products = await context.db.query.product.findMany({ with: productLinksWith });
 
     return toResponse(products.map(mapProduct), context.locale);
   }),
@@ -116,27 +104,12 @@ export const productsRoutes = {
     .get("/products/:id")
     .params(idParams)
     .handler(async ({ params, context }) => {
-      const product = await context.db.product.findUniqueOrThrow({
-        where: { id: params.id },
-        include: {
-          images: {
-            select: {
-              image_id: true,
-            },
-            orderBy: {
-              image_id: "asc",
-            },
-          },
-          tags: {
-            select: {
-              tag_id: true,
-            },
-            orderBy: {
-              tag_id: "asc",
-            },
-          },
-        },
-      });
+      const product = orNotFound(
+        await context.db.query.product.findFirst({
+          where: { id: params.id },
+          with: productLinksWith,
+        }),
+      );
 
       return toResponse(mapProduct(product), context.locale);
     }),
@@ -147,29 +120,20 @@ export const productsRoutes = {
     .handler(async ({ body, context }) => {
       const { category_id, vendor_id, images, tags, ...data } = body;
 
-      const product = await context.db.product.create({
-        data: {
+      const [{ id }] = await context.db
+        .insert(productTable)
+        .values({
           ...data,
           name: toLocalizedString(data.name, context.locale),
           slug: toLocalizedSlug(data.name, context.locale),
           headline: toLocalizedString(data.headline, context.locale),
           full_description: toLocalizedString(data.full_description, context.locale),
-          tags: buildCreateTagLinks(tags),
-          category:
-            category_id == null
-              ? undefined
-              : {
-                  connect: { id: category_id },
-                },
-          images: buildCreateImageLinks(images),
-          vendor: {
-            connect: {
-              id: vendor_id,
-            },
-          },
-        },
-        include: productMutationAuditInclude,
-      });
+          category_id,
+          vendor_id,
+        })
+        .returning({ id: productTable.id });
+      await replaceProductLinks(context.db, id, { images, tags });
+      const product = await findProductForAudit(context.db, id);
 
       await logAdminAction(context.db, {
         actor: context.authContext,
@@ -198,14 +162,11 @@ export const productsRoutes = {
     .handler(async ({ params, body, context }) => {
       const { id } = params;
       const { category_id, images, tags, ...data } = body;
-      const existingProduct = await context.db.product.findUniqueOrThrow({
-        where: { id },
-        include: productMutationAuditInclude,
-      });
+      const existingProduct = await findProductForAudit(context.db, id);
 
-      const updated = await context.db.product.update({
-        where: { id },
-        data: {
+      await context.db
+        .update(productTable)
+        .set({
           name: mergeLocalizedString(existingProduct.name, data.name, context.locale),
           slug: mergeLocalizedSlug(existingProduct.slug, data.name, context.locale),
           weight_grams: data.weight_grams,
@@ -215,25 +176,17 @@ export const productsRoutes = {
             data.full_description,
             context.locale,
           ),
-          tags: buildReplaceTagLinks(tags),
           cost_price_cents: data.cost_price_cents,
           sales_price_cents: data.sales_price_cents,
           current_stock: data.current_stock,
           storefront_visibility: data.storefront_visibility,
           is_featured: data.is_featured,
-          category:
-            category_id == null
-              ? {
-                  disconnect: true,
-                }
-              : {
-                  connect: { id: category_id },
-                },
-          images: buildReplaceImageLinks(images),
+          category_id: category_id ?? null,
           purchase_limit_per_order: data.purchase_limit_per_order,
-        },
-        include: productMutationAuditInclude,
-      });
+        })
+        .where(eq(productTable.id, id));
+      await replaceProductLinks(context.db, id, { images, tags });
+      const updated = await findProductForAudit(context.db, id);
 
       await logAdminAction(context.db, {
         actor: context.authContext,
@@ -261,12 +214,8 @@ export const productsRoutes = {
     .handler(async ({ params, context }) => {
       const { id } = params;
 
-      const deleted = await tryDeleteEntity(() =>
-        context.db.product.delete({
-          where: { id },
-          include: productMutationAuditInclude,
-        }),
-      );
+      const deleted = await findProductForAudit(context.db, id);
+      await tryDeleteEntity(() => context.db.delete(productTable).where(eq(productTable.id, id)));
 
       await logAdminAction(context.db, {
         actor: context.authContext,
@@ -287,8 +236,8 @@ export const productsRoutes = {
     }),
 
   getOptionsForForm: productRoute.get("/products/options-for-form").handler(async ({ context }) => {
-    const result = await context.db.product.findMany({
-      select: { id: true, name: true, sku: true },
+    const result = await context.db.query.product.findMany({
+      columns: { id: true, name: true, sku: true },
     });
 
     return toResponse(

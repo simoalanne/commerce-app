@@ -1,6 +1,7 @@
 import type { EnvConfig } from "#src/config.ts";
+import type { OrderInvoiceDetails } from "#src/db/json.ts";
 
-export const getCompanyDetails = (config: EnvConfig): PrismaJson.OrderInvoiceDetails => ({
+export const getCompanyDetails = (config: EnvConfig): OrderInvoiceDetails => ({
   seller: {
     name: config.COMPANY_LEGAL_NAME ?? "Acme Inc.",
     businessId: config.COMPANY_BUSINESS_ID ?? "0000000-0",

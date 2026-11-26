@@ -1,222 +1,162 @@
 import { slugify } from "@acme/shared";
-import type { OrderStatus } from "@prisma/client";
 
-import prismaClient from "#src/prisma.ts";
+import { db } from "#src/db/client.ts";
+import {
+  categoryTable,
+  customerAccountTable,
+  imageTable,
+  orderItemTable,
+  orderTable,
+  type OrderStatus,
+  productImageTable,
+  productTable,
+  productTagTable,
+  reviewTable,
+  tagTable,
+  userTable,
+  vendorImageTable,
+  vendorTable,
+} from "#src/db/schema.ts";
 import { buildLocalizedSlugFromLocalizedText } from "#src/utils/localizedSlug.ts";
 
 const uniqueValue = (prefix: string) =>
   `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-/*const imageUrl = (kind: string, slug: string) =>
-	`https://images.example.com/${kind}s/${slug}/${uniqueValue("image")}.jpg`;*/
-
 const imageStorageKey = (kind: string, slug: string) =>
   `${kind}s/${slug}/${uniqueValue("image")}.jpg`;
 
-const buildImageLinkCreate = (kind: string, slug: string) => {
-  const storageKey = imageStorageKey(kind, slug);
+const insertImage = async (storageKey: string) =>
+  (await db.insert(imageTable).values({ storage_key: storageKey }).returning())[0];
 
-  return {
-    create: [
-      {
-        image: {
-          create: {
-            storage_key: storageKey,
-          },
-        },
-      },
-    ],
-  };
-};
-
-export const createCategory = async (overrides: any = {}) => {
-  const name = overrides.name ?? {
-    en: "Test category",
-  };
+export const createCategory = async (
+  overrides: Partial<typeof categoryTable.$inferInsert> = {},
+) => {
+  const name = overrides.name ?? { en: "Test category" };
   const slug = overrides.slug ?? buildLocalizedSlugFromLocalizedText(name);
   const imageSlug = typeof slug.en === "string" ? slug.en : uniqueValue("category").toLowerCase();
+  const image = await insertImage(imageStorageKey("category", imageSlug));
 
-  return prismaClient.category.create({
-    data: {
-      name,
-      slug,
-      image: {
-        create: {
-          storage_key: imageStorageKey("category", imageSlug),
-        },
-      },
-      ...overrides,
-    },
-  });
+  const [category] = await db
+    .insert(categoryTable)
+    .values({ name, slug, image_id: image.id, ...overrides })
+    .returning();
+  return category;
 };
 
-export const createImage = async (overrides: any = {}) => {
+export const createImage = async (overrides: Partial<typeof imageTable.$inferInsert> = {}) => {
   const slug = uniqueValue("image");
 
-  return prismaClient.image.create({
-    data: {
-      name: overrides.name ?? "Test image",
-      alt: overrides.alt ?? {},
-      storage_key: overrides.storage_key ?? imageStorageKey("asset", slug),
+  const [image] = await db
+    .insert(imageTable)
+    .values({
+      name: "Test image",
+      alt: {},
+      storage_key: imageStorageKey("asset", slug),
       ...overrides,
-    },
-  });
+    })
+    .returning();
+  return image;
 };
 
-export const createUser = async (overrides: any = {}) => {
-  return prismaClient.user.create({
-    data: {
-      clerk_id: uniqueValue("clerk"),
-      ...overrides,
-    },
-  });
+export const createUser = async (overrides: Partial<typeof userTable.$inferInsert> = {}) => {
+  const [user] = await db
+    .insert(userTable)
+    .values({ clerk_id: uniqueValue("clerk"), ...overrides })
+    .returning();
+  return user;
 };
 
-export const createCustomerAccount = async (overrides: any = {}) => {
-  const { user: providedUser, ...dataOverrides } = overrides;
+export const createCustomerAccount = async ({
+  user: providedUser,
+  ...overrides
+}: Partial<typeof customerAccountTable.$inferInsert> & { user?: { clerk_id: string } } = {}) => {
   const user = providedUser ?? (await createUser());
 
-  return prismaClient.customerAccount.create({
-    data: {
-      user_id: user.clerk_id,
-      ...dataOverrides,
-    },
-  });
+  const [account] = await db
+    .insert(customerAccountTable)
+    .values({ user_id: user.clerk_id, ...overrides })
+    .returning();
+  return account;
 };
 
-export const createAddress = async (overrides: any = {}) => {
-  const {
-    customer,
-    customer_id,
-    delivery_instructions: deliveryInstructionsOverride,
-    address_type: addressTypeOverride,
-    entrance: entranceOverride,
-    floor: floorOverride,
-    apartment: apartmentOverride,
-    delivery_details,
-    ...restOverrides
-  } = overrides;
-  const hasCustomerReference = customer != null || customer_id != null;
-  const customerAccount = hasCustomerReference ? null : await createCustomerAccount();
-  const resolvedCustomerId = customer?.id ?? customer_id ?? customerAccount?.id;
+export const createVendor = async (overrides: Partial<typeof vendorTable.$inferInsert> = {}) => {
+  const name = overrides.name ?? uniqueValue("Vendor");
+  const slug = overrides.slug ?? slugify(name);
 
-  return prismaClient.customerAddress.create({
-    data: {
-      customer: { connect: { id: resolvedCustomerId } },
-      street: "Test Street",
-      street_number: null,
-      postal_code: "10001",
-      city: "Springfield",
-      delivery_details: delivery_details ?? {
-        addressType: addressTypeOverride ?? null,
-        entrance: entranceOverride ?? null,
-        floor: floorOverride ?? null,
-        apartment: apartmentOverride ?? null,
-        deliveryInstructions: deliveryInstructionsOverride ?? {},
-      },
-      ...restOverrides,
-    },
-  });
-};
-
-export const createVendor = async (overrides: any = {}) => {
-  const dataOverrides = overrides;
-  const name = dataOverrides.name ?? uniqueValue("Vendor");
-  const slug = dataOverrides.slug ?? slugify(name);
-  const imageSlug = slug;
-
-  return prismaClient.vendor.create({
-    data: {
+  const [vendor] = await db
+    .insert(vendorTable)
+    .values({
       name,
       slug,
       slogan: { en: "Test slogan" },
       story: { en: "Test story" },
-      images: buildImageLinkCreate("vendor", imageSlug),
-      tags: {
-        en: ["test"],
-      },
-      ...dataOverrides,
-    },
-  });
+      tags: { en: ["test"] },
+      ...overrides,
+    })
+    .returning();
+  const image = await insertImage(imageStorageKey("vendor", slug));
+  await db.insert(vendorImageTable).values({ vendor_id: vendor.id, image_id: image.id });
+  return vendor;
 };
 
-export const createProduct = async (overrides: any = {}) => {
-  const {
-    vendor,
-    vendor_id,
-    category,
-    category_id,
-    categoryIds,
-    subCategoryId: _legacySubCategoryId,
-    subCategory: _legacySubCategory,
-    ...dataOverrides
-  } = overrides;
-  const hasVendorReference = vendor != null || dataOverrides.vendor_id != null;
-  const hasCategoryReference =
-    category != null ||
-    category_id != null ||
-    (Array.isArray(categoryIds) && categoryIds.length > 0);
-  const vendorRecord = hasVendorReference ? null : await createVendor();
-  const categoryRecord = hasCategoryReference ? null : await createCategory();
-  const name = dataOverrides.name ?? {
-    en: "Test product",
-  };
-  const slug = dataOverrides.slug ?? buildLocalizedSlugFromLocalizedText(name);
+export const createProduct = async ({
+  categoryIds,
+  ...overrides
+}: Partial<typeof productTable.$inferInsert> & { categoryIds?: number[] } = {}) => {
+  const vendorId = overrides.vendor_id ?? (await createVendor()).id;
+  const categoryId =
+    categoryIds?.[0] ??
+    (overrides.category_id === undefined ? (await createCategory()).id : overrides.category_id);
+  const name = overrides.name ?? { en: "Test product" };
+  const slug = overrides.slug ?? buildLocalizedSlugFromLocalizedText(name);
   const imageSlug = typeof slug.en === "string" ? slug.en : uniqueValue("product");
-  const resolvedCategoryId = Array.isArray(categoryIds)
-    ? categoryIds[0]
-    : (category_id ?? category?.id ?? categoryRecord?.id ?? null);
 
-  return prismaClient.product.create({
-    data: {
+  const [product] = await db
+    .insert(productTable)
+    .values({
       sku: uniqueValue("sku"),
       slug,
       name,
       weight_grams: 500,
-      headline: {
-        en: "Test headline",
-      },
-      full_description: {
-        en: "Test description",
-      },
-      tags: {
-        create: [
-          {
-            tag: {
-              create: {
-                name: { en: "test" },
-                color: "#16a34a",
-              },
-            },
-          },
-        ],
-      },
-      images: buildImageLinkCreate("product", imageSlug),
-      category:
-        resolvedCategoryId == null
-          ? undefined
-          : {
-              connect: { id: resolvedCategoryId },
-            },
+      headline: { en: "Test headline" },
+      full_description: { en: "Test description" },
       cost_price_cents: 990,
       sales_price_cents: 990,
       current_stock: 10,
       storefront_visibility: "ACTIVE",
-      vendor: {
-        connect: { id: vendor_id ?? vendor?.id ?? vendorRecord?.id },
-      },
-      ...dataOverrides,
-    },
-  });
+      ...overrides,
+      category_id: categoryId,
+      vendor_id: vendorId,
+    })
+    .returning();
+
+  const [tag] = await db
+    .insert(tagTable)
+    .values({ name: { en: "test" }, color: "#16a34a" })
+    .returning();
+  await db.insert(productTagTable).values({ product_id: product.id, tag_id: tag.id });
+  const image = await insertImage(imageStorageKey("product", imageSlug));
+  await db.insert(productImageTable).values({ product_id: product.id, image_id: image.id });
+  return product;
 };
 
-export const createOrder = async (overrides: any = {}, status: OrderStatus = "PENDING") => {
-  const { customer, ...dataOverrides } = overrides;
-  const hasCustomerReference = customer != null || dataOverrides.customer_id != null;
-  const customerAccount = hasCustomerReference ? null : await createCustomerAccount();
+type OrderItemInput = Omit<typeof orderItemTable.$inferInsert, "order_id">;
 
-  return prismaClient.order.create({
-    data: {
+export const createOrder = async (
+  {
+    order_items: orderItems = [],
+    ...overrides
+  }: Partial<typeof orderTable.$inferInsert> & { order_items?: OrderItemInput[] } = {},
+  status: OrderStatus = "PENDING",
+) => {
+  const customerId =
+    overrides.customer_id === undefined
+      ? (await createCustomerAccount()).id
+      : overrides.customer_id;
+
+  const [order] = await db
+    .insert(orderTable)
+    .values({
       items_subtotal_cents: 1990,
       items_discount_cents: 0,
       charged_total_cents: 1990,
@@ -227,7 +167,6 @@ export const createOrder = async (overrides: any = {}, status: OrderStatus = "PE
       status,
       claim_token: uniqueValue("claim"),
       order_details: {
-        items: [],
         customer: {
           name: "Test Customer",
           email: "customer@example.com",
@@ -239,48 +178,54 @@ export const createOrder = async (overrides: any = {}, status: OrderStatus = "PE
           instructions: {},
         },
       },
-      invoice_details: {},
-      customer_id: dataOverrides.customer_id ?? customerAccount?.id ?? null,
-      ...dataOverrides,
-    },
-  });
+      // Tests that read invoice details set them.
+      invoice_details: {} as typeof orderTable.$inferInsert.invoice_details,
+      ...overrides,
+      customer_id: customerId,
+    })
+    .returning();
+
+  if (orderItems.length > 0) {
+    await db
+      .insert(orderItemTable)
+      .values(orderItems.map((item) => ({ ...item, order_id: order.id })));
+  }
+  return order;
 };
 
-export const createVendorReview = async (overrides: any = {}) => {
-  const { vendor, reviewer, order, ...dataOverrides } = overrides;
-  const vendorRecord = vendor ?? (dataOverrides.vendor_id != null ? null : await createVendor());
-  const reviewOrder = order ?? (dataOverrides.order_id != null ? null : await createOrder());
+const createReview = async (
+  kind: "VENDOR" | "PRODUCT",
+  overrides: Partial<typeof reviewTable.$inferInsert>,
+  defaults: { vendor_id?: number; product_id?: number },
+) => {
+  const orderId = overrides.order_id === undefined ? (await createOrder()).id : overrides.order_id;
 
-  return prismaClient.review.create({
-    data: {
-      kind: "VENDOR",
-      order_id: dataOverrides.order_id ?? reviewOrder?.id,
-      vendor_id: dataOverrides.vendor_id ?? vendorRecord?.id,
-      reviewer_name: dataOverrides.reviewer_name ?? "Test Reviewer",
-      show_reviewer_name: dataOverrides.show_reviewer_name ?? true,
+  const [review] = await db
+    .insert(reviewTable)
+    .values({
+      kind,
+      reviewer_name: "Test Reviewer",
+      show_reviewer_name: true,
       rating: 4,
       comment: "Test review",
-      ...dataOverrides,
-    },
-  });
+      ...defaults,
+      ...overrides,
+      order_id: orderId,
+    })
+    .returning();
+  return review;
 };
 
-export const createProductReview = async (overrides: any = {}) => {
-  const { product, reviewer, order, ...dataOverrides } = overrides;
-  const productRecord =
-    product ?? (dataOverrides.product_id != null ? null : await createProduct());
-  const reviewOrder = order ?? (dataOverrides.order_id != null ? null : await createOrder());
-
-  return prismaClient.review.create({
-    data: {
-      kind: "PRODUCT",
-      order_id: dataOverrides.order_id ?? reviewOrder?.id,
-      product_id: dataOverrides.product_id ?? productRecord?.id,
-      reviewer_name: dataOverrides.reviewer_name ?? "Test Reviewer",
-      show_reviewer_name: dataOverrides.show_reviewer_name ?? true,
-      rating: 4,
-      comment: "Test review",
-      ...dataOverrides,
-    },
+export const createVendorReview = async (
+  overrides: Partial<typeof reviewTable.$inferInsert> = {},
+) =>
+  createReview("VENDOR", overrides, {
+    vendor_id: overrides.vendor_id ?? (await createVendor()).id,
   });
-};
+
+export const createProductReview = async (
+  overrides: Partial<typeof reviewTable.$inferInsert> = {},
+) =>
+  createReview("PRODUCT", overrides, {
+    product_id: overrides.product_id ?? (await createProduct()).id,
+  });

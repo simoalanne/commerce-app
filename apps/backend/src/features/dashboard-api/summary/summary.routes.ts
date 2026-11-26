@@ -1,7 +1,8 @@
-import type { OrderStatus, Prisma } from "@prisma/client";
-import { join, sqltag } from "@prisma/client/runtime/client";
+import { eq, sql } from "drizzle-orm";
 import z from "zod";
 
+import type { Db } from "#src/db/client.ts";
+import { customerAccountTable, type OrderStatus, productTable } from "#src/db/schema.ts";
 import { supportedLocales } from "#src/locales.ts";
 import { dashboardRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
@@ -16,9 +17,13 @@ import {
 const summaryRoute = dashboardRoute.meta({ access: "ADMIN" });
 
 const PAID_REVENUE_STATUSES: OrderStatus[] = ["PAID", "DELIVERED"];
+const paidRevenueStatuses = sql.join(
+  PAID_REVENUE_STATUSES.map((status) => sql`${status}`),
+  sql`, `,
+);
 
 const queryOrderSummaryRows = async (
-  db: Prisma.TransactionClient,
+  db: Db,
   {
     now,
     currentStart,
@@ -29,7 +34,8 @@ const queryOrderSummaryRows = async (
     previousStart: Date;
   },
 ) =>
-  await db.$queryRaw<OrderQueryRow[]>(sqltag`
+  (
+    await db.execute<OrderQueryRow>(sql`
 		WITH filtered AS (
 			SELECT created_at, charged_total_cents, status
 			FROM "Order"
@@ -44,7 +50,7 @@ const queryOrderSummaryRows = async (
 				rs.day,
 				COALESCE(SUM(
 					CASE
-						WHEN f.status IN (${join(PAID_REVENUE_STATUSES)})
+						WHEN f.status IN (${paidRevenueStatuses})
 						THEN f.charged_total_cents
 						ELSE 0
 					END
@@ -63,7 +69,7 @@ const queryOrderSummaryRows = async (
 				CASE
 					WHEN f.created_at >= ${currentStart}
 						AND f.created_at < ${now}
-						AND f.status IN (${join(PAID_REVENUE_STATUSES)})
+						AND f.status IN (${paidRevenueStatuses})
 					THEN f.charged_total_cents
 					ELSE 0
 				END
@@ -72,7 +78,7 @@ const queryOrderSummaryRows = async (
 				CASE
 					WHEN f.created_at >= ${previousStart}
 						AND f.created_at < ${currentStart}
-						AND f.status IN (${join(PAID_REVENUE_STATUSES)})
+						AND f.status IN (${paidRevenueStatuses})
 					THEN f.charged_total_cents
 					ELSE 0
 				END
@@ -80,12 +86,12 @@ const queryOrderSummaryRows = async (
 			COUNT(*) FILTER (
 				WHERE f.created_at >= ${currentStart}
 					AND f.created_at < ${now}
-					AND f.status IN (${join(PAID_REVENUE_STATUSES)})
+					AND f.status IN (${paidRevenueStatuses})
 			)::int AS current_paid_orders,
 			COUNT(*) FILTER (
 				WHERE f.created_at >= ${previousStart}
 					AND f.created_at < ${currentStart}
-					AND f.status IN (${join(PAID_REVENUE_STATUSES)})
+					AND f.status IN (${paidRevenueStatuses})
 			)::int AS previous_paid_orders,
 			(
 				SELECT json_agg(
@@ -99,20 +105,17 @@ const queryOrderSummaryRows = async (
 				FROM daily
 			) AS chart
 		FROM filtered f
-	`);
+	`)
+  ).rows;
 
-const queryActiveProductCountRows = async (db: Prisma.TransactionClient) =>
-  await db.product.count({
-    where: {
-      storefront_visibility: "ACTIVE",
-    },
-  });
+const queryActiveProductCountRows = async (db: Db) =>
+  await db.$count(productTable, eq(productTable.storefront_visibility, "ACTIVE"));
 
-const queryCustomerCountRows = async (db: Prisma.TransactionClient) =>
-  await db.customerAccount.count();
+const queryCustomerCountRows = async (db: Db) => await db.$count(customerAccountTable);
 
-const queryLocalizationCoverageRows = async (db: Prisma.TransactionClient) =>
-  await db.$queryRaw<LocalizationCoverageRow[]>(sqltag`
+const queryLocalizationCoverageRows = async (db: Db) =>
+  (
+    await db.execute<LocalizationCoverageRow>(sql`
 		WITH fields AS (
 			SELECT name::jsonb AS content FROM "Category"
 			UNION ALL
@@ -142,7 +145,7 @@ const queryLocalizationCoverageRows = async (db: Prisma.TransactionClient) =>
 					WHEN jsonb_typeof(content->locale) = 'array' THEN jsonb_array_length(content->locale) > 0
 					ELSE false
 				END AS ok
-			FROM localizable CROSS JOIN unnest(${[...supportedLocales]}::text[]) AS locales(locale)
+			FROM localizable CROSS JOIN unnest(${sql.param([...supportedLocales])}::text[]) AS locales(locale)
 		),
 		by_locale AS (
 			SELECT locale, COUNT(*) FILTER (WHERE ok)::int AS completed FROM marked GROUP BY locale
@@ -154,7 +157,8 @@ const queryLocalizationCoverageRows = async (db: Prisma.TransactionClient) =>
 			(SELECT COUNT(*)::int FROM localizable) AS out_of,
 			(SELECT COUNT(*) FILTER (WHERE all_ok)::int FROM by_field) AS completed_all_locales,
 			(SELECT jsonb_object_agg(locale, completed) FROM by_locale) AS completed_by_locale
-	`);
+	`)
+  ).rows;
 
 export const summaryRoutes = {
   get: summaryRoute

@@ -1,6 +1,8 @@
+import type { ProductSearchDocumentData } from "#src/db/json.ts";
+
 import postgresSearchProvider from "./postgresSearch.provider.ts";
 
-export type SearchResultProduct = PrismaJson.ProductSearchDocumentData["product"];
+export type SearchResultProduct = ProductSearchDocumentData["product"];
 
 export type SearchResultVendor = {
   id: number;

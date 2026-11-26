@@ -1,9 +1,11 @@
-import { Prisma } from "@prisma/client";
+import { inArray, sql } from "drizzle-orm";
 
+import { db as appDb, type Db } from "#src/db/client.ts";
+import type { ProductSearchDocumentData } from "#src/db/json.ts";
+import { productSearchDocumentTable } from "#src/db/schema.ts";
 import { activeStorefrontProductWhere } from "#src/domain/storefrontVisibility.ts";
 import { ObjectStorage } from "#src/integrations/object-storage/objectStorage.provider.ts";
 import { type SupportedLocale, supportedLocales } from "#src/locales.ts";
-import prismaClient from "#src/prisma.ts";
 import { FIRST_LINKED_IMAGE_SELECT, getFirstLinkedImageUrl } from "#src/utils/imageUrl.ts";
 
 import type {
@@ -16,7 +18,7 @@ import type {
 
 type RawSearchResult = {
   productId: number;
-  searchData: PrismaJson.ProductSearchDocumentData;
+  searchData: ProductSearchDocumentData;
   score: number;
   productMatched: boolean;
   vendorFullMatched: boolean;
@@ -31,7 +33,7 @@ type ProductSearchDocumentInput = {
   productSearchText: string;
   vendorSearchText: string;
   categorySearchText: string;
-  searchData: PrismaJson.ProductSearchDocumentData;
+  searchData: ProductSearchDocumentData;
   searchText: string;
 };
 
@@ -63,7 +65,7 @@ const buildSearchText = (
 class PostgresSearchProvider implements SearchProvider {
   async search(input: SearchInput): Promise<SearchResult> {
     const { q, locale, limit = 10, offset = 0 } = input;
-    const results = await prismaClient.$queryRaw<RawSearchResult[]>`
+    const { rows: results } = await appDb.execute<RawSearchResult>(sql`
 			WITH search_input AS (
 				SELECT
 					lower(${q}) AS normalized_query,
@@ -141,7 +143,7 @@ class PostgresSearchProvider implements SearchProvider {
       ORDER BY ("productMatched" OR "vendorFullMatched" OR "categoryFullMatched") DESC, score DESC
       LIMIT ${limit}
       OFFSET ${offset}
-    `;
+    `);
     const productResults = results.filter(
       (result) => result.productMatched || result.vendorFullMatched || result.categoryFullMatched,
     );
@@ -172,9 +174,9 @@ class PostgresSearchProvider implements SearchProvider {
   async getInitialData(input: InitialSearchDataInput): Promise<SearchResult> {
     const { locale, limit = 10 } = input;
     const featuredLimit = Math.min(5, limit);
-    const documents = await prismaClient.$queryRaw<
-      { searchData: PrismaJson.ProductSearchDocumentData }[]
-    >`
+    const { rows: documents } = await appDb.execute<{
+      searchData: ProductSearchDocumentData;
+    }>(sql`
 			WITH featured AS (
 				SELECT
 					product_id,
@@ -211,7 +213,7 @@ class PostgresSearchProvider implements SearchProvider {
 			) initial_results
 			ORDER BY group_order ASC, created_at DESC, product_id DESC
 			LIMIT ${limit}
-		`;
+		`);
     const products = documents.map((document) => document.searchData.product);
 
     return {
@@ -231,7 +233,7 @@ class PostgresSearchProvider implements SearchProvider {
       return;
     }
 
-    await prismaClient.$transaction(async (tx) => {
+    await appDb.transaction(async (tx) => {
       const documents = await this.buildProductDocuments({ productIds }, tx);
 
       await this.upsertDocuments(documents, tx);
@@ -252,25 +254,22 @@ class PostgresSearchProvider implements SearchProvider {
       );
 
       if (notIndexedProductIds.length > 0) {
-        await tx.productSearchDocument.deleteMany({
-          where: {
-            product_id: { in: notIndexedProductIds },
-          },
-        });
+        await tx
+          .delete(productSearchDocumentTable)
+          .where(inArray(productSearchDocumentTable.product_id, notIndexedProductIds));
       }
     });
   }
 
   private async buildProductDocuments(
     input: { productIds?: number[] },
-    tx?: Prisma.TransactionClient,
+    db: Db = appDb,
   ): Promise<ProductSearchDocumentInput[]> {
-    const db = tx ?? prismaClient;
-    const products = await db.product.findMany({
+    const products = await db.query.product.findMany({
       where: {
         ...activeStorefrontProductWhere({ productIds: input.productIds }),
       },
-      select: {
+      columns: {
         id: true,
         name: true,
         slug: true,
@@ -279,31 +278,36 @@ class PostgresSearchProvider implements SearchProvider {
         reserved_stock: true,
         is_featured: true,
         created_at: true,
+      },
+      with: {
         images: FIRST_LINKED_IMAGE_SELECT,
         vendor: {
-          select: {
+          columns: {
             id: true,
             name: true,
             slug: true,
-            images: FIRST_LINKED_IMAGE_SELECT,
           },
+          with: { images: FIRST_LINKED_IMAGE_SELECT },
         },
         category: {
-          select: {
+          columns: {
             id: true,
             name: true,
             slug: true,
+          },
+          with: {
             image: {
-              select: {
+              columns: {
                 storage_key: true,
               },
             },
           },
         },
         tags: {
-          select: {
+          columns: {},
+          with: {
             tag: {
-              select: {
+              columns: {
                 name: true,
               },
             },
@@ -367,17 +371,13 @@ class PostgresSearchProvider implements SearchProvider {
     );
   }
 
-  private async upsertDocuments(
-    documents: ProductSearchDocumentInput[],
-    tx?: Prisma.TransactionClient,
-  ) {
+  private async upsertDocuments(documents: ProductSearchDocumentInput[], db: Db = appDb) {
     const filteredDocuments = documents.filter((document) => document.searchText.trim() !== "");
     if (filteredDocuments.length === 0) return;
 
-    const db = tx ?? prismaClient;
-    const values = Prisma.join(
+    const values = sql.join(
       filteredDocuments.map(
-        (document) => Prisma.sql`(
+        (document) => sql`(
 					${document.productId},
 					${document.locale},
 					${document.productSearchText},
@@ -391,9 +391,10 @@ class PostgresSearchProvider implements SearchProvider {
           now()
 				)`,
       ),
+      sql`, `,
     );
 
-    await db.$executeRaw`
+    await db.execute(sql`
 			INSERT INTO "ProductSearchDocument" (
 				product_id,
 				locale,
@@ -412,7 +413,7 @@ class PostgresSearchProvider implements SearchProvider {
 				search_data = EXCLUDED.search_data,
 				search_vector = EXCLUDED.search_vector,
 				updated_at = EXCLUDED.updated_at
-		`;
+		`);
   }
 }
 

@@ -1,20 +1,19 @@
 // Route modules are imported at build time without an environment (contract
 // extraction), so everything with side effects is imported as a type and
 // provided per request by index.ts as initial context.
-import type { Prisma } from "@prisma/client";
 import { route } from "@rest-rpc/server";
 
 import { customerApiPrefix, dashboardApiPrefix } from "#src/apiPrefixes.ts";
 import type envConfig from "#src/config.ts";
+import type { Db } from "#src/db/client.ts";
 import type { AuthProvider } from "#src/integrations/auth/auth.provider.ts";
 import type { EmailServiceProvider } from "#src/integrations/email/email.provider.ts";
 import type { ObjectStorageProvider } from "#src/integrations/object-storage/objectStorage.provider.ts";
 import type { PaymentProviders } from "#src/integrations/payments/payment.provider.ts";
 import type { SearchProvider } from "#src/integrations/search/search.provider.ts";
-import type { JobQueue } from "#src/jobs/queue.ts";
+import type { EnqueueJob, JobQueue } from "#src/jobs/queue.ts";
 import { type SupportedLocale, supportedLocales } from "#src/locales.ts";
 import { requestContextStorage } from "#src/utils/requestContext.ts";
-import type { RunAppTransaction } from "#src/utils/runAppTransaction.ts";
 
 import { type AccessLevel, resolveAuthContext } from "./auth.ts";
 import { Forbidden, RateLimitExceeded, Unauthorized } from "./errors.ts";
@@ -29,9 +28,8 @@ declare module "@rest-rpc/server" {
 
 export type AppContext = {
   headers: Headers;
-  // A transaction client type even outside a transaction, so handlers cannot
-  // open nested transactions; explicit ones go through runAppTransaction.
-  db: Prisma.TransactionClient;
+  // The database, or in the Tx builders the transaction.
+  db: Db;
   config: typeof envConfig;
   auth: AuthProvider;
   payments: PaymentProviders;
@@ -39,7 +37,6 @@ export type AppContext = {
   storage: ObjectStorageProvider;
   search: SearchProvider;
   jobQueue: JobQueue;
-  runAppTransaction: RunAppTransaction;
 };
 
 type ParsedLanguage = {
@@ -131,7 +128,10 @@ export const dashboardRoute = withContext.prefix(dashboardApiPrefix);
 // writes; use the plain builders for reads and for routes that call external
 // services, which must not hold a transaction open.
 const withTransaction = withContext.use(({ context, next }) =>
-  context.runAppTransaction(({ tx, enqueueJob }) => next({ context: { db: tx, enqueueJob } })),
+  context.db.transaction((tx) => {
+    const enqueueJob: EnqueueJob = (job) => context.jobQueue.enqueue(tx, job);
+    return next({ context: { db: tx, enqueueJob } });
+  }),
 );
 
 export const customerTxRoute = withTransaction.prefix(customerApiPrefix);

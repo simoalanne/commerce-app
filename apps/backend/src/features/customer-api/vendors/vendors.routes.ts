@@ -1,5 +1,6 @@
 import z from "zod";
 
+import { orNotFound } from "#src/db/errors.ts";
 import { activeStorefrontVendorWhere } from "#src/domain/storefrontVisibility.ts";
 import { customerRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
@@ -31,16 +32,16 @@ export const vendorsRoutes = {
       }),
     )
     .handler(async ({ params, context }) => {
-      const vendor = await context.db.vendor.findFirst({
+      const vendor = await context.db.query.vendor.findFirst({
         where: activeStorefrontVendorWhere({ vendorId: params.id }),
-        include: {
+        with: {
           images: FIRST_LINKED_IMAGE_SELECT,
           reviews: {
             where: {
               kind: "VENDOR",
               status: "APPROVED",
             },
-            select: {
+            columns: {
               rating: true,
             },
           },
@@ -68,16 +69,16 @@ export const vendorsRoutes = {
     }),
 
   getAll: customerRoute.get("/vendors").handler(async ({ context }) => {
-    const vendors = await context.db.vendor.findMany({
+    const vendors = await context.db.query.vendor.findMany({
       where: activeStorefrontVendorWhere(),
-      include: {
+      with: {
         images: FIRST_LINKED_IMAGE_SELECT,
         reviews: {
           where: {
             kind: "VENDOR",
             status: "APPROVED",
           },
-          select: {
+          columns: {
             rating: true,
           },
         },
@@ -117,14 +118,14 @@ export const vendorsRoutes = {
       const { id } = params;
       const { limit = 10 } = query;
 
-      await context.db.vendor.findFirstOrThrow({
-        where: activeStorefrontVendorWhere({ vendorId: id }),
-        select: {
-          id: true,
-        },
-      });
+      orNotFound(
+        await context.db.query.vendor.findFirst({
+          where: activeStorefrontVendorWhere({ vendorId: id }),
+          columns: { id: true },
+        }),
+      );
 
-      const reviews = await context.db.review.findMany({
+      const reviews = await context.db.query.review.findMany({
         where: {
           kind: "VENDOR",
           status: "APPROVED",
@@ -133,7 +134,7 @@ export const vendorsRoutes = {
         orderBy: {
           updated_at: "desc",
         },
-        take: limit,
+        limit,
       });
 
       return toResponse(

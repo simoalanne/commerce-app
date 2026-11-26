@@ -1,6 +1,9 @@
 import { WebhookSubscriptionFormSchema } from "@acme/shared/schemas/webhooks";
+import { eq } from "drizzle-orm";
 import z from "zod";
 
+import { orNotFound } from "#src/db/errors.ts";
+import { webhookSubscriptionTable } from "#src/db/schema.ts";
 import { dashboardRoute, dashboardTxRoute } from "#src/routing/base.ts";
 import { EntityInUse } from "#src/routing/errors.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
@@ -15,7 +18,7 @@ const idParams = z.object({ id: z.coerce.number<number>().int().positive() });
 export const webhooksRoutes = {
   getAll: webhookRoute.get("/webhooks").handler(async ({ context }) =>
     toResponse(
-      await context.db.webhookSubscription.findMany({
+      await context.db.query.webhookSubscription.findMany({
         orderBy: {
           id: "asc",
         },
@@ -29,9 +32,11 @@ export const webhooksRoutes = {
     .params(idParams)
     .handler(async ({ params, context }) =>
       toResponse(
-        await context.db.webhookSubscription.findUniqueOrThrow({
-          where: { id: params.id },
-        }),
+        orNotFound(
+          await context.db.query.webhookSubscription.findFirst({
+            where: { id: params.id },
+          }),
+        ),
         context.locale,
       ),
     ),
@@ -40,9 +45,10 @@ export const webhooksRoutes = {
     .post("/webhooks")
     .body(WebhookSubscriptionFormSchema)
     .handler(async ({ body, context }) => {
-      const subscription = await context.db.webhookSubscription.create({
-        data: body,
-      });
+      const [subscription] = await context.db
+        .insert(webhookSubscriptionTable)
+        .values(body)
+        .returning();
 
       await logAdminAction(context.db, {
         actor: context.authContext,
@@ -60,14 +66,17 @@ export const webhooksRoutes = {
     .params(idParams)
     .body(WebhookSubscriptionFormSchema)
     .handler(async ({ params, body, context }) => {
-      const existingSubscription = await context.db.webhookSubscription.findUniqueOrThrow({
-        where: { id: params.id },
-      });
+      const existingSubscription = orNotFound(
+        await context.db.query.webhookSubscription.findFirst({
+          where: { id: params.id },
+        }),
+      );
 
-      const updated = await context.db.webhookSubscription.update({
-        where: { id: params.id },
-        data: body,
-      });
+      const [updated] = await context.db
+        .update(webhookSubscriptionTable)
+        .set(body)
+        .where(eq(webhookSubscriptionTable.id, params.id))
+        .returning();
 
       await logAdminAction(context.db, {
         actor: context.authContext,
@@ -84,10 +93,15 @@ export const webhooksRoutes = {
     .params(idParams)
     .error(EntityInUse)
     .handler(async ({ params, context }) => {
-      const deleted = await tryDeleteEntity(() =>
-        context.db.webhookSubscription.delete({
-          where: { id: params.id },
-        }),
+      const deleted = await tryDeleteEntity(async () =>
+        orNotFound(
+          (
+            await context.db
+              .delete(webhookSubscriptionTable)
+              .where(eq(webhookSubscriptionTable.id, params.id))
+              .returning()
+          )[0],
+        ),
       );
 
       await logAdminAction(context.db, {
@@ -100,8 +114,8 @@ export const webhooksRoutes = {
     }),
 
   getOptionsForForm: webhookRoute.get("/webhooks/options-for-form").handler(async ({ context }) => {
-    const subscriptions = await context.db.webhookSubscription.findMany({
-      select: {
+    const subscriptions = await context.db.query.webhookSubscription.findMany({
+      columns: {
         id: true,
         event: true,
       },

@@ -1,7 +1,8 @@
 import envConfig from "#src/config.ts";
+import { db } from "#src/db/client.ts";
+import { orNotFound } from "#src/db/errors.ts";
 import { EmailService } from "#src/integrations/email/email.provider.ts";
 import logger from "#src/logger.ts";
-import prismaClient from "#src/prisma.ts";
 import { getOnlineStoreUrl } from "#src/utils/getOnlineStoreUrl.ts";
 
 import { renderOrderReviewInvitationEmail } from "./renderOrderReviewInvitationEmail.tsx";
@@ -43,16 +44,18 @@ const buildReviewOrderUrl = ({
 export async function sendOrderReviewInvitationEmail({
   orderId,
 }: SendOrderReviewInvitationEmailPayload) {
-  const order = await prismaClient.order.findUniqueOrThrow({
-    where: { id: orderId },
-    select: {
-      id: true,
-      status: true,
-      claim_token: true,
-      preferred_locale: true,
-      order_details: true,
-    },
-  });
+  const order = orNotFound(
+    await db.query.order.findFirst({
+      where: { id: orderId },
+      columns: {
+        id: true,
+        status: true,
+        claim_token: true,
+        preferred_locale: true,
+        order_details: true,
+      },
+    }),
+  );
 
   if (order.status !== "DELIVERED") {
     logger.warn("Skipping order review invitation for non-delivered order", {

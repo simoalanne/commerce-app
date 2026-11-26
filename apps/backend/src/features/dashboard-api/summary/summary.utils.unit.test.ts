@@ -1,5 +1,3 @@
-import { Decimal } from "@prisma/client/runtime/client";
-
 import {
   buildSummaryResponse,
   getDeltaPercent,
@@ -102,8 +100,8 @@ describe("summary.utils", () => {
         now,
         days: 30,
         orderRow: {
-          current_revenue: new Decimal("12550"),
-          previous_revenue: new Decimal("10000"),
+          current_revenue: "12550",
+          previous_revenue: "10000",
           current_paid_orders: 5,
           previous_paid_orders: 4,
           chart: [{ date: "2026-04-13", revenueCents: "12550", orders: "5" }],
@@ -121,7 +119,7 @@ describe("summary.utils", () => {
         generatedAt: now,
         windowDays: 30,
         kpis: {
-          totalRevenueCents: new Decimal("12550"),
+          totalRevenueCents: 12550,
           revenueDeltaPct: 25.5,
           paidOrders: 5,
           paidOrdersDeltaPct: 25,
@@ -145,8 +143,8 @@ describe("summary.utils", () => {
         now: new Date("2026-04-13T18:42:11.123Z"),
         days: 7,
         orderRow: {
-          current_revenue: new Decimal("0"),
-          previous_revenue: new Decimal("0"),
+          current_revenue: "0",
+          previous_revenue: "0",
           current_paid_orders: 0,
           previous_paid_orders: 0,
           chart: [],
@@ -161,7 +159,7 @@ describe("summary.utils", () => {
       });
 
       expect(result.kpis).toStrictEqual({
-        totalRevenueCents: new Decimal("0"),
+        totalRevenueCents: 0,
         revenueDeltaPct: 0,
         paidOrders: 0,
         paidOrdersDeltaPct: 0,

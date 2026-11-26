@@ -1,8 +1,22 @@
 import "dotenv/config";
+import { sql } from "drizzle-orm";
+
 import envConfig from "#src/config.ts";
+import { db } from "#src/db/client.ts";
+import {
+  categoryTable,
+  imageTable,
+  legalDocumentTable,
+  productImageTable,
+  productTable,
+  productTagTable,
+  promotionCodeTable,
+  tagTable,
+  vendorImageTable,
+  vendorTable,
+} from "#src/db/schema.ts";
 import { ObjectStorage } from "#src/integrations/object-storage/objectStorage.provider.ts";
 import { searchProvider } from "#src/integrations/search/search.provider.ts";
-import prismaClient from "#src/prisma.ts";
 
 // Replaces the catalog, orders and content with demo data. Users and admin
 // accounts are kept.
@@ -34,20 +48,30 @@ const createImage = async (label: string, color: string) => {
     body: placeholderSvg(label, color),
     contentType: "image/svg+xml",
   });
-  return prismaClient.image.create({
-    data: { name: label, alt: en(label), storage_key: storageKey },
-  });
+  const [image] = await db
+    .insert(imageTable)
+    .values({ name: label, alt: en(label), storage_key: storageKey })
+    .returning();
+  return image;
 };
 
-await prismaClient.$executeRawUnsafe(`
+await db.execute(sql`
   TRUNCATE "Order", "Review", "Product", "Category", "Vendor", "Image", "Tag",
-    "PromotionCode", "LegalDocument", "ProductSearchDocument", "Job"
+    "PromotionCode", "LegalDocument", "ProductSearchDocument"
   RESTART IDENTITY CASCADE
 `);
 
+const createTag = async (name: string, color: string) =>
+  (
+    await db
+      .insert(tagTable)
+      .values({ name: en(name), color })
+      .returning()
+  )[0];
+
 const tags = {
-  new: await prismaClient.tag.create({ data: { name: en("New"), color: "#22c55e" } }),
-  bestseller: await prismaClient.tag.create({ data: { name: en("Bestseller"), color: "#f59e0b" } }),
+  new: await createTag("New", "#22c55e"),
+  bestseller: await createTag("Bestseller", "#f59e0b"),
 };
 
 const categoryDefinitions = [
@@ -58,9 +82,10 @@ const categoryDefinitions = [
 const categories: Record<string, number> = {};
 for (const { name, color } of categoryDefinitions) {
   const image = await createImage(name, color);
-  const category = await prismaClient.category.create({
-    data: { name: en(name), slug: en(slugify(name)), image_id: image.id },
-  });
+  const [category] = await db
+    .insert(categoryTable)
+    .values({ name: en(name), slug: en(slugify(name)), image_id: image.id })
+    .returning();
   categories[name] = category.id;
 }
 
@@ -81,17 +106,18 @@ const vendorDefinitions = [
 const vendors: Record<string, number> = {};
 for (const definition of vendorDefinitions) {
   const image = await createImage(definition.name, definition.color);
-  const vendor = await prismaClient.vendor.create({
-    data: {
+  const [vendor] = await db
+    .insert(vendorTable)
+    .values({
       name: definition.name,
       slug: slugify(definition.name),
       slogan: en(definition.slogan),
       story: en(`${definition.name} is a demo vendor created by the seed script.`),
-      tags: en(definition.tags),
+      tags: en([...definition.tags]),
       is_featured: true,
-      images: { create: { image_id: image.id } },
-    },
-  });
+    })
+    .returning();
+  await db.insert(vendorImageTable).values({ vendor_id: vendor.id, image_id: image.id });
   vendors[definition.name] = vendor.id;
 }
 
@@ -111,8 +137,9 @@ for (const [index, definition] of productDefinitions.entries()) {
   const [name, category, vendor, costPriceCents, salesPriceCents, stock, weightGrams, color] =
     definition;
   const image = await createImage(name, color);
-  const product = await prismaClient.product.create({
-    data: {
+  const [product] = await db
+    .insert(productTable)
+    .values({
       sku: `DEMO-${String(index + 1).padStart(3, "0")}`,
       slug: en(slugify(name)),
       name: en(name),
@@ -125,21 +152,24 @@ for (const [index, definition] of productDefinitions.entries()) {
       cost_price_cents: costPriceCents,
       sales_price_cents: salesPriceCents,
       current_stock: stock,
-      images: { create: { image_id: image.id } },
-      tags: {
-        create: [
-          ...(index % 3 === 0 ? [{ tag_id: tags.new.id }] : []),
-          ...(index < 2 ? [{ tag_id: tags.bestseller.id }] : []),
-        ],
-      },
-    },
-  });
+    })
+    .returning();
+  await db.insert(productImageTable).values({ product_id: product.id, image_id: image.id });
+  const tagIds = [
+    ...(index % 3 === 0 ? [tags.new.id] : []),
+    ...(index < 2 ? [tags.bestseller.id] : []),
+  ];
+  if (tagIds.length > 0) {
+    await db
+      .insert(productTagTable)
+      .values(tagIds.map((tagId) => ({ product_id: product.id, tag_id: tagId })));
+  }
   productIds.push(product.id);
 }
 
-await prismaClient.promotionCode.create({
-  data: { code: "WELCOME10", discount_type: "PERCENT", discount_value: 10 },
-});
+await db
+  .insert(promotionCodeTable)
+  .values({ code: "WELCOME10", discount_type: "PERCENT", discount_value: 10 });
 
 const legalDocuments = {
   PRIVACY_NOTICE: "Privacy notice",
@@ -148,12 +178,10 @@ const legalDocuments = {
   CONTACT_INFORMATION: "Contact information",
 };
 for (const [key, title] of Object.entries(legalDocuments)) {
-  await prismaClient.legalDocument.create({
-    data: {
-      key,
-      title: en(title),
-      content: en(`# ${title}\n\nPlaceholder text created by the seed script.`),
-    },
+  await db.insert(legalDocumentTable).values({
+    key,
+    title: en(title),
+    content: en(`# ${title}\n\nPlaceholder text created by the seed script.`),
   });
 }
 
@@ -163,4 +191,4 @@ console.info(
   `Seeded ${productIds.length} products, ${Object.keys(vendors).length} vendors, ${Object.keys(categories).length} categories, ` +
     `promotion code WELCOME10 and ${Object.keys(legalDocuments).length} legal documents.`,
 );
-await prismaClient.$disconnect();
+await db.$client.end();

@@ -1,6 +1,3 @@
-# Any prisma generated files
-/generated/prisma
-
 # Contracts extracted from the route trees (pnpm contract)
 /generated/contracts
 

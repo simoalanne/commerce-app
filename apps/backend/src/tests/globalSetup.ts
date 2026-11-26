@@ -1,4 +1,4 @@
-import prismaClient from "#src/prisma.ts";
+import { db } from "#src/db/client.ts";
 
 import { bootstrapTestDatabase } from "./utils.ts";
 
@@ -7,5 +7,5 @@ export const setup = async () => {
 };
 
 export const teardown = async () => {
-  await prismaClient.$disconnect();
+  await db.$client.end();
 };

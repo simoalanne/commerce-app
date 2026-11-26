@@ -1,12 +1,12 @@
-import { Prisma } from "@prisma/client";
+import type { LocalizedString, LocalizedStringArray } from "#src/db/json.ts";
 
 import { toResponse } from "./toResponse.ts";
 
 describe("toResponse", () => {
-  it("converts decimals and dates, nested in objects and arrays", () => {
+  it("converts dates, nested in objects and arrays", () => {
     const result = toResponse(
       {
-        price: new Prisma.Decimal("19.99"),
+        price: 19.99,
         items: [{ at: new Date("2026-01-02T03:04:05.000Z") }],
       },
       "en",
@@ -54,7 +54,7 @@ describe("toResponse", () => {
   it("keeps localized objects without a locale", () => {
     const result = toResponse({
       name: { en: "hello" },
-      price: new Prisma.Decimal("1"),
+      price: 1,
     });
 
     expect(result).toEqual({ name: { en: "hello" }, price: 1 });
@@ -62,10 +62,10 @@ describe("toResponse", () => {
 
   it("types the result as what JSON delivers", () => {
     const value = {
-      price: new Prisma.Decimal("1"),
+      price: 1,
       at: new Date(),
-      name: { en: "x" } as PrismaJson.LocalizedString,
-      list: { en: ["x"] } as PrismaJson.LocalizedStringArray,
+      name: { en: "x" } as LocalizedString,
+      list: { en: ["x"] } as LocalizedStringArray,
       headers: {} as Record<string, string>,
     };
     const localized = toResponse(value, "en");
@@ -78,6 +78,6 @@ describe("toResponse", () => {
       list: string[];
       headers: Record<string, string>;
     };
-    raw satisfies { name: PrismaJson.LocalizedString; price: number };
+    raw satisfies { name: LocalizedString; price: number };
   });
 });

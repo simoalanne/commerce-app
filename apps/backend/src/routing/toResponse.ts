@@ -1,5 +1,3 @@
-import type { Prisma } from "@prisma/client";
-
 import { type SupportedLocale, supportedLocales } from "#src/locales.ts";
 
 type Equal<A, B> =
@@ -12,31 +10,25 @@ type LocalizedValue<T> = T[keyof T] extends string[] | undefined
     : Jsonified<NonNullable<T[keyof T]>>;
 
 /**
- * What JSON delivers for a handler value: Decimal as `number`, Date as an ISO
- * `string`, and, when `TLocalize` is true, objects keyed exactly by
- * `SupportedLocale` (`PrismaJson.LocalizedString`, `LocalizedStringArray`, or
+ * What JSON delivers for a handler value: Date as an ISO `string`, and, when
+ * `TLocalize` is true, objects keyed exactly by `SupportedLocale`
+ * (`LocalizedString`, `LocalizedStringArray`, or
  * records of localized objects such as CMS blocks) as the value for the
  * requested locale.
  */
-export type Jsonified<T, TLocalize extends boolean = true> = T extends Prisma.Decimal
-  ? number
-  : T extends Date
-    ? string
-    : T extends string | number | boolean | null | undefined
-      ? T
-      : T extends readonly (infer U)[]
-        ? Jsonified<U, TLocalize>[]
-        : T extends object
-          ? TLocalize extends true
-            ? Equal<keyof T, SupportedLocale> extends true
-              ? LocalizedValue<T>
-              : { [K in keyof T]: Jsonified<T[K], TLocalize> }
+export type Jsonified<T, TLocalize extends boolean = true> = T extends Date
+  ? string
+  : T extends string | number | boolean | null | undefined
+    ? T
+    : T extends readonly (infer U)[]
+      ? Jsonified<U, TLocalize>[]
+      : T extends object
+        ? TLocalize extends true
+          ? Equal<keyof T, SupportedLocale> extends true
+            ? LocalizedValue<T>
             : { [K in keyof T]: Jsonified<T[K], TLocalize> }
-          : T;
-
-// Duck typed so this module needs no generated Prisma client at runtime.
-const isDecimal = (value: object): value is Prisma.Decimal =>
-  "toNumber" in value && typeof value.toNumber === "function";
+          : { [K in keyof T]: Jsonified<T[K], TLocalize> }
+        : T;
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && Object.getPrototypeOf(value) === Object.prototype;
@@ -69,7 +61,6 @@ const convert = (value: unknown, locale?: SupportedLocale): unknown => {
   if (Array.isArray(value)) return value.map((item) => convert(item, locale));
   if (value instanceof Date) return value.toISOString();
   if (typeof value !== "object" || value === null) return value;
-  if (isDecimal(value)) return value.toNumber();
   if (!isPlainObject(value)) return value;
   if (locale && isLocalizedObject(value)) return localize(value, locale);
 

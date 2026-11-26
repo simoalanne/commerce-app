@@ -1,6 +1,10 @@
 import { CategoryFormSchema } from "@acme/shared/schemas/categories";
+import { eq } from "drizzle-orm";
 import z from "zod";
 
+import type { Db } from "#src/db/client.ts";
+import { orNotFound } from "#src/db/errors.ts";
+import { categoryTable } from "#src/db/schema.ts";
 import { categoriesRoutes as customerCategoriesRoutes } from "#src/features/customer-api/categories/categories.routes.ts";
 import { productsRoutes as customerProductsRoutes } from "#src/features/customer-api/products/products.routes.ts";
 import { storefrontRoutes } from "#src/features/customer-api/storefront/storefront.routes.ts";
@@ -22,7 +26,7 @@ const categoryTxRoute = dashboardTxRoute.meta({ access: "ADMIN" });
 
 const idParams = z.object({ id: z.coerce.number<number>().int().positive() });
 
-const categorySelect = {
+const categoryColumns = {
   id: true,
   name: true,
   slug: true,
@@ -41,14 +45,13 @@ const buildCategoryInvalidationTags = (productIds: number[] = []) => [
   ...productIds.map((productId) => buildTag(customerProductsRoutes.getById, productId)),
 ];
 
-const categoryMutationAuditInclude = {
-  image: {
-    select: {
-      id: true,
-      name: true,
-    },
-  },
-} as const;
+const findCategoryForAudit = async (db: Db, id: number) =>
+  orNotFound(
+    await db.query.category.findFirst({
+      where: { id },
+      with: { image: { columns: { id: true, name: true } } },
+    }),
+  );
 
 // TODO: move this field to the database somewhere where it makes sense.
 // because I don't know where it makes sense in there (global, per category, etc.)
@@ -59,8 +62,8 @@ export const categoriesRoutes = {
   getProductMarkupDefaults: categoryRoute
     .get("/categories/product-markup-defaults")
     .handler(async ({ context }) => {
-      const categories = await context.db.category.findMany({
-        select: { id: true, markup_percent: true },
+      const categories = await context.db.query.category.findMany({
+        columns: { id: true, markup_percent: true },
       });
 
       return toResponse(
@@ -78,7 +81,10 @@ export const categoriesRoutes = {
   getAll: categoryRoute
     .get("/categories")
     .handler(async ({ context }) =>
-      toResponse(await context.db.category.findMany({ select: categorySelect }), context.locale),
+      toResponse(
+        await context.db.query.category.findMany({ columns: categoryColumns }),
+        context.locale,
+      ),
     ),
 
   getById: categoryRoute
@@ -86,10 +92,12 @@ export const categoriesRoutes = {
     .params(idParams)
     .handler(async ({ params, context }) =>
       toResponse(
-        await context.db.category.findFirstOrThrow({
-          where: { id: params.id },
-          select: categorySelect,
-        }),
+        orNotFound(
+          await context.db.query.category.findFirst({
+            where: { id: params.id },
+            columns: categoryColumns,
+          }),
+        ),
         context.locale,
       ),
     ),
@@ -98,15 +106,16 @@ export const categoriesRoutes = {
     .post("/categories")
     .body(CategoryFormSchema)
     .handler(async ({ body, context }) => {
-      const category = await context.db.category.create({
-        data: {
+      const [{ id }] = await context.db
+        .insert(categoryTable)
+        .values({
           name: toLocalizedString(body.name, context.locale),
           slug: toLocalizedSlug(body.name, context.locale),
           markup_percent: body.markup_percent,
-          image: { connect: { id: body.image_id } },
-        },
-        include: categoryMutationAuditInclude,
-      });
+          image_id: body.image_id,
+        })
+        .returning({ id: categoryTable.id });
+      const category = await findCategoryForAudit(context.db, id);
 
       await logAdminAction(context.db, {
         actor: context.authContext,
@@ -129,25 +138,23 @@ export const categoriesRoutes = {
     .params(idParams)
     .body(CategoryFormSchema)
     .handler(async ({ params, body, context }) => {
-      const existingCategory = await context.db.category.findUniqueOrThrow({
-        where: { id: params.id },
-        include: {
-          ...categoryMutationAuditInclude,
-          products: { select: { id: true } },
-        },
+      const existingCategory = await findCategoryForAudit(context.db, params.id);
+      const affectedProducts = await context.db.query.product.findMany({
+        where: { category_id: params.id },
+        columns: { id: true },
       });
-      const affectedProductIds = existingCategory.products.map((product) => product.id);
+      const affectedProductIds = affectedProducts.map((product) => product.id);
 
-      const updated = await context.db.category.update({
-        where: { id: params.id },
-        data: {
+      await context.db
+        .update(categoryTable)
+        .set({
           name: mergeLocalizedString(existingCategory.name, body.name, context.locale),
           slug: mergeLocalizedSlug(existingCategory.slug, body.name, context.locale),
           markup_percent: body.markup_percent,
-          image: { connect: { id: body.image_id } },
-        },
-        include: categoryMutationAuditInclude,
-      });
+          image_id: body.image_id,
+        })
+        .where(eq(categoryTable.id, params.id));
+      const updated = await findCategoryForAudit(context.db, params.id);
 
       await logAdminAction(context.db, {
         actor: context.authContext,
@@ -175,17 +182,15 @@ export const categoriesRoutes = {
     .params(idParams)
     .error(EntityInUse)
     .handler(async ({ params, context }) => {
-      const category = await context.db.category.findUniqueOrThrow({
-        where: { id: params.id },
-        select: { products: { select: { id: true } } },
+      const deleted = await findCategoryForAudit(context.db, params.id);
+      const products = await context.db.query.product.findMany({
+        where: { category_id: params.id },
+        columns: { id: true },
       });
-      const productIds = category.products.map((product) => product.id);
+      const productIds = products.map((product) => product.id);
 
-      const deleted = await tryDeleteEntity(() =>
-        context.db.category.delete({
-          where: { id: params.id },
-          include: categoryMutationAuditInclude,
-        }),
+      await tryDeleteEntity(() =>
+        context.db.delete(categoryTable).where(eq(categoryTable.id, params.id)),
       );
 
       await logAdminAction(context.db, {
@@ -210,8 +215,8 @@ export const categoriesRoutes = {
     .get("/categories/options-for-form")
     .handler(async ({ context }) =>
       toResponse(
-        await context.db.category.findMany({
-          select: { id: true, name: true },
+        await context.db.query.category.findMany({
+          columns: { id: true, name: true },
         }),
         context.locale,
       ),

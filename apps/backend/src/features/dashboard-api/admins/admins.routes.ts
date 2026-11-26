@@ -1,5 +1,6 @@
 import z from "zod";
 
+import { adminAccountTable } from "#src/db/schema.ts";
 import { dashboardTxRoute } from "#src/routing/base.ts";
 import { toResponse } from "#src/routing/toResponse.ts";
 import { logAdminAction } from "#src/utils/adminActionLog.ts";
@@ -28,17 +29,18 @@ export const adminsRoutes = {
         actualClerkId = identityUser.id;
       }
 
-      const user = await context.db.user.findUnique({
+      const user = await context.db.query.user.findFirst({
         where: { clerk_id: actualClerkId },
-        include: { admin_account: true },
+        with: { admin_account: true },
       });
 
       if (!user) throw new UserNotFound();
       if (user.admin_account) throw new AlreadyAdmin();
 
-      const adminAccount = await context.db.adminAccount.create({
-        data: { user_id: actualClerkId },
-      });
+      const [adminAccount] = await context.db
+        .insert(adminAccountTable)
+        .values({ user_id: actualClerkId })
+        .returning();
 
       await logAdminAction(context.db, {
         actor: context.authContext,

@@ -1,9 +1,9 @@
 import envConfig from "#src/config.ts";
+import { db } from "#src/db/client.ts";
 import { getCompanyContactInformation } from "#src/domain/getCompanyDetails.ts";
 import { EmailService } from "#src/integrations/email/email.provider.ts";
 import { buildOrderPaidPayload } from "#src/jobs/handlers/orders/buildOrderPaidPayload.ts";
 import logger from "#src/logger.ts";
-import prismaClient from "#src/prisma.ts";
 import { generateOrderInvoicePdf } from "#src/utils/pdf/generateOrderInvoicePdf.ts";
 
 import { renderOrderConfirmationEmail } from "./renderOrderConfirmationEmail.tsx";
@@ -19,7 +19,7 @@ export async function sendOrderConfirmationEmail({ orderId }: SendOrderConfirmat
     getCompanyContactInformation(envConfig).email,
   );
   const invoice = await generateOrderInvoicePdf(
-    { db: prismaClient, config: envConfig },
+    { db, config: envConfig },
     {
       access: "internal",
       orderId: payload.orderId,

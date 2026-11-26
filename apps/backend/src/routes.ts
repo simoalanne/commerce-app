@@ -1,4 +1,3 @@
-/// <reference path="./prisma-json-types.d.ts" />
 import { categoriesRoutes as customerCategoriesRoutes } from "./features/customer-api/categories/categories.routes.ts";
 import { checkoutRoutes } from "./features/customer-api/checkout/checkout.routes.ts";
 import { contactSubmissionsRoutes as customerContactSubmissionsRoutes } from "./features/customer-api/contactSubmissions/contactSubmissions.routes.ts";

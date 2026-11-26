@@ -1,6 +1,8 @@
 import { RouteError } from "@rest-rpc/server";
 import z from "zod";
 
+import { orNotFound } from "#src/db/errors.ts";
+import { imageTable, reviewTable } from "#src/db/schema.ts";
 import { verifyOrderCapabilityJwt } from "#src/features/customer-api/orders/orderCapabilities.ts";
 import { ordersRoutes as customerOrdersRoutes } from "#src/features/customer-api/orders/orders.routes.ts";
 import { customerRoute, customerTxRoute } from "#src/routing/base.ts";
@@ -55,15 +57,17 @@ export const orderReviewsRoutes = {
       // Prevent giving everyone access to upload images to our
       // object storage by ensuring the person actually has a valid order
       // before providing the presigned URL
-      await context.db.order.findFirstOrThrow({
-        where: {
-          id: capability.orderId,
-          status: "DELIVERED",
-        },
-        select: {
-          id: true,
-        },
-      });
+      orNotFound(
+        await context.db.query.order.findFirst({
+          where: {
+            id: capability.orderId,
+            status: "DELIVERED",
+          },
+          columns: {
+            id: true,
+          },
+        }),
+      );
 
       if (!acceptedImageContentTypes.has(body.contentType)) {
         throw new ImageUploadInvalidContentType();
@@ -91,49 +95,58 @@ export const orderReviewsRoutes = {
         scope: "order:review",
       });
 
-      const order = await context.db.order.findFirstOrThrow({
-        where: {
-          id: capability.orderId,
-          status: "DELIVERED",
-        },
-        select: {
-          id: true,
-          order_items: {
-            select: {
-              product: {
-                select: {
-                  id: true,
-                  name: true,
-                  images: FIRST_LINKED_IMAGE_SELECT,
-                  vendor: {
-                    select: {
-                      id: true,
-                      name: true,
+      const order = orNotFound(
+        await context.db.query.order.findFirst({
+          where: {
+            id: capability.orderId,
+            status: "DELIVERED",
+          },
+          columns: {
+            id: true,
+          },
+          with: {
+            order_items: {
+              columns: {},
+              with: {
+                product: {
+                  columns: {
+                    id: true,
+                    name: true,
+                  },
+                  with: {
+                    images: FIRST_LINKED_IMAGE_SELECT,
+                    vendor: {
+                      columns: {
+                        id: true,
+                        name: true,
+                      },
                     },
                   },
                 },
               },
             },
-          },
-          reviews: {
-            select: {
-              id: true,
-              kind: true,
-              product_id: true,
-              vendor_id: true,
-              show_reviewer_name: true,
-              rating: true,
-              comment: true,
-              images: {
-                select: {
-                  storage_key: true,
+            reviews: {
+              columns: {
+                id: true,
+                kind: true,
+                product_id: true,
+                vendor_id: true,
+                show_reviewer_name: true,
+                rating: true,
+                comment: true,
+              },
+              with: {
+                images: {
+                  columns: {
+                    storage_key: true,
+                  },
                 },
               },
+              orderBy: { kind: "asc", id: "asc" },
             },
-            orderBy: [{ kind: "asc" }, { id: "asc" }],
           },
-        },
-      });
+        }),
+      );
 
       const products = [
         ...new Map(
@@ -274,38 +287,45 @@ export const orderReviewsRoutes = {
       });
       const orderId = capability.orderId;
 
-      const order = await context.db.order.findFirstOrThrow({
-        where: {
-          id: orderId,
-          status: "DELIVERED",
-        },
-        select: {
-          id: true,
-          order_details: true,
-          order_items: {
-            select: {
-              product: {
-                select: {
-                  id: true,
-                  vendor: {
-                    select: {
-                      id: true,
+      const order = orNotFound(
+        await context.db.query.order.findFirst({
+          where: {
+            id: orderId,
+            status: "DELIVERED",
+          },
+          columns: {
+            id: true,
+            order_details: true,
+          },
+          with: {
+            order_items: {
+              columns: {},
+              with: {
+                product: {
+                  columns: {
+                    id: true,
+                  },
+                  with: {
+                    vendor: {
+                      columns: {
+                        id: true,
+                      },
                     },
                   },
                 },
               },
             },
-          },
-          reviews: {
-            select: {
-              id: true,
-              kind: true,
-              product_id: true,
-              vendor_id: true,
+            reviews: {
+              columns: {
+                id: true,
+                kind: true,
+                product_id: true,
+                vendor_id: true,
+              },
             },
           },
-        },
-      });
+        }),
+      );
 
       const products = [
         ...new Map(
@@ -389,21 +409,24 @@ export const orderReviewsRoutes = {
       });
 
       for (const review of reviews) {
-        await context.db.review.create({
-          data: {
-            order: { connect: { id: orderId } },
+        const [createdReview] = await context.db
+          .insert(reviewTable)
+          .values({
+            order_id: orderId,
             kind: review.kind,
             reviewer_name: reviewerName,
-            product: review.kind === "PRODUCT" ? { connect: { id: review.productId } } : undefined,
-            vendor: review.kind === "VENDOR" ? { connect: { id: review.vendorId } } : undefined,
+            product_id: review.kind === "PRODUCT" ? review.productId : undefined,
+            vendor_id: review.kind === "VENDOR" ? review.vendorId : undefined,
             rating: review.review.rating,
             comment: review.review.comment,
             show_reviewer_name: review.review.showReviewerName,
-            images: review.review.objectKey
-              ? { create: [{ storage_key: review.review.objectKey }] }
-              : undefined,
-          },
-        });
+          })
+          .returning({ id: reviewTable.id });
+        if (review.review.objectKey) {
+          await context.db
+            .insert(imageTable)
+            .values({ storage_key: review.review.objectKey, review_id: createdReview.id });
+        }
       }
 
       await context.enqueueJob({
