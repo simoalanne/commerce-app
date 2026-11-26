@@ -6,7 +6,7 @@ import logger from "#src/logger.ts";
 import prismaClient from "#src/prisma.ts";
 import { generateRefundReceiptPdf } from "#src/utils/pdf/generateRefundReceiptPdf.ts";
 
-import { renderOrderRefundedEmail } from "./renderOrderRefundedEmail.ts";
+import { renderOrderRefundedEmail } from "./renderOrderRefundedEmail.tsx";
 
 type SendOrderRefundedEmailPayload = {
   refundId: number;

@@ -1,5 +1,14 @@
-import { renderMjmlTemplate } from "#src/integrations/email/renderMjmlTemplate.ts";
+import { render } from "@react-email/components";
 
+import {
+  AddressBlock,
+  EmailLayout,
+  EmailSection,
+  FieldTable,
+  ItemRows,
+  MailLink,
+  TotalsTable,
+} from "./emailComponents.tsx";
 import { formatCurrency, formatLine, getInitials } from "./emailHelpers.ts";
 
 export type NewOrderNotificationEmailPayload = {
@@ -77,45 +86,46 @@ export async function renderNewOrderNotificationEmail(
     total: formatCurrency(item.lineTotal),
   }));
 
-  const html = await renderMjmlTemplate("new-order-notification.mjml", {
-    subject,
-    preview: copy.preview,
-    intro: copy.intro,
-    brand: {
-      name: copy.brand,
-    },
-    dashboardOrderUrl: payload.dashboardOrderUrl,
-    dashboardLabel: copy.openDashboard,
-    order: {
-      title: copy.orderTitle,
-      numberLabel: copy.orderNumber,
-      number: payload.orderId,
-      placedAtLabel: copy.placedAt,
-      placedAt,
-    },
-    customer: {
-      title: copy.customerTitle,
-      nameLabel: copy.name,
-      name: payload.customer.name,
-      emailLabel: copy.email,
-      email: payload.customer.email,
-      phoneLabel: copy.phone,
-      phone: payload.customer.phone,
-    },
-    delivery: {
-      title: copy.deliveryTitle,
-      addressLabel: copy.deliveryAddress,
-      addressLines,
-    },
-    itemsTitle: copy.itemsTitle,
-    items,
-    totals: {
-      subtotalLabel: copy.subtotal,
-      subtotal: formatCurrency(payload.subtotal),
-      totalLabel: copy.total,
-      total: formatCurrency(payload.total),
-    },
-  });
+  const html = await render(
+    <EmailLayout
+      subject={subject}
+      preview={copy.preview}
+      eyebrow={copy.brand}
+      title={subject}
+      intro={copy.intro}
+      action={{ href: payload.dashboardOrderUrl, label: copy.openDashboard }}
+    >
+      <EmailSection label={copy.orderTitle}>
+        <FieldTable
+          rows={[
+            { label: copy.orderNumber, value: `#${payload.orderId}` },
+            { label: copy.placedAt, value: placedAt },
+          ]}
+        />
+      </EmailSection>
+      <EmailSection label={copy.customerTitle}>
+        <FieldTable
+          rows={[
+            { label: copy.name, value: payload.customer.name },
+            { label: copy.email, value: <MailLink email={payload.customer.email} /> },
+            ...(payload.customer.phone
+              ? [{ label: copy.phone, value: payload.customer.phone }]
+              : []),
+          ]}
+        />
+      </EmailSection>
+      <EmailSection label={copy.deliveryTitle}>
+        <AddressBlock label={copy.deliveryAddress} lines={addressLines} />
+      </EmailSection>
+      <EmailSection label={copy.itemsTitle}>
+        <ItemRows items={items} />
+        <TotalsTable
+          rows={[{ label: copy.subtotal, value: formatCurrency(payload.subtotal) }]}
+          total={{ label: copy.total, value: formatCurrency(payload.total) }}
+        />
+      </EmailSection>
+    </EmailLayout>,
+  );
 
   const itemLines = payload.items.flatMap((item) => {
     const lines = [

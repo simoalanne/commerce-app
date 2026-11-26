@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
   "sortImports": true,
-  "ignorePatterns": ["pnpm-lock.yaml", "**/*.mjml"],
+  "ignorePatterns": ["pnpm-lock.yaml"],
   "overrides": [
     {
       "files": ["apps/dashboard/**"],

@@ -1,6 +1,14 @@
-import { renderMjmlTemplate } from "#src/integrations/email/renderMjmlTemplate.ts";
+import { render } from "@react-email/components";
+
 import type { OrderRefundedPayload } from "#src/jobs/handlers/orders/buildOrderRefundedPayload.ts";
 
+import {
+  ContactFooter,
+  EmailLayout,
+  EmailSection,
+  ItemRows,
+  TotalsTable,
+} from "./emailComponents.tsx";
 import { formatCurrency, formatLine, getInitials } from "./emailHelpers.ts";
 
 type OrderRefundedEmailContent = {
@@ -71,27 +79,30 @@ export async function renderOrderRefundedEmail(
   });
   const detailLines = itemLines;
 
-  const html = await renderMjmlTemplate("order-refund-confirmation.mjml", {
-    subject,
-    preview: t.preview,
-    intro,
-    brand: {
-      name: t.brand,
-    },
-    detailsTitle: t.detailsTitle,
-    refundLines,
-    totals: {
-      totalLabel: t.totalLabel,
-      total: totalFormatted,
-    },
-    customer: {
-      email: payload.recipientEmail,
-    },
-    helpText: formatLine(t.helpText, {
-      email: `<a href="mailto:${contactEmail}">${contactEmail}</a>`,
-    }),
-    recipientLabel: `${t.recipient}:`,
-  });
+  const html = await render(
+    <EmailLayout
+      subject={subject}
+      preview={t.preview}
+      eyebrow={t.brand}
+      title={subject}
+      intro={intro}
+    >
+      {refundLines.length > 0 ? (
+        <EmailSection label={t.detailsTitle}>
+          <ItemRows items={refundLines} />
+        </EmailSection>
+      ) : null}
+      <EmailSection>
+        <TotalsTable total={{ label: t.totalLabel, value: totalFormatted }} />
+      </EmailSection>
+      <ContactFooter
+        helpText={t.helpText}
+        contactEmail={contactEmail}
+        recipientLabel={`${t.recipient}:`}
+        recipientEmail={payload.recipientEmail}
+      />
+    </EmailLayout>,
+  );
 
   const text = [
     subject,

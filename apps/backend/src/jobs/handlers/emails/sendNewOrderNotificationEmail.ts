@@ -4,7 +4,7 @@ import { EmailService } from "#src/integrations/email/email.provider.ts";
 import { buildOrderPaidPayload } from "#src/jobs/handlers/orders/buildOrderPaidPayload.ts";
 import logger from "#src/logger.ts";
 
-import { renderNewOrderNotificationEmail } from "./renderNewOrderNotificationEmail.ts";
+import { renderNewOrderNotificationEmail } from "./renderNewOrderNotificationEmail.tsx";
 
 type SendNewOrderNotificationEmailPayload = {
   orderId: number;

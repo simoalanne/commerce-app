@@ -6,7 +6,7 @@ import logger from "#src/logger.ts";
 import prismaClient from "#src/prisma.ts";
 import { generateOrderInvoicePdf } from "#src/utils/pdf/generateOrderInvoicePdf.ts";
 
-import { renderOrderConfirmationEmail } from "./renderOrderConfirmationEmail.ts";
+import { renderOrderConfirmationEmail } from "./renderOrderConfirmationEmail.tsx";
 
 type SendOrderConfirmationEmailPayload = {
   orderId: number;

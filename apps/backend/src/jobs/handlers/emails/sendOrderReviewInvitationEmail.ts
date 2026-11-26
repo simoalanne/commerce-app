@@ -4,7 +4,7 @@ import logger from "#src/logger.ts";
 import prismaClient from "#src/prisma.ts";
 import { getOnlineStoreUrl } from "#src/utils/getOnlineStoreUrl.ts";
 
-import { renderOrderReviewInvitationEmail } from "./renderOrderReviewInvitationEmail.ts";
+import { renderOrderReviewInvitationEmail } from "./renderOrderReviewInvitationEmail.tsx";
 
 type SendOrderReviewInvitationEmailPayload = {
   orderId: number;

@@ -1,4 +1,6 @@
-import { renderMjmlTemplate } from "#src/integrations/email/renderMjmlTemplate.ts";
+import { render } from "@react-email/components";
+
+import { EmailLayout, EmailSection, MutedText, UrlLink } from "./emailComponents.tsx";
 
 type OrderReviewInvitationEmailPayload = {
   orderId: number;
@@ -23,15 +25,23 @@ const getLocaleCopy = (locale: string) => copy[locale as keyof typeof copy] ?? c
 export async function renderOrderReviewInvitationEmail(payload: OrderReviewInvitationEmailPayload) {
   const localizedCopy = getLocaleCopy(payload.locale);
   const body = localizedCopy.body.replace("{name}", payload.recipientName);
-  const html = await renderMjmlTemplate("order-review-invitation.mjml", {
-    subject: localizedCopy.subject,
-    eyebrow: localizedCopy.eyebrow,
-    title: localizedCopy.title,
-    body,
-    ctaLabel: localizedCopy.ctaLabel,
-    linkFallback: localizedCopy.linkFallback,
-    reviewUrl: payload.reviewUrl,
-  });
+  const html = await render(
+    <EmailLayout
+      subject={localizedCopy.subject}
+      preview={localizedCopy.title}
+      eyebrow={localizedCopy.eyebrow}
+      title={localizedCopy.title}
+      action={{ href: payload.reviewUrl, label: localizedCopy.ctaLabel }}
+    >
+      <EmailSection>
+        <MutedText size={15}>{body}</MutedText>
+      </EmailSection>
+      <EmailSection>
+        <MutedText>{localizedCopy.linkFallback}</MutedText>
+        <UrlLink href={payload.reviewUrl} />
+      </EmailSection>
+    </EmailLayout>,
+  );
 
   return {
     subject: localizedCopy.subject,

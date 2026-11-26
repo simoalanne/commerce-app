@@ -2,8 +2,10 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "module": "nodenext",
+    "jsx": "react-jsx",
+    "lib": ["esnext", "dom"],
     "types": ["bun", "node"]
   },
-  "include": ["**/*.ts"],
+  "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules", "generated"]
 }

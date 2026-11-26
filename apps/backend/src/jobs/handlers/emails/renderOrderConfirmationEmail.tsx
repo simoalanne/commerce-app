@@ -1,5 +1,15 @@
-import { renderMjmlTemplate } from "#src/integrations/email/renderMjmlTemplate.ts";
+import { render } from "@react-email/components";
 
+import {
+  AddressBlock,
+  ContactFooter,
+  EmailLayout,
+  EmailSection,
+  ItemRows,
+  MutedText,
+  TotalsTable,
+  UrlLink,
+} from "./emailComponents.tsx";
 import { formatCurrency, formatLine, getInitials } from "./emailHelpers.ts";
 
 type OrderConfirmationEmailPayload = {
@@ -71,55 +81,55 @@ export async function renderOrderConfirmationEmail(
   ];
   const shopUrl = new URL(`/${locale}`, payload.viewOrderUrl).toString();
 
-  const html = await renderMjmlTemplate("order-confirmation.mjml", {
-    subject,
-    preview: t.preview,
-    intro,
-    brand: {
-      name: t.brand,
-    },
-    customer: {
-      email: payload.recipientEmail,
-    },
-    delivery: {
-      title: t.deliveryTitle,
-      addressLabel: t.deliveryAddress,
-      addressLines,
-    },
-    itemsTitle: t.yourOrder,
-    items: payload.items.map((item) => ({
-      name: item.name,
-      initials: getInitials(item.name),
-      imageUrl: item.imageUrl,
-      imageAlt: formatLine(t.productImageAlt, { name: item.name }),
-      lineItem: formatLine(t.lineItem, {
-        quantity: item.quantity,
-        unitPrice: formatCurrency(item.unitPrice, locale),
-      }),
-      vendor: item.vendorName,
-      total: formatCurrency(item.lineTotal, locale),
-    })),
-    totals: {
-      subtotalLabel: t.subtotal,
-      subtotal: formatCurrency(payload.subtotal, locale),
-      totalLabel: t.total,
-      total: formatCurrency(payload.total, locale),
-      includedVatLabel: formatLine(t.includedVat, {
-        rate: payload.vatRate,
-      }),
-      includedVat: formatCurrency(payload.includedVatAmount, locale),
-    },
-    orderUrl: payload.viewOrderUrl,
-    viewOrderLabel: t.viewOrder,
-    shopUrl,
-    shopLinkPrefix: t.or,
-    shopLinkLabel: t.visitShop,
-    helpText: formatLine(t.helpText, {
-      email: `<a href="mailto:${contactEmail}">${contactEmail}</a>`,
-    }),
-    paymentReceiptText: t.receiptNote,
-    recipientLabel: `${t.recipient}:`,
-  });
+  const html = await render(
+    <EmailLayout
+      subject={subject}
+      preview={t.preview}
+      eyebrow={t.brand}
+      title={subject}
+      intro={intro}
+      action={{ href: payload.viewOrderUrl, label: t.viewOrder }}
+      headerLink={{ prefix: t.or, href: shopUrl, label: t.visitShop }}
+    >
+      <EmailSection label={t.deliveryTitle}>
+        <AddressBlock label={t.deliveryAddress} lines={addressLines} />
+      </EmailSection>
+      <EmailSection label={t.yourOrder}>
+        <ItemRows
+          items={payload.items.map((item) => ({
+            name: item.name,
+            initials: getInitials(item.name),
+            imageUrl: item.imageUrl,
+            imageAlt: formatLine(t.productImageAlt, { name: item.name }),
+            lineItem: formatLine(t.lineItem, {
+              quantity: item.quantity,
+              unitPrice: formatCurrency(item.unitPrice, locale),
+            }),
+            vendor: item.vendorName,
+            total: formatCurrency(item.lineTotal, locale),
+          }))}
+        />
+        <TotalsTable
+          rows={[{ label: t.subtotal, value: formatCurrency(payload.subtotal, locale) }]}
+          total={{ label: t.total, value: formatCurrency(payload.total, locale) }}
+          footnote={{
+            label: formatLine(t.includedVat, { rate: payload.vatRate }),
+            value: formatCurrency(payload.includedVatAmount, locale),
+          }}
+        />
+      </EmailSection>
+      <EmailSection>
+        <MutedText>{t.receiptNote}</MutedText>
+        <UrlLink href={payload.viewOrderUrl} />
+      </EmailSection>
+      <ContactFooter
+        helpText={t.helpText}
+        contactEmail={contactEmail}
+        recipientLabel={`${t.recipient}:`}
+        recipientEmail={payload.recipientEmail}
+      />
+    </EmailLayout>,
+  );
 
   const itemLines = payload.items.flatMap((item) => {
     const lines = [
