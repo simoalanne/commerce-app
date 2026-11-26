@@ -1,0 +1,73 @@
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--brand);
+  font: inherit;
+}
+
+.rootInteractive {
+  cursor: pointer;
+}
+
+.rootStarsOnly {
+  gap: 0;
+}
+
+.stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.starActive {
+  color: var(--brand);
+}
+
+.starInactive {
+  color: color-mix(in srgb, var(--brand) 35%, white);
+}
+
+.starWrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.starWrapper svg {
+  display: block;
+}
+
+.starFillOverlay {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.starFillOverlay svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.count {
+  color: var(--foreground-variant);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.rootInteractive:hover .count,
+.rootInteractive:focus-visible .count {
+  color: var(--foreground);
+}
+
+.rootInteractive:focus-visible {
+  outline: 2px solid var(--light-grey-border);
+  outline-offset: 3px;
+  border-radius: 999px;
+}

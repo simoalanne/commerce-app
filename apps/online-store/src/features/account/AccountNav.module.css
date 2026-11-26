@@ -1,0 +1,112 @@
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.profileCard {
+  display: none;
+  padding: 1.25rem;
+  border: 1px solid var(--light-grey-border);
+  /* border-radius: 1.25rem; */
+  border-radius: var(--profile-item-radius);
+  background: var(--background-container-lowest);
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius-pill);
+  background: var(--primary-fixed);
+  color: var(--brand);
+  font-size: var(--font-size-md);
+  font-weight: 800;
+}
+
+.profileText {
+  margin-top: 0.85rem;
+  color: var(--brand);
+}
+
+.profileName {
+  font-weight: 700;
+}
+
+.profileMeta {
+  margin-top: 0.2rem;
+  color: var(--foreground-variant);
+  font-size: var(--font-size-sm);
+}
+
+.links {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding-bottom: 0.35rem;
+  scrollbar-width: thin;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex: 0 0 auto;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--light-grey-border);
+  border-radius: var(--profile-item-radius);
+  background: var(--background-container-lowest);
+  color: var(--foreground-variant);
+  text-decoration: none;
+  font-size: var(--font-size-md);
+  white-space: nowrap;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease;
+}
+
+.signOutLink {
+  color: var(--error);
+}
+
+.signOutLink:hover {
+  background: rgb(255 138 128 / 0.12);
+  color: var(--error);
+  border-color: var(--error);
+}
+
+.link:not(.linkActive):not(.signOutLink):hover {
+  background: var(--background-container-low);
+  color: var(--brand-hover);
+}
+
+.linkActive {
+  border-color: transparent;
+  background: var(--brand);
+  color: var(--white-bg);
+}
+
+.icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .profileCard {
+    display: block;
+  }
+
+  .links {
+    flex-direction: column;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+
+  .link {
+    width: 100%;
+    /* border-radius: var(--profile-item-radius); */
+  }
+}

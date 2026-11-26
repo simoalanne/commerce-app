@@ -1,0 +1,107 @@
+.content {
+  gap: 1.5rem;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.imageWrap {
+  width: 4rem;
+  min-width: 4rem;
+  height: 4rem;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: var(--background-container-high);
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 0.15rem;
+}
+
+.productName {
+  margin: 0;
+  color: var(--foreground);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.productNameInvalid {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+}
+
+.valueRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  color: var(--foreground-variant);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.arrow {
+  color: var(--foreground-variant);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.promoRemovalNote {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border-radius: 1rem;
+  background: var(--background-container-high);
+  color: var(--foreground-variant);
+  line-height: 1.5;
+}
+
+.secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.8rem 1.1rem;
+  border: 1px solid var(--light-grey-border);
+  border-radius: 999px;
+  background: var(--background-container-low);
+  color: var(--foreground);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.secondaryButton:hover,
+.secondaryButton:focus-visible {
+  background: var(--background-container-high);
+  border-color: var(--grey-border);
+  transform: translateY(-1px);
+}
+
+.secondaryButton:focus-visible {
+  outline: 2px solid var(--grey-border);
+  outline-offset: 3px;
+}

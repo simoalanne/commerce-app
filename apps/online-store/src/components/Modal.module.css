@@ -1,0 +1,195 @@
+/*
+TODO: this is very likely doing things harder than they need to be. Animating fade in/out
+while preserving scroll lock is apparently very hard hence why this mess exists.
+*/
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgb(15 23 42 / 0.56);
+  backdrop-filter: blur(6px);
+}
+
+.overlay[data-state="open"] {
+  animation: fadeInOverlay 180ms ease-out forwards;
+}
+
+.overlay[data-state="closed"] {
+  animation: fadeOutOverlay 180ms ease-in forwards;
+}
+
+.contentPositioner {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  pointer-events: auto;
+}
+
+.contentPositioner:focus-visible {
+  outline: none;
+}
+
+.contentPositioner[data-state="closed"] {
+  animation: preserveModalPresenceClosed 180ms linear;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: min(100vw - 2rem, 40rem);
+  max-height: calc(100dvh - 2rem);
+  padding: 1.5rem;
+  overflow-y: auto;
+  border-radius: 1.5rem;
+  background: var(--white-bg);
+  box-shadow:
+    0 20px 50px rgb(15 23 42 / 0.18),
+    0 8px 18px rgb(15 23 42 / 0.08);
+  pointer-events: auto;
+}
+
+.contentPositioner[data-state="open"] .content {
+  animation: fadeInModal 180ms ease-out forwards;
+}
+
+.contentPositioner[data-state="closed"] .content {
+  animation: fadeOutModal 180ms ease-in forwards;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0;
+}
+
+.headerMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-3xl);
+  line-height: 1.1;
+  font-weight: 400;
+  color: var(--brand);
+}
+
+.subtitle {
+  margin: 0.5rem 0 0;
+  font-size: var(--font-size-md);
+  line-height: 1.5;
+  color: var(--grey-text);
+}
+
+.cornerAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid var(--light-grey-border);
+  border-radius: 999px;
+  background: var(--white-bg);
+  color: #36543f;
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
+}
+
+.cornerAction:hover {
+  background: var(--white-bg);
+  border-color: var(--light-grey-border);
+  color: var(--brand-hover);
+}
+
+.cornerAction:focus-visible {
+  outline: 2px solid var(--brand-hover);
+  outline-offset: 2px;
+}
+
+.cornerAction:active {
+  transform: scale(0.98);
+}
+
+@keyframes fadeInOverlay {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOutOverlay {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes fadeInModal {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeOutModal {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+@keyframes preserveModalPresenceClosed {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .content {
+    /* width: min(100vw - 1rem, 40rem); */
+    padding: 1.25rem;
+    border-radius: 1.25rem;
+  }
+
+  .title {
+    font-size: var(--font-size-xl);
+  }
+}

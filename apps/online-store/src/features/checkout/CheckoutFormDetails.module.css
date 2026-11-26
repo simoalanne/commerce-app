@@ -1,0 +1,109 @@
+.sectionHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.sectionTitle {
+  color: var(--brand);
+  font-size: 1.4rem;
+}
+.fieldGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.fieldGridFull {
+  grid-column: 1 / -1;
+}
+
+.inlineError {
+  color: var(--error);
+}
+
+.savedAddressesSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.savedAddressesRail {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  scrollbar-width: thin;
+  scroll-snap-type: x proximity;
+}
+
+.savedAddressesRail > * {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
+.actionRow {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.submitButton {
+  width: 100%;
+}
+
+.existingAccountModalActions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+.existingAccountDescription {
+  color: var(--brand);
+  padding: 1rem 0;
+}
+
+.logInButton {
+  margin: 5px 0 0 0;
+  padding: 15px 30px;
+  align-self: center;
+
+  color: var(--white-text);
+  font-weight: 500;
+  background-color: var(--brand);
+  border: none;
+  border-radius: var(--radius-pill);
+
+  font-family: var(--font-brand), sans-serif;
+  cursor: pointer;
+}
+
+.continueAsGuestButton {
+  margin: 5px 0 0 0;
+  padding: 15px 30px;
+  align-self: center;
+
+  color: var(--brand);
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-pill);
+
+  font-family: var(--font-brand), sans-serif;
+  cursor: pointer;
+
+  box-shadow: inset 0 0 0 1px var(--brand-secondary);
+}
+
+@media (max-width: 900px) {
+  .actionRow {
+    order: 2;
+  }
+
+  .existingAccountModalActions {
+    flex-direction: column;
+  }
+}

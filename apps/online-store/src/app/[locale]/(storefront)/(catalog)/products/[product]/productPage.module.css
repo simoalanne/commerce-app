@@ -1,0 +1,233 @@
+.productPageContainer {
+  margin-left: var(--storefront-page-edge);
+  margin-right: var(--storefront-page-edge);
+}
+
+/*=========== Section  ============*/
+.productInfoGrid {
+  align-items: center;
+  justify-content: center;
+  /* margin: 30px; */
+}
+/*========== Big image ===========*/
+
+.productImageWrapper {
+  position: relative;
+  width: 100%;
+  height: auto;
+}
+
+/*========= Product Information =========*/
+
+.productDetailsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1em;
+  margin: 0 10px 0 10px;
+}
+
+.gridItem {
+  border-radius: 10px;
+  padding-top: 10px;
+  margin-top: 10px;
+  box-sizing: border-box;
+
+  /* max-height: 400px; */
+  overflow: visible;
+}
+
+.productText {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  color: var(--brand);
+}
+.productText h3 {
+  font-weight: 700;
+  font-size: var(--font-size-2xl);
+  margin-bottom: 8px;
+  color: var(--brand);
+}
+.vendorName {
+  color: var(--brand);
+  margin: 0;
+}
+
+.addToCartArea {
+  display: flex;
+  height: 5rem;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.paymentMethods {
+  margin-top: 12px;
+  margin-bottom: 20px;
+}
+
+.paymentMethodsRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.paymentMethodLogoWrap {
+  position: relative;
+  height: 1.75rem;
+  width: 3.5rem;
+  display: inline-block;
+}
+
+.paymentMethodLogo {
+  object-fit: contain;
+  object-position: center;
+}
+
+.cartBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  height: 48px;
+  padding: 0 24px;
+  font-size: 0.95rem;
+  line-height: 1;
+
+  background: var(--brand);
+  color: var(--white-text);
+
+  flex: 1;
+  border: none;
+  border-radius: 999px;
+  font-weight: 600;
+
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+}
+
+.favoriteActionButton {
+  flex-shrink: 0;
+}
+
+.cartBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.collapsibleDesc {
+  width: 100%;
+  margin-bottom: 50px;
+  padding-left: 20px;
+  box-sizing: border-box;
+  color: var(--brand);
+}
+
+/*======= Product by category ==========*/
+
+.productByCategorySection {
+  margin-top: 100px;
+}
+
+.productByCategory img {
+  /*some images have less width tan others,
+    thats why height is more important*/
+  width: auto;
+  height: 200px;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+}
+
+.otherCategoriesTitle {
+  font-weight: 700;
+  font-size: var(--font-size-3xl);
+  color: var(--brand);
+  margin: 0;
+}
+
+/*======= products by category links ============*/
+.otherProductsSectionHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.otherProductsSectionHeader a {
+  text-decoration: none;
+  color: var(--brand);
+  margin-bottom: 1rem;
+}
+
+/* Ensure the See all link icon and text are vertically centered */
+.seeDirectory {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (min-width: 768px) {
+  .main {
+    margin: 0 auto;
+    padding: 40px 20px;
+  }
+  /*====================================*/
+
+  .productInfoGrid {
+    display: grid;
+    grid-template-columns: calc(55% - 20px) calc(45% - 20px);
+    gap: 40px;
+    align-items: flex-start;
+  }
+
+  .productDetailsGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+  }
+
+  .gridItem {
+    margin: 0;
+    padding: 0;
+  }
+
+  .otherCategoriesTitle {
+    margin-bottom: 1rem;
+  }
+
+  .productText h3 {
+    font-size: var(--font-size-3xl);
+  }
+
+  .cartBtn {
+    border-radius: 999px;
+    padding: 14px 24px;
+    font-weight: 600;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+  }
+
+  .cartBtn:hover {
+    background: var(--brand-hover);
+    transform: translateY(-1px);
+  }
+  /*============================================*/
+
+  .productByCategorySection {
+    margin-bottom: 60px;
+  }
+
+  .otherCategoriesTitle {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .otherProductsSectionHeader {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}

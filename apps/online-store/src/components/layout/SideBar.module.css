@@ -1,0 +1,173 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: rgb(26 28 28 / 0.38);
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.overlay[data-state="open"] {
+  opacity: 1;
+}
+
+.overlay[data-state="closed"] {
+  opacity: 0;
+}
+
+.content {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  z-index: 130;
+  width: min(26rem, 75vw);
+  border: 0;
+  background: var(--background-container-lowest);
+  box-shadow: var(--shadow-ambient);
+  color: var(--foreground);
+}
+
+.content:focus-visible {
+  outline: none;
+}
+
+.left {
+  left: 0;
+  border-right: 1px solid var(--light-grey-border);
+  transform: translateX(-100%);
+}
+
+.left[data-state="open"] {
+  animation: slideInFromLeft 180ms ease forwards;
+}
+
+.left[data-state="closed"] {
+  animation: slideOutToLeft 180ms ease forwards;
+}
+
+.right {
+  right: 0;
+  border-left: 1px solid var(--light-grey-border);
+  transform: translateX(100%);
+}
+
+.right[data-state="open"] {
+  animation: slideInFromRight 180ms ease forwards;
+}
+
+.right[data-state="closed"] {
+  animation: slideOutToRight 180ms ease forwards;
+}
+
+.panel {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 1rem 1rem 0;
+}
+
+.closeButton {
+  display: inline-flex;
+  height: 2rem;
+  width: 2rem;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 9999px;
+  background: var(--background-container-lowest);
+  color: var(--foreground);
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.closeButton:hover {
+  background: var(--background-container-high);
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.footer {
+  padding: 1rem;
+  border-top: 1px solid var(--light-grey-border);
+  background: var(--background-container-lowest);
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+@keyframes slideInFromLeft {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutToLeft {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutToRight {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (min-width: 768px) {
+  .body {
+    scrollbar-width: thin;
+  }
+
+  .body::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+}

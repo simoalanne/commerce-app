@@ -1,0 +1,243 @@
+.headerRow {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.5rem;
+  color: var(--brand);
+}
+
+.title {
+  margin: 0;
+  color: var(--brand);
+  font-size: clamp(2rem, 3vw, 2.8rem);
+  font-weight: 500;
+  line-height: 1;
+}
+
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+.toolbarLeft {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-height: 40px;
+  margin-right: auto;
+}
+
+.toolbarRight {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 20px;
+  min-width: 0;
+}
+
+.mobileFilterContainer {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 10px;
+}
+
+.mobileFilterContainer p {
+  margin: 0;
+}
+
+.mobileFilterBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid var(--background-container-high, #e5e5e5);
+  border-radius: var(--radius-pill, 9999px);
+  background-color: var(--background-container-lowest, #fff);
+  color: var(--foreground, #111);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mobileFilterBtn:hover {
+  background-color: var(--background-container-low, #f5f5f5);
+  border-color: var(--brand-hover);
+}
+
+.filterButtons {
+  display: none;
+}
+
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 0.5rem 0.55rem;
+  border: 1px solid #c9c9c9;
+  border-radius: 999px;
+  background-color: var(--white-bg);
+}
+
+.searchIcon {
+  width: 18px;
+  height: 18px;
+  color: var(--brand);
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  border: none;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  outline: none;
+}
+
+.searchActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.clearButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #6b6b6b;
+  cursor: pointer;
+}
+
+.clearButton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.searchButton {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 999px;
+  background-color: var(--brand);
+  color: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.searchButton:hover {
+  filter: brightness(0.95);
+}
+
+.searchButton:active {
+  transform: translateY(1px);
+}
+
+.toggleContainer {
+  display: none;
+  margin-right: 20px;
+}
+
+.viewToggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.viewToggleButton,
+.viewToggleButtonActive {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #c9c9c9;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.viewToggleButton {
+  background-color: var(--white-bg);
+  color: var(--foreground);
+}
+
+.viewToggleButtonActive {
+  background-color: var(--brand);
+  color: var(--white-text);
+}
+
+.viewContent {
+  min-height: 100vh;
+}
+
+.viewContentAnimated {
+  animation: scaleIn 180ms ease both;
+  will-change: transform, opacity;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0.6;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (min-width: 1024px) {
+  .headerRow {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-left: 1rem;
+  }
+
+  .toolbar {
+    flex-direction: row;
+    padding-left: 1rem;
+  }
+
+  .mobileFilterBtn {
+    display: none;
+  }
+
+  .filterButtons {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .searchBar {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    max-width: 720px;
+  }
+
+  .toggleContainer {
+    display: inline;
+  }
+
+  /* Chrome, Safari, Edge, Opera: remove number input arrows. */
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .viewContent {
+    padding: 1rem;
+  }
+}

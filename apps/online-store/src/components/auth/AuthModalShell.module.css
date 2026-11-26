@@ -1,0 +1,81 @@
+.modalContent {
+  width: min(100vw - 2rem, 68rem);
+  padding: 0;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  background: var(--background-container-lowest);
+}
+
+.visualPane {
+  display: none;
+  position: relative;
+  padding: 2.5rem;
+  background: linear-gradient(160deg, #262626 0%, #0a0a0a 55%, #002d11 100%);
+  color: #ffffff;
+}
+
+.visualPane::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 12% 18%, rgb(167 245 175 / 0.28) 0%, transparent 45%),
+    radial-gradient(circle at 88% 80%, rgb(255 223 158 / 0.18) 0%, transparent 46%);
+}
+
+.visualContent {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2rem;
+  height: 100%;
+}
+
+.heroTitle {
+  max-width: 24rem;
+  font-family: var(--font-headline), sans-serif;
+  font-size: var(--font-size-4xl);
+  font-weight: 800;
+  line-height: 1.06;
+}
+
+.heroCard {
+  max-width: 24rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid rgb(255 255 255 / 0.2);
+  border-radius: 1rem;
+  backdrop-filter: blur(8px);
+  background: rgb(255 255 255 / 0.09);
+  font-size: var(--font-size-md);
+  line-height: 1.5;
+}
+
+.formPane {
+  padding: 1.25rem;
+}
+
+.formHeader {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+@media (min-width: 900px) {
+  .layout {
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    min-height: 40rem;
+  }
+
+  .visualPane {
+    display: block;
+  }
+
+  .formPane {
+    padding: 2rem;
+  }
+}

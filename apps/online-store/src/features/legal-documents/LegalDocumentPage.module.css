@@ -1,0 +1,15 @@
+.article {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.header {
+  width: 100%;
+  text-align: left;
+}
+
+.title {
+  font-size: var(--font-size-5xl);
+  color: var(--brand);
+}

@@ -1,0 +1,256 @@
+.page {
+  box-sizing: border-box;
+  overflow-x: clip;
+  padding: calc(4rem + clamp(2rem, 5vw, 4rem)) var(--storefront-page-edge) clamp(2rem, 5vw, 4rem);
+}
+
+.panel {
+  width: 100%;
+  max-width: var(--storefront-rail-max);
+  margin: 0 auto;
+}
+
+.hero {
+  max-width: 44rem;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.3rem);
+  line-height: 1;
+  color: #243423;
+}
+
+.errorBanner {
+  margin: 24px 0 0;
+  padding: 14px 16px;
+  border-radius: 18px;
+  font-weight: 600;
+}
+
+.errorBanner {
+  background: #f7ded8;
+  color: #8b3427;
+}
+
+.sections {
+  display: grid;
+  gap: 18px;
+  margin-top: 32px;
+}
+
+.singleCardRow {
+  width: 100%;
+}
+
+.productGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
+.reviewCard {
+  padding: 18px;
+  border-radius: var(--rectangle-image-radius);
+  background: var(--background-container-lowest);
+  border: 1px solid rgba(64, 51, 37, 0.08);
+}
+
+.reviewCardHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+
+.reviewTitle {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--brand);
+}
+
+.reviewSubtitle {
+  margin: 6px 0 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #5b6452;
+}
+
+.reviewImageWrapper {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+}
+
+.reviewImage {
+  border-radius: 20px;
+  object-fit: cover;
+}
+
+.starRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.starButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 2px solid rgba(72, 62, 52, 0.16);
+  border-radius: 999px;
+  background: var(--tag-bg);
+  color: var(--brand);
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.starButton:hover {
+  transform: translateY(-1px);
+  background-color: var(--tag-text);
+  color: var(--white-bg);
+}
+
+.starButtonActive {
+  background: var(--brand);
+  color: var(--white-bg);
+}
+
+.commentField {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.commentLabel {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #314033;
+}
+
+.commentInput {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid rgba(72, 62, 52, 0.16);
+  border-radius: 18px;
+  background: var(--white-bg);
+  color: var(--foreground);
+  font: inherit;
+  resize: vertical;
+}
+
+.uploadField {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.nameVisibilityField {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 16px;
+  font-size: 0.92rem;
+  color: var(--grey-text);
+  accent-color: var(--brand-secondary);
+  justify-content: start;
+}
+
+.fileInput {
+  width: 100%;
+  font: inherit;
+  color: var(--grey-text);
+  padding: 10px 12px;
+  border: 1px solid rgba(72, 62, 52, 0.16);
+  border-radius: 16px;
+  background: #fffdfa;
+  cursor: pointer;
+}
+
+.fileInput::file-selector-button {
+  margin-right: 20px;
+  padding: 10px 20px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--brand-secondary);
+  color: var(--white-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/*do not remove*/
+.fileInput::-webkit-file-upload-button {
+  margin-right: 20px;
+  padding: 10px 20px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--brand-secondary);
+  color: var(--white-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.uploadPreviewWrapper {
+  position: relative;
+  width: 140px;
+  height: 140px;
+}
+
+.uploadPreviewImage {
+  border-radius: 18px;
+  object-fit: cover;
+  border: 1px solid rgba(72, 62, 52, 0.16);
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: stretch;
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(64, 51, 37, 0.08);
+  flex-direction: column;
+}
+
+.footerText {
+  margin: 0;
+  color: #4d5745;
+}
+
+.submitButton {
+  padding: 14px 24px;
+  border: 0;
+  border-radius: 999px;
+  background: #243f2b;
+  color: var(--white-text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+}
+
+.submitButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (min-width: 721px) {
+  .footer {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .submitButton {
+    width: auto;
+  }
+}

@@ -1,0 +1,52 @@
+.desktopAside {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .desktopAside {
+    display: block;
+    position: relative;
+    width: 260px;
+
+    flex: 0 0 auto;
+    overflow: visible;
+    transition: width 220ms cubic-bezier(0.2, 0.9, 0.2, 1);
+    --aside-width: 200px;
+  }
+
+  /* Closed: aside width collapses to 40px so content fills the space without overlapping the button */
+  .desktopAside.closed {
+    width: 40px;
+  }
+
+  .desktopStickyWrap {
+    position: sticky;
+    top: 120px;
+    max-height: calc(100vh - 140px);
+    display: flex;
+    align-items: flex-start;
+  }
+
+  .desktopPanel {
+    position: relative;
+    /* width: 260px; */
+    max-height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition:
+      transform 220ms cubic-bezier(0.2, 0.9, 0.2, 1),
+      opacity 180ms ease;
+  }
+
+  .panelClosed {
+    transform: translateX(-260px);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .panelOpen {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+}

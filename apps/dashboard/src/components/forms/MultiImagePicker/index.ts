@@ -1,0 +1,1 @@
+export { MultiImagePicker } from "./MultiImagePicker";

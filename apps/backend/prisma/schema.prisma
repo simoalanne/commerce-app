@@ -1,0 +1,513 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator json {
+  provider = "prisma-json-types-generator"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  EXPIRED
+  DELIVERED
+}
+
+enum ContactSubmissionTopic {
+  CONTACT
+  VENDOR_APPLICATION
+}
+
+enum ContactSubmissionStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum PaymentProvider {
+  STRIPE
+  PAYTRAIL
+}
+
+enum PromotionCodeDiscountType {
+  ITEMS_PERCENT
+  ITEMS_FIXED
+  DELIVERY_PERCENT
+  DELIVERY_FIXED
+}
+
+enum ImageKind {
+  CMS
+  USER_REVIEW
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum AdminActionType {
+  CREATE
+  UPDATE
+  DELETE
+  OTHER
+}
+
+enum StorefrontVisibility {
+  ACTIVE
+  INACTIVE
+}
+
+enum RefundStatus {
+  PENDING
+  PROCESSING
+  REQUIRES_MANUAL_REVIEW
+  SUCCEEDED
+  FAILED
+}
+
+model User {
+  clerk_id         String           @id
+  customer_account CustomerAccount?
+  admin_account    AdminAccount?
+  created_at       DateTime         @default(now())
+}
+
+model ContactSubmission {
+  id         Int                     @id @default(autoincrement())
+  topic      ContactSubmissionTopic
+  name       String
+  email      String?
+  phone      String?
+  message    String
+  locale     String
+  status     ContactSubmissionStatus @default(OPEN)
+  created_at DateTime                @default(now())
+  updated_at DateTime                @updatedAt
+}
+
+model CustomerAccount {
+  id                        Int                        @id @default(autoincrement())
+  user_id                   String                     @unique
+  user                      User                       @relation(fields: [user_id], references: [clerk_id], onDelete: Cascade)
+  preferred_locale          String                     @default("en")
+  addresses                 CustomerAddress[]
+  orders                    Order[]
+  reviews                   Review[]
+  customerFavoriteProducts  CustomerFavoriteProduct[]
+  customerFavoriteVendors CustomerFavoriteVendor[]
+  customerSavedCartItems    CustomerSavedCartItem[]
+}
+
+model CustomerFavoriteProduct {
+  customer_account_id Int
+  customer_account    CustomerAccount @relation(fields: [customer_account_id], references: [id], onDelete: Cascade)
+  product_id          Int
+  product             Product         @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  added_at            DateTime        @default(now())
+
+  @@id([customer_account_id, product_id])
+}
+
+model CustomerFavoriteVendor {
+  customer_account_id Int
+  customer_account    CustomerAccount @relation(fields: [customer_account_id], references: [id], onDelete: Cascade)
+  vendor_id         Int
+  vendor            Vendor        @relation(fields: [vendor_id], references: [id], onDelete: Cascade)
+  added_at            DateTime        @default(now())
+
+  @@id([customer_account_id, vendor_id])
+}
+
+model CustomerSavedCartItem {
+  customer_account_id Int
+  customer_account    CustomerAccount @relation(fields: [customer_account_id], references: [id], onDelete: Cascade)
+  product_id          Int
+  product             Product         @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  quantity            Int
+  added_at            DateTime        @default(now())
+
+  @@id([customer_account_id, product_id])
+}
+
+model AdminAccount {
+  id              Int              @id @default(autoincrement())
+  user_id         String           @unique
+  user            User             @relation(fields: [user_id], references: [clerk_id], onDelete: Cascade)
+  adminActionLogs AdminActionLog[]
+}
+
+model PromotionCode {
+  id                  Int                       @id @default(autoincrement())
+  code                String                    @unique
+  is_active           Boolean                   @default(true)
+  valid_from          DateTime?
+  valid_until         DateTime?
+  minimum_items_value Decimal?                  @db.Decimal(10, 2)
+  discount_type       PromotionCodeDiscountType
+  discount_value      Decimal                   @db.Decimal(10, 2)
+  usage_limit         Int?
+  times_used          Int                       @default(0)
+  created_at          DateTime                  @default(now())
+  updated_at          DateTime                  @updatedAt
+}
+
+model Order {
+  id                                  Int             @id @default(autoincrement())
+  items_subtotal                      Decimal         @db.Decimal(10, 2)
+  items_discount_amount               Decimal         @default(0) @db.Decimal(10, 2)
+  delivery_fee                        Decimal         @db.Decimal(10, 2)
+  delivery_discount_amount            Decimal         @default(0) @db.Decimal(10, 2)
+  tip_percentage                      Decimal         @default(0) @db.Decimal(5, 2)
+  tip_amount                          Decimal         @default(0) @db.Decimal(10, 2)
+  charged_total                       Decimal         @db.Decimal(10, 2)
+  vat_rate                            Decimal         @db.Decimal(5, 2)
+  included_vat_amount                 Decimal         @db.Decimal(10, 2)
+  total_weight_grams                  Int             @default(0)
+  status                              OrderStatus     @default(PENDING)
+  payment_id                          String?         @unique
+  payment_provider                    PaymentProvider
+  claim_token                         String          @default(uuid(7))
+  has_been_linked_to_customer_account Boolean         @default(false)
+  preferred_locale                    String          @default("en")
+  applied_promo_code                  String?
+  utm_source                          String?
+  utm_medium                          String?
+  utm_campaign                        String?
+  /// [OrderDetails]
+  order_details                       Json
+  paid_at                             DateTime?
+  created_at                          DateTime        @default(now())
+  updated_at                          DateTime        @updatedAt
+
+  customer_id Int?
+  customer    CustomerAccount? @relation(fields: [customer_id], references: [id], onDelete: SetNull)
+
+  reviews Review[]
+
+  /// [OrderInvoiceDetails]
+  invoice_details Json
+  order_items     OrderItem[]
+  refunds         Refund[]
+}
+
+model OrderItem {
+  id                   Int     @id @default(autoincrement())
+  sku                  String
+  name                 String
+  quantity             Int
+  uncommitted_quantity Int     @default(0)
+  unit_cost_price      Decimal @db.Decimal(10, 2)
+  unit_sales_price     Decimal @db.Decimal(10, 2)
+
+  product_id    Int?
+  product       Product?  @relation(fields: [product_id], references: [id], onDelete: SetNull)
+  vendor_id   Int?
+  vendor      Vendor? @relation(fields: [vendor_id], references: [id], onDelete: SetNull)
+  vendor_name String
+
+  order_id    Int
+  order       Order        @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  refundItems RefundItem[]
+
+  @@index([order_id])
+  @@index([vendor_id])
+}
+
+model Refund {
+  id                 Int          @id @default(autoincrement())
+  idempotency_key    String       @unique @default(uuid(7))
+  order_id           Int
+  order              Order        @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  provider_refund_id String?
+  status             RefundStatus @default(PENDING)
+  total_amount       Decimal      @db.Decimal(10, 2)
+  tip_amount         Decimal?     @db.Decimal(10, 2)
+  delivery_fee       Decimal?     @db.Decimal(10, 2)
+  reason             String
+  internal_notes     String?
+  failure_reason     String?
+  created_at         DateTime     @default(now())
+  updated_at         DateTime     @updatedAt
+
+  refund_items RefundItem[]
+
+  @@index([order_id])
+  @@index([provider_refund_id])
+}
+
+model RefundItem {
+  id               Int       @id @default(autoincrement())
+  refund_id        Int
+  refund           Refund    @relation(fields: [refund_id], references: [id], onDelete: Cascade)
+  order_item_id    Int
+  order_item       OrderItem @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  quantity         Int
+  restock_quantity Int?
+  amount           Decimal   @db.Decimal(10, 2)
+
+  @@index([refund_id])
+  @@index([order_item_id])
+}
+
+model CustomerAddress {
+  id Int @id @default(autoincrement())
+
+  customer_id Int
+  customer    CustomerAccount @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+
+  street        String
+  street_number String?
+  postal_code   String
+  city          String
+
+  /// [CustomerAddressDeliveryDetails]
+  delivery_details Json
+}
+
+model Category {
+  id             Int       @id @default(autoincrement())
+  /// [LocalizedString]
+  name           Json
+  /// [LocalizedString]
+  slug           Json
+  markup_percent Decimal?  @db.Decimal(5, 2)
+  image_id       Int
+  image          Image     @relation(fields: [image_id], references: [id], onDelete: Restrict)
+  products       Product[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([image_id])
+}
+
+model Product {
+  id                       Int                       @id @default(autoincrement())
+  sku                      String                    @unique
+  /// [LocalizedString]
+  slug                     Json
+  /// [LocalizedString]
+  name                     Json
+  weight_grams             Int                       @default(0)
+  /// [LocalizedString]
+  headline                 Json
+  /// [LocalizedString]
+  full_description         Json
+  storefront_visibility    StorefrontVisibility      @default(ACTIVE)
+  is_featured              Boolean                   @default(false)
+  tags                     ProductTag[]
+  images                   ProductImage[]
+  category_id              Int?
+  category                 Category?                 @relation(fields: [category_id], references: [id], onDelete: SetNull)
+  cost_price               Decimal                   @db.Decimal(10, 2)
+  sales_price              Decimal                   @db.Decimal(10, 2)
+  current_stock            Int
+  reserved_stock           Int                       @default(0)
+  vendor_id              Int
+  vendor                 Vendor                  @relation(fields: [vendor_id], references: [id], onDelete: Cascade)
+  created_at               DateTime                  @default(now())
+  updated_at               DateTime                  @updatedAt
+  reviews                  Review[]
+  purchase_limit_per_order Int                       @default(0) @db.SmallInt
+  order_items              OrderItem[]
+  customerFavoriteProducts CustomerFavoriteProduct[]
+  customerSavedCartItems   CustomerSavedCartItem[]
+
+  @@index([category_id])
+}
+
+model Vendor {
+  id                    Int                  @id @default(autoincrement())
+  name                  String               @unique
+  slug                  String               @unique
+  /// [LocalizedString]
+  slogan                Json
+  /// [LocalizedString]
+  story                 Json
+  storefront_visibility StorefrontVisibility @default(ACTIVE)
+  is_featured           Boolean              @default(false)
+  images                VendorImage[]
+  /// [LocalizedStringArray]
+  tags                  Json
+  products              Product[]
+  reviews               Review[]
+
+  created_at                DateTime                   @default(now())
+  updated_at                DateTime                   @updatedAt
+  order_items               OrderItem[]
+  customerFavoriteVendors CustomerFavoriteVendor[]
+}
+
+model Image {
+  id          Int             @id @default(autoincrement())
+  name        String?
+  kind        ImageKind       @default(CMS)
+  /// [LocalizedString]
+  alt         Json?
+  storage_key String          @unique
+  created_at  DateTime        @default(now())
+  vendor_id Int?
+  products    ProductImage[]
+  categories  Category[]
+  vendors   VendorImage[]
+  review_id   Int?
+  review      Review?         @relation(fields: [review_id], references: [id], onDelete: SetNull)
+}
+
+model LegalDocument {
+  id         Int      @id @default(autoincrement())
+  key        String   @unique
+  /// [LocalizedString]
+  title      Json
+  /// [LocalizedString]
+  content    Json
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model ProductImage {
+  product_id Int
+  image_id   Int
+
+  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  image   Image   @relation(fields: [image_id], references: [id], onDelete: Cascade)
+
+  @@id([product_id, image_id])
+  @@index([image_id])
+}
+
+model Tag {
+  id    Int    @id @default(autoincrement())
+  /// [LocalizedString]
+  name  Json
+  /// Hex color, e.g. "#22c55e"
+  color String
+
+  products ProductTag[]
+}
+
+model ProductTag {
+  product_id Int
+  tag_id     Int
+
+  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tag_id], references: [id], onDelete: Restrict)
+
+  @@id([product_id, tag_id])
+  @@index([tag_id])
+}
+
+model VendorImage {
+  vendor_id Int
+  image_id    Int
+
+  vendor Vendor @relation(fields: [vendor_id], references: [id], onDelete: Cascade)
+  image    Image    @relation(fields: [image_id], references: [id], onDelete: Cascade)
+
+  @@id([vendor_id, image_id])
+  @@index([image_id])
+}
+
+model WebhookSubscription {
+  id    Int    @id @default(autoincrement())
+  event String
+  url   String
+}
+
+model Review {
+  id                 Int              @id @default(autoincrement())
+  /// !['VENDOR' | 'PRODUCT' | 'STORE_EXPERIENCE']
+  kind               String
+  reviewer_name      String
+  reviewer_email     String?
+  show_reviewer_name Boolean          @default(true)
+  is_verified        Boolean          @default(false)
+  customer_id        Int?
+  customer           CustomerAccount? @relation(fields: [customer_id], references: [id], onDelete: SetNull)
+  order_id           Int?
+  order              Order?           @relation(fields: [order_id], references: [id], onDelete: SetNull)
+  vendor_id        Int?
+  vendor           Vendor?        @relation(fields: [vendor_id], references: [id], onDelete: Cascade)
+  product_id         Int?
+  product            Product?         @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  images             Image[]
+  status             ReviewStatus     @default(PENDING)
+  rating             Int
+  comment            String?
+  admin_reply        String?
+  created_at         DateTime         @default(now())
+  updated_at         DateTime         @updatedAt
+
+  @@index([kind, vendor_id])
+  @@index([kind, product_id])
+  @@index([order_id])
+  @@index([customer_id])
+}
+
+model ProductSearchDocument {
+  product_id           Int
+  locale               String
+  product_search_text  String
+  vendor_search_text String
+  category_search_text String
+  /// [ProductSearchDocumentData]
+  search_data          Json
+  search_vector        Unsupported("tsvector")
+  created_at           DateTime                @default(now())
+  updated_at           DateTime                @updatedAt
+
+  // Add this index on DB side or in migration:
+  // CREATE INDEX product_search_document_search_vector_idx
+  // ON "ProductSearchDocument"
+  // USING GIN (search_vector);
+  @@id([product_id, locale])
+  @@index([locale])
+}
+
+model Job {
+  id           String    @id @default(cuid())
+  type         String
+  payload      Json
+  status       JobStatus @default(PENDING)
+  attempts     Int       @default(0)
+  max_attempts Int       @default(3)
+  next_run_at  DateTime  @default(now())
+  last_error   String?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  @@index([status, next_run_at])
+}
+
+model AdminActionLog {
+  id Int @id @default(autoincrement())
+
+  admin_account_id Int?
+  admin_account    AdminAccount? @relation(fields: [admin_account_id], references: [id], onDelete: SetNull)
+  admin_email      String
+
+  action    AdminActionType
+  entity    String
+  entity_id String?
+  details   Json?
+
+  created_at DateTime @default(now())
+
+  @@index([admin_account_id])
+  @@index([created_at])
+  @@index([entity, entity_id])
+  @@index([action])
+}

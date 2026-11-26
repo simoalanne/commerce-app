@@ -1,0 +1,475 @@
+import { calculateOrderPricing } from "@acme/shared";
+import { DeliveryInstructionsSchema } from "@acme/shared/schemas";
+import { isValidPhoneNumber } from "@acme/shared/utils/addressValidation";
+import type { PrismaClient } from "@prisma/client";
+import * as Sentry from "@sentry/node";
+import { isAfter, isBefore } from "date-fns";
+import z from "zod";
+
+import { getCompanyDetails } from "#src/domain/getCompanyDetails.ts";
+import { verifyOrderCapabilityJwt } from "#src/features/customer-api/orders/orderCapabilities.ts";
+import { getCachedPaytrailPaymentMethods } from "#src/integrations/payments/paytrail.paymentMethods.ts";
+import { enqueueProductStockInvalidationJobs } from "#src/jobs/handlers/jobAggregrates.ts";
+import type { SupportedLocale } from "#src/locales.ts";
+import type { AuthContext } from "#src/routing/auth.ts";
+import { type AppContext, customerRoute } from "#src/routing/base.ts";
+import { MINUTE_MS, type RateLimitPolicy } from "#src/routing/rateLimit.ts";
+import { toResponse } from "#src/routing/toResponse.ts";
+import { findCustomerIdByEmail } from "#src/utils/findCustomerIdByEmail.ts";
+import { NotFoundError } from "#src/utils/notFoundError.ts";
+import { relevantOrderStatuses } from "#src/utils/orderStatus.ts";
+
+import { releaseReservedStock, reserveStockOrThrow } from "./checkout.adjustStock.ts";
+import {
+  AccountExistsForEmail,
+  InsufficientStock,
+  InvalidPromoCode,
+  isPromoCodeError,
+  PriceMismatch,
+  ProductsNotPurchasable,
+  PromoCodeExpired,
+  PromoCodeInactive,
+  PromoCodeMinimumItemsValueNotMet,
+  PromoCodeNotFound,
+  PromoCodeNotStarted,
+  PromoCodeUsageLimitReached,
+  PurchaseLimitExceeded,
+} from "./checkout.errors.ts";
+import {
+  consumeCheckoutCreatePaymentRateLimit,
+  releaseCheckoutCreatePaymentRateLimit,
+} from "./checkout.rateLimit.ts";
+import {
+  buildOrderDetails,
+  buildOrderItemsFromProducts,
+  calculateOrderTotal,
+  fetchPurchasableProducts,
+  validateCartPurchaseLimits,
+  validateCartUnitPrices,
+} from "./checkout.utils.ts";
+
+const TipPercentageSchema = z.number().min(0).max(100);
+
+const DeliveryAddressSchema = z.object({
+  street: z.string().trim().min(1).max(255),
+  city: z.string().trim().min(1).max(255),
+  postalCode: z.string().trim().min(1).max(32),
+  addressType: z.string().trim().max(255).nullable(),
+  streetNumber: z.string().trim().max(64).nullable(),
+  entrance: z.string().trim().max(64).nullable(),
+  floor: z.string().trim().max(64).nullable(),
+  apartment: z.string().trim().max(64).nullable(),
+  deliveryInstructions: DeliveryInstructionsSchema,
+});
+
+const OrderRecipientSchema = z.object({
+  email: z.email(),
+  phone: z.string().trim().min(1).max(32).refine(isValidPhoneNumber, {
+    message: "phone must be a valid phone number",
+  }),
+  firstName: z.string().trim().min(1).max(255),
+  lastName: z.string().trim().min(1).max(255),
+});
+
+export const CheckoutCartSchema = z
+  .record(
+    z.string(),
+    z.object({
+      quantity: z.int().min(1, "Quantity must be at least 1").max(99, "Quantity cannot exceed 99"),
+      unitPrice: z.number().nonnegative(),
+    }),
+  )
+  .refine((obj) => Object.keys(obj).length > 0, {
+    message: "Cart cannot be empty",
+  });
+
+const baseCreatepaymentBodySchema = z.object({
+  cart: CheckoutCartSchema,
+  deliveryAddress: DeliveryAddressSchema,
+  recipient: OrderRecipientSchema,
+  tipPercentage: TipPercentageSchema.optional(),
+  promoCode: z.string().trim().min(1).max(1024).optional(),
+  continueAsGuest: z.boolean().optional(),
+  utm_source: z.string().trim().min(1).max(255).optional(),
+  utm_medium: z.string().trim().min(1).max(255).optional(),
+  utm_campaign: z.string().trim().min(1).max(255).optional(),
+});
+
+const createPaymentBodySchema = z.discriminatedUnion("provider", [
+  baseCreatepaymentBodySchema.extend({
+    provider: z.literal("STRIPE"),
+  }),
+  baseCreatepaymentBodySchema.extend({
+    provider: z.literal("PAYTRAIL"),
+  }),
+]);
+
+type CreatePaymentBody = z.output<typeof createPaymentBodySchema>;
+
+type CheckoutContext = AppContext & {
+  authContext: AuthContext;
+  locale: SupportedLocale;
+};
+
+const createPaymentInternal = async (
+  context: CheckoutContext,
+  {
+    cart,
+    deliveryAddress,
+    recipient,
+    tipPercentage,
+    provider,
+    promoCode,
+    continueAsGuest,
+    utm_source,
+    utm_medium,
+    utm_campaign,
+  }: CreatePaymentBody,
+) => {
+  const { authContext, db, config, payments } = context;
+  const customerId = authContext.isAuthenticated
+    ? authContext.customerId
+    : await findCustomerIdByEmail({ db, auth: context.auth }, recipient.email);
+
+  if (!authContext.isAuthenticated && customerId !== null && continueAsGuest !== true) {
+    throw new AccountExistsForEmail();
+  }
+
+  const products = await fetchPurchasableProducts(db, Object.keys(cart));
+
+  validateCartPurchaseLimits(products, cart);
+  validateCartUnitPrices(products, cart);
+
+  const orderItems = buildOrderItemsFromProducts(products, cart, context.locale);
+  const itemsSubtotal = calculateOrderTotal(orderItems);
+
+  const deliveryFeeCalculation = estimateDeliveryFee(itemsSubtotal);
+
+  const validatedPromoCode = !promoCode
+    ? null
+    : await getValidatedPromoCodeForPayment(db, {
+        promoCode,
+        itemsSubtotal,
+      }).catch((error) => {
+        if (isPromoCodeError(error)) {
+          throw new InvalidPromoCode();
+        }
+        throw error;
+      });
+
+  const pricingSnapshot = calculateOrderPricing({
+    itemsSubtotal,
+    deliveryFee: deliveryFeeCalculation.deliveryFeeCents / 100,
+    tipPercentage,
+    discountType: validatedPromoCode?.discountType,
+    discountValue: validatedPromoCode?.discountValue,
+  });
+
+  const orderDetails: PrismaJson.OrderDetails = buildOrderDetails({
+    deliveryAddress,
+    recipient,
+  });
+
+  const order = await context.runAppTransaction(async ({ tx, enqueueJob }) => {
+    await reserveStockOrThrow({
+      items: orderItems,
+      transaction: tx,
+    });
+    const order = await tx.order.create({
+      data: {
+        customer_id: customerId,
+        has_been_linked_to_customer_account: customerId != null,
+        items_subtotal: pricingSnapshot.itemsSubtotal,
+        items_discount_amount: pricingSnapshot.itemsDiscountAmount ?? 0,
+        delivery_fee: pricingSnapshot.deliveryFee,
+        delivery_discount_amount: pricingSnapshot.deliveryDiscountAmount ?? 0,
+        tip_amount: pricingSnapshot.tipAmount ?? 0,
+        tip_percentage: pricingSnapshot.tipPercentage ?? 0,
+        charged_total: pricingSnapshot.chargedTotal,
+        vat_rate: pricingSnapshot.vatRate,
+        included_vat_amount: pricingSnapshot.includedVatAmount,
+        payment_provider: provider,
+        order_details: orderDetails,
+        invoice_details: getCompanyDetails(config),
+        applied_promo_code: validatedPromoCode ? promoCode : null,
+        utm_source,
+        utm_medium,
+        utm_campaign,
+        total_weight_grams: orderItems.reduce(
+          (sum, item) => sum + item.weightGrams * item.quantity,
+          0,
+        ),
+        preferred_locale: context.locale,
+        order_items: {
+          create: orderItems.map((item) => ({
+            sku: item.sku,
+            name: item.productName,
+            quantity: item.quantity,
+            unit_cost_price: item.unitCostPrice,
+            unit_sales_price: item.unitPrice,
+            product_id: item.productId,
+            vendor_id: item.vendorId,
+            vendor_name: item.vendorName,
+          })),
+        },
+      },
+    });
+
+    await enqueueJob({
+      type: "expirePendingOrder",
+      payload: { orderId: order.id },
+      delayMs: config.PENDING_ORDER_EXPIRY_MINUTES * 60 * 1000,
+    });
+
+    return order;
+  });
+
+  Sentry.getCurrentScope().setContext("order", { orderId: order.id });
+
+  const amountCents = Math.round(pricingSnapshot.chargedTotal * 100);
+
+  try {
+    const payment = await payments[provider].createPayment({
+      amountCents,
+      currency: "eur",
+      receiptEmail: recipient.email,
+      metadata: {
+        orderId: order.id,
+        claimToken: order.claim_token,
+        locale: context.locale,
+        ...(customerId != null ? { customerId } : {}),
+      },
+    });
+
+    Sentry.getCurrentScope().setContext("order", {
+      orderId: order.id,
+      paymentId: payment.paymentId,
+    });
+
+    await context.runAppTransaction(async ({ tx, enqueueJob }) => {
+      await tx.order.update({
+        where: { id: order.id },
+        data: { payment_id: payment.paymentId },
+      });
+
+      // Stock can be consired stale once stock is reserved AND payment is successfully created.
+      // Technically theres a small window where stock is reserved but payment creation fails,
+      // but because availability in client UI is optimistic anyway this is simplest solution.
+      await enqueueProductStockInvalidationJobs({
+        productIds: orderItems.map((item) => item.productId),
+        enqueueJob,
+      });
+    });
+
+    if (payment.provider === "STRIPE") {
+      return {
+        provider: "STRIPE" as const,
+        orderId: order.id,
+        paymentIntentClientSecret: payment.paymentIntentClientSecret,
+        amountCents: payment.amountCents,
+      };
+    }
+
+    return {
+      provider: "PAYTRAIL" as const,
+      orderId: order.id,
+      redirectUrl: payment.redirectUrl,
+      amountCents: payment.amountCents,
+    };
+  } catch (error) {
+    await db.$transaction(async (tx) => {
+      await tx.order.delete({
+        where: { id: order.id },
+      });
+
+      await releaseReservedStock({
+        items: orderItems,
+        transaction: tx,
+      });
+    });
+    throw error;
+  }
+};
+
+// A flat fee, free above a subtotal threshold, until simulated shipping
+// replaces it.
+const deliveryPricing = {
+  baseFee: 6.9,
+  discountThreshold: 50,
+  discountPercentage: 100,
+};
+
+const estimateDeliveryFee = (itemsSubtotal: number) => {
+  const { baseFee, discountThreshold, discountPercentage } = deliveryPricing;
+  const qualifies = itemsSubtotal >= discountThreshold;
+
+  return {
+    deliveryFeeCents: Math.round(baseFee * (qualifies ? 1 - discountPercentage / 100 : 1) * 100),
+    appliedDiscountPercentage: qualifies ? discountPercentage : 0,
+    discountThreshold,
+  };
+};
+
+const getValidatedPromoCodeForPayment = async (
+  db: PrismaClient,
+  {
+    promoCode,
+    itemsSubtotal,
+  }: {
+    promoCode: string;
+    itemsSubtotal: number;
+  },
+) => {
+  try {
+    return await getValidatedPromoCode(db, { promoCode, itemsSubtotal });
+  } catch (error) {
+    if (isPromoCodeError(error)) {
+      throw new InvalidPromoCode();
+    }
+
+    throw error;
+  }
+};
+
+const getValidatedPromoCode = async (
+  db: PrismaClient,
+  {
+    promoCode,
+    itemsSubtotal,
+  }: {
+    promoCode: string;
+    itemsSubtotal: number;
+  },
+) => {
+  const promo = await db.promotionCode.findFirst({
+    where: { code: { equals: promoCode, mode: "insensitive" } },
+  });
+
+  if (!promo) {
+    throw new PromoCodeNotFound();
+  }
+
+  const now = new Date();
+
+  if (!promo.is_active) {
+    throw new PromoCodeInactive();
+  }
+
+  if (promo.valid_from && isBefore(now, promo.valid_from)) {
+    throw new PromoCodeNotStarted();
+  }
+
+  if (promo.valid_until && isAfter(now, promo.valid_until)) {
+    throw new PromoCodeExpired();
+  }
+
+  if (promo.usage_limit && promo.times_used >= promo.usage_limit) {
+    throw new PromoCodeUsageLimitReached();
+  }
+
+  const minimumItemsValue = promo.minimum_items_value?.toNumber();
+
+  if (minimumItemsValue && itemsSubtotal < minimumItemsValue) {
+    throw new PromoCodeMinimumItemsValueNotMet({
+      data: { minimumItemsValue },
+    });
+  }
+
+  return {
+    discountType: promo.discount_type,
+    discountValue: promo.discount_value.toNumber(),
+    minimumItemsValue: minimumItemsValue ?? null,
+  };
+};
+
+// Per IP, on top of the per-customer limit in checkout.rateLimit.ts.
+const checkoutPaymentRateLimit = {
+  name: "checkoutPayment",
+  windowMs: 10 * MINUTE_MS,
+  max: 25,
+} satisfies RateLimitPolicy;
+
+export const checkoutRoutes = {
+  createPayment: customerRoute
+    .meta({
+      access: "OPTIONAL_AUTHENTICATED",
+      rateLimit: checkoutPaymentRateLimit,
+    })
+    .post("/checkout/payment")
+    .body(createPaymentBodySchema)
+    .error(InsufficientStock)
+    .error(PurchaseLimitExceeded)
+    .error(ProductsNotPurchasable)
+    .error(PriceMismatch)
+    .error(InvalidPromoCode)
+    .error(AccountExistsForEmail)
+    .handler(async ({ body, context }) => {
+      await consumeCheckoutCreatePaymentRateLimit({
+        authContext: context.authContext,
+        recipientEmail: body.recipient.email,
+      });
+
+      try {
+        return toResponse(await createPaymentInternal(context, body), context.locale);
+      } catch (error) {
+        await releaseCheckoutCreatePaymentRateLimit({
+          authContext: context.authContext,
+          recipientEmail: body.recipient.email,
+        });
+        throw error;
+      }
+    }),
+  getPaymentMethods: customerRoute
+    .get("/checkout/payment-methods")
+    .handler(async ({ context }) =>
+      toResponse(await getCachedPaytrailPaymentMethods(context.config), context.locale),
+    ),
+  estimateDeliveryFee: customerRoute
+    .post("/checkout/estimate-delivery-fee")
+    .body(z.object({ itemsSubtotal: z.number().min(0) }))
+    .handler(async ({ body, context }) =>
+      toResponse(estimateDeliveryFee(body.itemsSubtotal), context.locale),
+    ),
+  validatePromoCode: customerRoute
+    .post("/checkout/validate-promo-code")
+    .body(
+      z.object({
+        promoCode: z.string().trim().min(1).max(1024),
+        itemsSubtotal: z.number().nonnegative(),
+      }),
+    )
+    .error(PromoCodeNotFound)
+    .error(PromoCodeInactive)
+    .error(PromoCodeNotStarted)
+    .error(PromoCodeExpired)
+    .error(PromoCodeUsageLimitReached)
+    .error(PromoCodeMinimumItemsValueNotMet)
+    .handler(async ({ body, context }) => {
+      return toResponse(await getValidatedPromoCode(context.db, body), context.locale);
+    }),
+  // TODO: should work via authContext and orderId as well, not just via short-lived token.
+  pollOrderStatus: customerRoute
+    .get("/checkout/poll-order-status")
+    .query(z.object({ token: z.string().trim().min(1) }))
+    .handler(async ({ query, context }) => {
+      const capability = await verifyOrderCapabilityJwt(context.config, {
+        token: query.token,
+        scope: "order:read",
+      });
+      const order = await context.db.order.findFirst({
+        where: { id: capability.orderId },
+        select: { status: true, payment_id: true },
+      });
+
+      if (!order) {
+        throw new NotFoundError("Order payment status not found");
+      }
+
+      return toResponse(
+        {
+          isPaid: (relevantOrderStatuses as readonly string[]).includes(order.status),
+        },
+        context.locale,
+      );
+    }),
+};

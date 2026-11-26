@@ -1,0 +1,26 @@
+.productsSection {
+  width: 100%;
+  padding: 0 16px;
+  box-sizing: border-box;
+  margin-top: 25px;
+}
+
+.productsLayout {
+  display: block;
+  width: 100%;
+}
+
+.productsListing {
+  width: 100%;
+  min-width: 0;
+  margin: 0 0 40px;
+}
+
+@media (min-width: 1024px) {
+  .productsLayout {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 24px;
+    width: 100%;
+  }
+}

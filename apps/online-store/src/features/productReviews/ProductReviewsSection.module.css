@@ -1,0 +1,24 @@
+.section {
+  margin-top: 48px;
+}
+
+.title {
+  margin: 0 0 20px;
+  color: var(--brand);
+  font-size: var(--font-size-2xl);
+}
+
+.reviewCardButton {
+  all: unset;
+  cursor: pointer;
+}
+
+@media (min-width: 768px) {
+  .section {
+    margin-top: 56px;
+  }
+
+  .title {
+    font-size: var(--font-size-3xl);
+  }
+}

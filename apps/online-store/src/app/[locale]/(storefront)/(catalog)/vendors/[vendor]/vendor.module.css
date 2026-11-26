@@ -1,0 +1,154 @@
+.page {
+  min-height: 100vh;
+  width: 100%;
+}
+
+.content {
+  width: 100%;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.vendorHeader {
+  margin-top: -7.5rem;
+  padding-top: 7.5rem;
+  min-height: calc(50vh + 7.5rem);
+  max-height: calc(60vh + 7.5rem);
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+.heroImage {
+  object-fit: cover;
+  object-position: center;
+  z-index: 0;
+}
+
+.vendorHeaderText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 7.5rem 1.5rem 1.5rem;
+}
+
+.vendorTitle {
+  line-height: 1.1;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  max-width: 90%;
+  color: var(--white-text);
+  text-align: left;
+}
+
+.vendorSlogan {
+  max-width: 90%;
+  color: var(--white-text);
+  text-align: left;
+}
+
+.vendorStoryTrigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--white-text);
+  font-size: var(--font-size-sm);
+  margin: 0;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.favoriteButton {
+  margin-top: 0.5rem;
+  height: 40px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.vendorStory {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  color: var(--foreground);
+}
+
+.vendorStory h1 {
+  line-height: 1.1;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  font-size: var(--font-size-4xl);
+  color: var(--brand);
+}
+
+.vendorStory h2 {
+  line-height: 1.1;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  font-size: var(--font-size-3xl);
+  color: var(--brand);
+}
+
+.vendorStory::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.vendorRating {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: var(--background-container-lowest);
+}
+
+.tagsWrapper {
+  margin-bottom: -1rem;
+  position: static;
+  transform: none;
+}
+
+.tagStyle {
+  background: var(--tag-bg);
+  color: var(--brand-secondary);
+  padding: 5px 15px 5px 15px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: var(--font-size-xxs);
+  letter-spacing: 1px;
+}
+
+@media (min-width: 1024px) {
+  .vendorHeaderText {
+    padding-left: 2rem;
+    padding-bottom: 2rem;
+  }
+
+  .tagStyle {
+    font-size: var(--font-size-sm);
+  }
+
+  .vendorStoryTrigger {
+    padding-top: 2rem;
+    font-size: var(--font-size-md);
+  }
+}
+
+@media (min-width: 1280px) {
+  .vendorTitle {
+    font-size: var(--font-size-7xl);
+  }
+
+  .vendorSlogan {
+    max-width: 100%;
+    font-size: var(--font-size-2xl);
+  }
+
+  .favoriteButton {
+    height: 56px;
+  }
+}

@@ -1,0 +1,31 @@
+.notice {
+  margin: 0;
+  color: var(--foreground-variant);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  text-align: center;
+}
+
+.linkButton {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--brand);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.linkButton:hover {
+  color: var(--brand-hover);
+}
+
+.linkButton:focus-visible {
+  outline: 2px solid var(--brand-hover);
+  outline-offset: 2px;
+}
+
+.modalContent {
+  width: min(100vw - 2rem, 48rem);
+}

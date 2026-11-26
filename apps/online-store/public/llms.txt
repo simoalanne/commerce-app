@@ -1,0 +1,11 @@
+# Acme
+
+> Acme is an example online store built on an owned commerce core.
+
+This file lists the public pages for Large Language Models (LLMs) and crawlers.
+
+- [Storefront](/en): Featured products and categories.
+- [Products](/en/products): Browse and filter all products.
+- [Vendors](/en/vendors): Browse vendors and their products.
+- [Contact](/en/contact): Send a message to customer service.
+- [Terms](/en/terms), [Returns](/en/returns), [Privacy](/en/privacy): Store policies.

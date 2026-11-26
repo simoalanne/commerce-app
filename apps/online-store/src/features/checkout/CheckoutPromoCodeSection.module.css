@@ -1,0 +1,41 @@
+.section {
+  --promo-control-height: 3.35rem;
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgb(0 0 0 / 0.1);
+}
+
+.controlRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.inputWrap {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.actionButton {
+  flex: 0 0 7rem;
+  align-self: flex-start;
+  min-height: var(--promo-control-height);
+  min-width: 7rem;
+  width: 7rem;
+}
+
+@media (max-width: 640px) {
+  .controlRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actionButton {
+    flex-basis: auto;
+    min-width: 0;
+    width: 100%;
+  }
+}

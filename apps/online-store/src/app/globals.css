@@ -1,0 +1,370 @@
+/* TODO: Review these styles and remove anything unnecessary or unused. */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/*TODO: organize by components and/or usage */
+/* clean dublicates last*/
+
+/* Dynamic Next.js font variables defined for IDE/static analysis */
+@property --font-brand {
+  syntax: "*";
+  inherits: true;
+}
+
+@property --font-body {
+  syntax: "*";
+  inherits: true;
+}
+
+@property --font-headline {
+  syntax: "*";
+  inherits: true;
+}
+
+:root {
+  /*COLORS ==========*/
+  --background: #f9f9f9;
+  --background-container-lowest: #ffffff;
+  --background-container-low: #f3f3f3;
+  --background-container-high: #e8e8e8;
+  --background-container-highest: #e2e2e2;
+  --background-dim: #dadada;
+
+  --foreground: #1a1c1c;
+  --foreground-variant: #525252;
+
+  /*GREYS ==========*/
+  --grey-border: #737373;
+  --light-grey-border: #d4d4d4;
+
+  --grey-text: #737373;
+
+  /*ORANGES ========== */
+  --brown: #654700;
+  --creme: #ffdea8; /*color not found but im fairly sure ive seen it in use*/
+  --orange: #ffba20; /*color not found but im fairly sure ive seen it in use*/
+  --warning-text: #804000;
+
+  /*BRAND ========== */
+  --brand: #171717;
+  --brand-hover: #0a0a0a;
+
+  --brand-secondary: #404040;
+
+  --brand-tertiary: #a3a3a3;
+
+  /*============ */
+  --white-text: white;
+  --white-bg: white;
+
+  --black-text: black;
+  --black: black;
+
+  /*TAGS ==========*/
+  --tag-bg: #f5f5f5;
+  --tag-text: #262626;
+
+  /*ERRORS  ==========*/
+  --error: #ba1a1a;
+  --error-container: #ffdad6;
+  --on-error-container: #93000a;
+
+  /*========= Variables below have been renamed  
+		DO NOT delete as there might be some css files
+		that have not been updated yet */
+
+  /*
+  variables changed in Locale, Components, Features
+  Needs to be checked manually, AI did not change everything
+  */
+
+  /* 
+  --on-surface: #1a1c1c;
+  --on-surface-variant: #525252;
+
+  --surface: #f9f9f9;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f3f3f3;
+  --surface-container-high: #e8e8e8;
+  --surface-container-highest: #e2e2e2;
+  --surface-variant: #e2e2e2;
+  --surface-dim: #dadada; 
+  
+  --secondary: #404040;
+
+  --tertiary-container: #654700;
+  --tertiary-fixed: #ffdea8;
+  --tertiary-fixed-dim: #ffba20;
+
+  */
+
+  /*===========   marketplace colors   ==============*/
+
+  --primary: #0a0a0a;
+  --primary-container: #262626;
+  --primary-fixed: #e5e5e5;
+  --primary-fixed-dim: #d4d4d4;
+
+  /*============ not yet ================*/
+
+  --on-primary: #ffffff;
+  --on-primary-container: #a3a3a3;
+  --on-primary-fixed: #0a0a0a;
+  --on-secondary: #ffffff;
+
+  /*RADIUS*/
+  --radius-organic: 1.5rem;
+  --radius-pill: 9999px;
+  --rectangle-image-radius: 0.5rem;
+  --profile-item-radius: 0.3rem;
+
+  /* HEADER ACTIONS */
+  --header-button-size: 2.5rem;
+
+  /*GLASS SURFACE*/
+  --shadow-ambient: 0 20px 40px rgb(0 0 0 / 0.06);
+  --glass-surface: rgb(249 249 249 / 0.8);
+  --glass-surface-strong: rgb(255 255 255 / 0.72);
+  --hero-gradient: radial-gradient(circle at top, #262626 0%, #0a0a0a 68%);
+
+  /* TYPOGRAPHY (rem units) */
+  --font-size-xxs: 0.6875rem; /* 11px */
+  --font-size-xs: 0.75rem; /* 12px */
+  --font-size-sm: 0.875rem; /* 14px */
+  --font-size-md: 1rem; /* 16px (base) */
+  --font-size-lg: 1.125rem; /* 18px */
+  --font-size-xl: 1.25rem; /* 20px */
+  --font-size-2xl: 1.5rem; /* 24px */
+  /* Larger fonts should be clamped so you dont need to write media queries or remember to clamp in each usage */
+  --font-size-3xl: clamp(1.5rem, 1.15rem + 1vw, 1.875rem); /* 24px -> 30px */
+  --font-size-4xl: clamp(1.75rem, 1.25rem + 1.5vw, 2.25rem); /* 28px -> 36px */
+  --font-size-5xl: clamp(2.125rem, 1.35rem + 2.4vw, 3rem); /* 34px -> 48px */
+  --font-size-6xl: clamp(2.5rem, 1.45rem + 3.6vw, 4rem); /* 40px -> 64px */
+  --font-size-7xl: clamp(3rem, 1.6rem + 5vw, 5rem); /* 48px -> 80px */
+
+  /* TRACKING */
+  --tracking-editorial: -0.02em;
+  --tracking-metadata: 0.05em;
+
+  /*???*/
+  --leading-tight: 1.15;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+
+  /* STORE LAYOUT */
+  --storefront-header-height: 4rem;
+  /* Base height for the global storefront header. */
+  --storefront-rail-max: 75rem;
+  /* Maximum readable/content width for normal storefront sections. Makes pages feel less heavy and more breathable. */
+  --storefront-narrow-rail-max: 48rem;
+  /* Maximum width for intentionally narrow content, such as text-heavy pages. Should be optimized for article style content. */
+  --storefront-gutter: clamp(1rem, 4vw, 6rem);
+  /* Minimum side spacing between page content and the browser edge. Ensures that content doesn't hit the edges on mobile while allowing for more generous spacing on larger screens. */
+  --storefront-page-edge: max(
+    var(--storefront-gutter),
+    calc((100vw - var(--storefront-rail-max)) / 2)
+  );
+  /* Shared horizontal page padding that keeps content aligned to the main rail. */
+
+  --storefront-narrow-page-edge: max(
+    max(env(safe-area-inset-left), 16px),
+    calc((50vw - 600px + 16px) * 0.5)
+  );
+  /* A tighter page edge used for landing pages and city layouts. */
+
+  --checkout-rail-max: 60rem;
+  /* Maximum width for checkout/payment flows, matching the wider existing checkout shell. */
+  --checkout-gutter: clamp(1rem, 4vw, 1.5rem);
+  /* Tighter checkout edge spacing that preserves the current payment-page feel on small and medium screens. */
+  --checkout-page-edge: max(var(--checkout-gutter), calc((100vw - var(--checkout-rail-max)) / 2));
+  /* Shared horizontal page padding for checkout pages and header, aligned to the checkout rail. */
+  --storefront-section-padding-block: clamp(3rem, 6vw, 5rem);
+  /* Shared vertical spacing above and below major storefront sections. */
+
+  --secondary-fixed: #3b82f6;
+  --on-secondary-fixed: #fff;
+
+  /* Radix UI dynamic variables (defined here to prevent IDE warnings) */
+  --radix-popover-trigger-width: 0px;
+  --radix-popover-content-transform-origin: 0px;
+  --radix-collapsible-content-height: 0px;
+  --radix-collapsible-content-width: 0px;
+}
+
+html {
+  background: var(--background);
+  scroll-behavior: smooth;
+  scrollbar-gutter: stable;
+  /* DO NOT ADD overflow-x: --> Breaks <Modal>; */
+
+  /*stops horiz. scrolling and bounce effect*/
+  /* overscroll-behavior: none; */
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body), sans-serif;
+  font-size: var(--font-size-md);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* overflow-x here stops horizontal scroll 
+	w/out breaking the <Modal> */
+  overflow-x: clip;
+}
+
+::selection {
+  background: var(--secondary-fixed);
+  color: var(--on-secondary-fixed);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-headline), sans-serif;
+  letter-spacing: var(--tracking-editorial);
+}
+
+/* Apply unified rem-based sizes */
+h1 {
+  font-size: var(--font-size-4xl);
+  line-height: var(--leading-tight);
+}
+h2 {
+  font-size: var(--font-size-3xl);
+  line-height: var(--leading-tight);
+}
+h3 {
+  font-size: var(--font-size-2xl);
+  line-height: var(--leading-normal);
+}
+h4 {
+  font-size: var(--font-size-xl);
+  line-height: var(--leading-normal);
+}
+h5 {
+  font-size: var(--font-size-lg);
+  line-height: var(--leading-normal);
+}
+h6 {
+  font-size: var(--font-size-md);
+  line-height: var(--leading-normal);
+}
+
+p {
+  font-size: var(--font-size-md);
+  margin-bottom: 1rem;
+}
+small {
+  font-size: var(--font-size-sm);
+}
+
+[data-brand],
+.font-brand {
+  font-family: var(--font-brand), sans-serif;
+}
+
+/* Reusable utility classes */
+.primaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.9rem 1.4rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--brand);
+  color: var(--white-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.primaryButton:hover {
+  background: var(--primary-container);
+}
+
+.storefrontPage {
+  min-height: 100vh;
+}
+
+.storefrontSection {
+  padding: var(--storefront-section-padding-block) var(--storefront-page-edge);
+}
+
+.storefrontLandingHeaderOffset {
+  padding-top: calc(var(--storefront-section-padding-block) + 4rem);
+}
+
+.storefrontRail,
+.storefrontNarrowRail {
+  width: 100%;
+  margin-inline: auto;
+}
+
+.storefrontRail {
+  max-width: var(--storefront-rail-max);
+}
+
+.storefrontNarrowRail {
+  max-width: var(--storefront-narrow-rail-max);
+}
+
+.storefrontNarrowPageEdge {
+  --storefront-page-edge: var(--storefront-narrow-page-edge);
+}
+
+.heroImageFrame {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.heroImageFrame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 0.4);
+  pointer-events: none;
+}
+
+.heroImageFrame > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 60% center;
+  pointer-events: none;
+}
+
+.heroImageOverlayContent {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* For markdown rich editor */
+.quotes blockquote {
+  border-left: 4px solid #d1d5db;
+  padding-left: 1rem;
+  margin: 1.5rem 0;
+  font-style: italic;
+  color: #4b5563;
+}
+
+@media (prefers-color-scheme: dark) {
+  .quotes blockquote {
+    border-left-color: #4b5563;
+    color: #9ca3af;
+  }
+}

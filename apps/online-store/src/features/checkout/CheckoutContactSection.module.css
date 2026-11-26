@@ -1,0 +1,147 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.statusShell {
+  min-height: 2.9rem;
+}
+
+.statusBlock {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-height: 2.9rem;
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 1.75rem;
+}
+
+.statusIdentity {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  color: rgb(24 24 24);
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  background: rgb(238 238 238);
+  color: rgb(24 24 24);
+  font-size: 0.8rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.guestLabel {
+  color: rgb(70 70 70);
+  font-size: 0.95rem;
+}
+
+.email {
+  overflow: hidden;
+  font-size: 0.95rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statusAction,
+.menuButton,
+.menuAction {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: rgb(70 70 70);
+  font: inherit;
+  cursor: pointer;
+}
+
+.statusAction:hover,
+.menuButton:hover,
+.menuAction:hover {
+  color: rgb(24 24 24);
+}
+
+.statusAction {
+  font-size: 0.95rem;
+  text-decoration: underline;
+  text-underline-offset: 0.14em;
+}
+
+.menuButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.menuButton:hover {
+  background: rgb(244 244 244);
+}
+
+.menu {
+  min-width: 8rem;
+  padding: 0.35rem;
+  border: 1px solid rgb(0 0 0 / 0.08);
+  border-radius: 0.7rem;
+  background: #fff;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.08);
+}
+
+.menuAction {
+  display: block;
+  width: 100%;
+  padding: 0.45rem 0.8rem;
+  border-radius: 0.45rem;
+  text-align: left;
+  transition:
+    background-color 140ms ease,
+    transform 140ms ease,
+    color 140ms ease;
+}
+
+.menuAction:hover,
+.menuAction:focus-visible {
+  background: rgb(244 244 244);
+  color: rgb(24 24 24);
+  transform: translateX(2px);
+}
+
+.helperText {
+  color: rgb(110 110 110);
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.fieldGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.fieldGridFull {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 640px) {
+  .fieldGrid {
+    grid-template-columns: 1fr;
+  }
+}

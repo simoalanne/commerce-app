@@ -1,0 +1,136 @@
+.paymentSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.secureText {
+  color: var(--foreground-variant);
+  font-size: var(--font-size-sm);
+  line-height: 1.45;
+}
+
+.methodCard {
+  display: flex;
+  flex-direction: column;
+}
+
+.methodRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  padding: 0.85rem;
+  border: 1px solid var(--light-grey-border);
+  border-radius: 0.65rem;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 180ms ease,
+    border-radius 180ms ease,
+    background-color 180ms ease;
+}
+
+.methodRow:focus-visible {
+  outline: 2px solid var(--brand-hover);
+  outline-offset: 0.25rem;
+}
+
+.methodRowSelected {
+  border-color: var(--brand);
+  border-radius: 0.65rem 0.65rem 0 0;
+  background: color-mix(in srgb, var(--brand) 8%, transparent);
+}
+
+.methodRowError {
+  border-color: var(--error);
+}
+
+.selectionIndicator {
+  width: 1rem;
+  height: 1rem;
+  border: 1px solid var(--light-grey-border);
+  border-radius: 999px;
+  background: var(--background);
+}
+
+.selectionIndicatorSelected {
+  border: 0.25rem solid var(--brand);
+}
+
+.methodLabel {
+  color: var(--foreground);
+  font-size: var(--font-size-sm);
+  line-height: 1.45;
+}
+
+.logoRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.3rem;
+}
+
+.methodLogoWrapper {
+  position: relative;
+  width: 4.75rem; /* Matches your max-width from before */
+  height: 1.65rem;
+}
+
+.methodLogo {
+  display: block;
+  padding: 0.15rem 0.3rem;
+  border: 1px solid var(--light-grey-border);
+  border-radius: 0.25rem;
+  background: var(--background);
+  object-fit: contain;
+}
+
+.redirectNoticeFrame {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    grid-template-rows 220ms ease,
+    opacity 180ms ease;
+}
+
+.redirectNoticeFrameOpen {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.redirectNotice {
+  min-height: 0;
+  padding: 0.85rem;
+  border: 1px solid var(--light-grey-border);
+  border-top: 0;
+  border-radius: 0 0 0.65rem 0.65rem;
+  background: var(--background-container-low);
+  color: var(--foreground);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  text-align: center;
+}
+
+.errorText {
+  color: var(--error);
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+@media (max-width: 640px) {
+  .methodRow {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .logoRow {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    padding-left: 1.8rem;
+  }
+}

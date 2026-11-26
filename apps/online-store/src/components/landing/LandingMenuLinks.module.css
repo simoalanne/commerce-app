@@ -1,0 +1,64 @@
+.link {
+  --nav-link-row-height: 1.5em;
+  font-size: var(--font-size-md);
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.link:hover .linkLabelTrack {
+  transform: translateY(calc(-1 * var(--nav-link-row-height)));
+}
+
+.link:hover .linkLabelSecondary {
+  border-bottom: 2px solid currentColor;
+  color: #fff;
+}
+
+.linkLabelViewport {
+  display: inline-flex;
+  height: var(--nav-link-row-height);
+}
+
+.linkLabelTrack {
+  display: inline-flex;
+  flex-direction: column;
+  transition: transform 250ms ease-in-out;
+}
+
+.linkLabelCopy {
+  min-height: var(--nav-link-row-height);
+  color: #fff;
+}
+
+/* Static (non-animated) link*/
+.linkStatic {
+  display: flex;
+  align-items: center;
+  justify-content: left;
+
+  color: var(--black-text);
+  text-decoration: none;
+
+  padding: 0;
+  margin: 0;
+}
+
+.linkStatic:active {
+  background: rgba(113, 156, 116, 0.317);
+  border-bottom-right-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+/* Side Menu */
+.sidemenuLinksWrapper {
+  display: flex;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.sidemenuLink {
+  padding: 20px 20px 20px 10px;
+  font-size: var(--font-size-xl);
+  font-family: var(--font-headline), sans-serif;
+}

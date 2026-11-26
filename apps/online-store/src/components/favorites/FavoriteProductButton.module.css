@@ -1,0 +1,80 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.button:hover,
+.button:focus-visible {
+  transform: translateY(-2px);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--light-grey-border);
+  outline-offset: 3px;
+}
+
+.button:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.overlay {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 3;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  backdrop-filter: blur(10px);
+}
+
+.inline {
+  gap: 10px;
+  min-width: 48px;
+  height: 48px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+}
+
+.inactive {
+  background: var(--brand);
+  color: var(--white-text);
+}
+
+.active {
+  background: rgba(177, 35, 67, 0.92);
+  border-color: rgba(177, 35, 67, 0.92);
+  color: var(--white-text);
+}
+
+.remove {
+  background: rgba(185, 28, 28, 0.92);
+  border-color: rgba(185, 28, 28, 0.92);
+  color: var(--white-text);
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+}
+
+.iconFilled {
+  fill: currentColor;
+}
+
+.label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1;
+}

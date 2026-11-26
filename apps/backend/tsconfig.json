@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "types": ["bun", "node"]
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules", "generated"]
+}

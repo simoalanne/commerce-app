@@ -1,0 +1,42 @@
+.panelContent {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px 24px;
+}
+
+.sortSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sortLabel {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--foreground, #111);
+  margin: 0;
+}
+
+.divider {
+  height: 1px;
+  background-color: var(--background-container-high, #e5e5e5);
+  margin: 4px 0;
+}
+
+.showProductsBtn {
+  width: 100%;
+  padding: 16px;
+  background-color: var(--brand);
+  color: white;
+  border: none;
+  border-radius: var(--radius-pill, 9999px);
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.showProductsBtn:hover {
+  background-color: var(--brand-hover, #004d2c);
+}

@@ -1,0 +1,309 @@
+/*  Base  */
+
+.header {
+  --header-height: 4rem;
+  --header-button-size: 2rem;
+  --header-text-color: white;
+
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  color: var(--header-text-color);
+  z-index: 100;
+}
+
+/*  Background modes  */
+
+.transparent {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: transparent;
+  transition:
+    background-color 300ms ease,
+    box-shadow 300ms ease;
+}
+
+.transparent.scrolled {
+  background-color: var(--brand, #262626);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.solid {
+  position: sticky;
+  top: 0;
+  background: var(--brand);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+/*  Grid layout  */
+
+.inner {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  grid-template-areas: "left-area search logo right-area";
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  height: var(--header-height, 4rem);
+  padding: 0 var(--storefront-page-edge);
+}
+
+.leftSlot {
+  grid-area: left-area;
+  display: flex;
+  align-items: center;
+}
+
+.searchSlot {
+  grid-area: search;
+  display: flex;
+  align-items: center;
+}
+
+.logoSlot {
+  grid-area: logo;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+}
+
+.leftAlignedLogo {
+  justify-content: flex-start;
+}
+
+.navSlot {
+  display: none;
+}
+
+.rightSlot {
+  grid-area: right-area;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/*  Icon button pill (cart, auth, search)  */
+
+.iconButton {
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  background: transparent;
+  transition:
+    background-color 160ms ease,
+    color 300ms ease;
+}
+
+.iconButton.scrolledIcon {
+  border-color: #fff;
+  background: var(--brand-secondary);
+}
+
+/*  Sidebar menu button  */
+
+.leftSlot button {
+  display: inline-flex;
+  height: var(--header-button-size);
+  width: var(--header-button-size);
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+}
+
+.sidebarMenuLinks {
+  display: flex;
+  flex-direction: column;
+}
+
+/*  Spacer (for fixed headers)  */
+
+.headerSpacer {
+  width: 100%;
+  height: calc(var(--header-height, 4rem) + 2rem);
+  transition: height 250ms ease;
+}
+
+/*  Storefront-specific slots  */
+
+.searchBtn {
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  position: relative;
+  display: inline-flex;
+  height: var(--header-button-size);
+  width: var(--header-button-size);
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--header-text-color);
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 300ms ease;
+}
+
+.searchBtn.scrolledIcon {
+  border-color: #fff;
+  background: var(--brand-secondary);
+}
+
+.searchBtn:hover {
+  transform: translateY(-2px);
+}
+
+.addressSlot {
+  display: none;
+}
+
+.addressBtn {
+  display: none;
+}
+
+/*  Checkout-specific: return link  */
+
+.returnLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: #fff;
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.returnLink:hover {
+  opacity: 0.5;
+}
+
+/*  Nav link animations (shared between MenuLinks / LandingMenuLinks)  */
+
+.link {
+  --nav-link-row-height: 1.5em;
+  font-size: var(--font-size-md);
+  overflow: hidden;
+}
+
+.linkLabelViewport {
+  display: inline-flex;
+  height: var(--nav-link-row-height);
+}
+
+.linkLabelTrack {
+  display: inline-flex;
+  flex-direction: column;
+  transition: transform 250ms ease-in-out;
+}
+
+.linkLabelCopy {
+  min-height: var(--nav-link-row-height);
+  color: var(--header-text-color);
+  transition: color 300ms ease;
+}
+
+.link:hover .linkLabelTrack {
+  transform: translateY(calc(-1 * var(--nav-link-row-height)));
+}
+
+.link:hover .linkLabelSecondary {
+  border-bottom: 2px solid currentcolor;
+}
+
+/*  Responsive  */
+
+@media (max-width: 400px) {
+  .returnLinkLabel {
+    display: none;
+  }
+
+  .returnLink {
+    padding: 1rem;
+  }
+}
+
+@media (min-width: 480px) {
+  .rightSlot {
+    gap: 0.75rem;
+  }
+}
+
+@media (min-width: 1124px) {
+  .inner {
+    grid-template-columns: auto auto 1fr auto auto;
+    grid-template-areas: "logo nav spacer search right-area";
+    gap: 1rem;
+  }
+
+  .inner.hasAddress {
+    grid-template-columns: auto auto auto 1fr auto auto;
+    grid-template-areas: "logo address nav spacer search right-area";
+  }
+
+  .leftSlot {
+    display: none;
+  }
+
+  .logoSlot {
+    justify-content: flex-start;
+  }
+
+  .addressSlot {
+    grid-area: address;
+    display: flex;
+    align-items: center;
+  }
+
+  .navSlot {
+    grid-area: nav;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    padding-left: 1.5rem;
+    gap: 2.5rem;
+  }
+
+  .centerLinks {
+    display: flex;
+    align-items: center;
+    gap: 2.5rem;
+  }
+
+  .addressBtn {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    text-decoration: none;
+    background-color: transparent;
+    margin-left: 10px;
+    border-radius: 9999px;
+    padding: 0.25rem 0.5rem;
+    transition:
+      background-color 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+
+  .addressBtn p {
+    display: flex;
+    color: var(--header-text-color);
+    font-weight: 500;
+    font-size: var(--font-size-md);
+    margin: 0;
+    transition: color 300ms ease;
+  }
+
+  .addressBtn:hover,
+  .addressBtn:focus-visible {
+    background: rgb(38 38 38 / 0.06);
+    box-shadow: 0 0 0 1px rgb(38 38 38 / 0.08);
+  }
+}

@@ -1,0 +1,204 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.title {
+  color: var(--brand);
+  font-size: var(--font-size-xl);
+  line-height: var(--leading-tight);
+}
+
+.panel {
+  overflow: hidden;
+  border: 1px solid var(--light-grey-border);
+  border-radius: 0.65rem;
+  background: var(--background);
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  padding: 0.95rem 1rem;
+  border: 0;
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--brand-hover);
+  outline-offset: -0.25rem;
+}
+
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  flex: 0 0 auto;
+  border: 1px solid var(--light-grey-border);
+  border-radius: 0.3rem;
+  background: var(--background);
+  color: var(--background);
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.checkboxSelected {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: var(--background);
+}
+
+.triggerText {
+  font-size: var(--font-size-sm);
+  line-height: 1.45;
+}
+
+.contentFrame {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    grid-template-rows 220ms ease,
+    opacity 180ms ease;
+}
+
+.contentFrameOpen {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.content {
+  min-height: 0;
+  overflow: hidden;
+  padding: 0 1rem;
+  border-top: 0 solid transparent;
+  background: var(--background-container-low);
+  transition:
+    padding 220ms ease,
+    border-color 180ms ease;
+}
+
+.contentFrameOpen .content {
+  padding: 1rem;
+  border-top-width: 1px;
+  border-top-color: var(--light-grey-border);
+}
+
+.tipSelector {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tipOptions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--light-grey-border);
+  border-radius: 0.65rem;
+  background: var(--background);
+}
+
+.tipButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  min-height: 3.25rem;
+  padding: 0.7rem 0.85rem;
+  border: 0;
+  border-right: 1px solid var(--light-grey-border);
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.tipButton:last-child {
+  border-right: 0;
+}
+
+.tipButton:hover,
+.tipButtonSelected {
+  background: color-mix(in srgb, var(--brand-hover) 10%, transparent);
+  color: var(--brand-hover);
+}
+
+.tipButtonSelected {
+  font-weight: 700;
+}
+
+.tipButtonAmount {
+  color: var(--foreground-variant);
+  font-size: 0.78rem;
+  font-weight: 400;
+}
+
+.customTipRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+}
+
+.customTipInput {
+  min-height: 3.25rem;
+  font-size: var(--font-size-sm);
+}
+
+.customTipButton {
+  min-height: 3.25rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--light-grey-border);
+  border-radius: 0.65rem;
+  background: var(--background);
+  color: var(--brand);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    opacity 160ms ease;
+}
+
+.customTipButton:not(:disabled):hover {
+  border-color: var(--brand-hover);
+  background: color-mix(in srgb, var(--brand-hover) 8%, transparent);
+}
+
+.customTipButton:disabled {
+  color: var(--foreground-variant);
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.thankYouText {
+  margin: 0;
+  color: var(--foreground);
+  font-size: var(--font-size-sm);
+  line-height: 1.45;
+}
+
+@media (max-width: 640px) {
+  .customTipRow {
+    grid-template-columns: 1fr;
+  }
+}

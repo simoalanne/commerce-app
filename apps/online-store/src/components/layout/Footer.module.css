@@ -1,0 +1,167 @@
+.footer {
+  background-color: var(--background);
+  color: var(--brand);
+  height: auto;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  padding-bottom: 3rem;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  /* max-width: 60%; */
+  /* padding-right: 10px; */
+}
+.brand h2 {
+  /* margin-left: 10px; */
+  margin-bottom: 1.2rem;
+  color: var(--brand);
+  font-weight: bold;
+  font-size: 30px;
+  -webkit-text-stroke: 2px var(--brand);
+}
+
+.brand p {
+  /* margin-left: 10px; */
+  color: var(--brand);
+  font-weight: bold;
+  font-size: 20px;
+  width: min(100%, 500px);
+}
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sectionTitle {
+  font-size: 1.1rem;
+  padding-bottom: 1.2rem;
+  color: var(--brand);
+  font-weight: bold;
+  margin: 0;
+}
+
+.navLink {
+  color: inherit;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+  font-size: 0.8rem;
+}
+
+.navLink:hover {
+  opacity: 0.75;
+}
+
+.footerBottom {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.year {
+  font-size: 0.95rem;
+}
+
+.bottomMenu {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.95rem;
+}
+
+.paymentMethods {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+  margin-bottom: 20px;
+}
+
+.paymentMethodsRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  width: min(100%, 660px);
+}
+
+.paymentMethodLogo {
+  height: 22px;
+  width: auto;
+  object-fit: contain;
+}
+
+.bottomRightGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.languageSwitcher {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.langLink {
+  color: #4a6b52;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.langLink:hover {
+  color: var(--brand);
+}
+
+.activeLang {
+  color: var(--brand);
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.langDivider {
+  opacity: 0.4;
+  user-select: none;
+}
+
+@media (min-width: 768px) {
+  .container {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .nav {
+    flex-direction: row;
+    gap: 100px;
+  }
+
+  .footerBottom {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+}
+
+@media (max-width: 1024px) {
+  .container {
+    gap: 0;
+    flex-wrap: nowrap;
+  }
+
+  .paymentMethodsRow {
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+}

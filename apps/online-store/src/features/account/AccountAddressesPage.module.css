@@ -1,0 +1,224 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.headerTitle {
+  color: var(--brand);
+  font-size: var(--font-size-5xl);
+  font-weight: 800;
+  line-height: 0.95;
+}
+
+.headerText {
+  max-width: 38rem;
+  margin-top: 0.75rem;
+  color: var(--foreground-variant);
+  line-height: 1.6;
+  font-size: var(--font-size-md);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.countChip,
+.helperChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  padding: 0 0.95rem;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--error) 10%, white);
+  color: var(--error);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.addButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0 1rem;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--brand);
+  color: var(--white-text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.addButton:hover {
+  background: var(--brand-hover);
+}
+
+.addButton:focus-visible {
+  outline: 2px solid var(--brand-hover);
+  outline-offset: 2px;
+}
+
+.addButton:active {
+  transform: scale(0.98);
+}
+
+.surface {
+  padding: 1rem;
+  border: 1px solid var(--light-grey-border);
+  border-radius: var(--profile-item-radius);
+  background: var(--background-container-lowest);
+  box-shadow: var(--shadow-ambient);
+}
+
+.list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.emptyState {
+  padding: 1.5rem;
+  border: 1px solid var(--light-grey-border);
+  border-radius: var(--profile-item-radius);
+  background: linear-gradient(
+    180deg,
+    var(--background-container-lowest) 0%,
+    var(--background-container-low) 100%
+  );
+}
+
+.emptyTitle {
+  color: var(--brand);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+}
+
+.emptyText {
+  margin-top: 0.65rem;
+  color: var(--foreground-variant);
+  line-height: 1.6;
+  font-size: var(--font-size-md);
+}
+
+/*.errorBox {
+	margin-top: 1rem;
+	padding: 1rem;
+	border-radius: 1rem;
+	background: var(--background-container-low);
+	font-size: var(--font-size-sm);
+	overflow-x: auto;
+}*/
+
+.modalContent {
+  width: min(100vw - 2rem, 38rem);
+}
+
+.modalBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.modalError {
+  color: var(--error);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+.primaryButton,
+.secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.85rem;
+  padding: 0 1.1rem;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease,
+    opacity 140ms ease;
+}
+
+.primaryButton {
+  border: none;
+  background: var(--brand);
+  color: var(--white-text);
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: var(--brand-hover);
+}
+
+.secondaryButton {
+  border: 1px solid var(--light-grey-border);
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.secondaryButton:hover:not(:disabled) {
+  background: var(--background-container-high);
+  border-color: var(--grey-border);
+}
+
+.primaryButton:focus-visible,
+.secondaryButton:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.primaryButton:active:not(:disabled),
+.secondaryButton:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+@media (min-width: 768px) {
+  .surface {
+    padding: 1.25rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .modalActions {
+    flex-direction: column-reverse;
+  }
+
+  .primaryButton,
+  .secondaryButton {
+    width: 100%;
+  }
+}

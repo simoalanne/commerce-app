@@ -1,0 +1,361 @@
+.page {
+  padding-bottom: 4rem;
+}
+
+.hero {
+  position: relative;
+  display: flex;
+  min-height: 38rem;
+  align-items: center;
+  justify-content: center;
+  padding: 8rem 1.5rem 7rem;
+  background: linear-gradient(
+    180deg,
+    var(--brand) 0%,
+    rgb(10 10 10 / 0.92) 30%,
+    var(--background) 100%
+  );
+}
+
+.heroInner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  max-width: 46rem;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.statusIcon {
+  display: flex;
+  height: 6rem;
+  width: 6rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  box-shadow: 0 20px 40px rgb(0 0 0 / 0.2);
+}
+
+.statusIconConfirmed {
+  background: var(--brand);
+  color: var(--white-text);
+}
+
+.statusIconPending {
+  background: rgb(255 255 255 / 0.12);
+  color: #fff8df;
+  backdrop-filter: blur(10px);
+}
+
+.heroTitle {
+  margin-top: 1.5rem;
+  font-size: var(--font-size-7xl);
+  line-height: 0.94;
+  color: var(--white-text);
+}
+
+.heroBody {
+  margin-top: 1rem;
+  max-width: 34rem;
+  color: var(--brand);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.primaryButton,
+.secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  padding: 0.95rem 1.5rem;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.primaryButton:hover,
+.secondaryButton:hover {
+  transform: translateY(-1px);
+}
+
+.primaryButton {
+  background: var(--brand);
+  color: var(--white-text);
+}
+
+.secondaryButton {
+  border: 1px solid rgb(255 255 255 / 0.24);
+  background: rgb(255 255 255 / 0.08);
+  color: var(--white-text);
+  backdrop-filter: blur(10px);
+}
+
+.content {
+  position: relative;
+  z-index: 2;
+  max-width: 76rem;
+  margin: -5rem auto 0;
+  padding: 0 1.5rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(18rem, 0.8fr);
+  gap: 1.75rem;
+  align-items: start;
+}
+
+.card,
+.infoCard {
+  border-radius: var(--radius-organic);
+  background: var(--background-container-lowest);
+  box-shadow: var(--shadow-ambient);
+}
+
+.card {
+  padding: 1.75rem;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+
+.cardHeaderIcon {
+  color: var(--brand);
+}
+
+.cardTitle {
+  font-size: 1.6rem;
+  color: var(--brand);
+}
+
+.itemList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.itemRow {
+  display: grid;
+  grid-template-columns: 5rem minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+}
+
+.itemImage,
+.itemImageFallback {
+  height: 5rem;
+  width: 5rem;
+  border-radius: 1rem;
+  background: var(--background-container-low);
+}
+
+.itemImageWrapper {
+  position: relative;
+  width: 5rem;
+  height: 5rem;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.itemImage {
+  object-fit: cover;
+}
+
+.itemImageFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--brand);
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.itemName {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.itemMeta {
+  margin-top: 0.25rem;
+  color: var(--foreground-variant);
+  line-height: 1.45;
+}
+
+.itemPrice {
+  font-size: 1.05rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.totals {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-top: 1.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--light-grey-border);
+}
+
+.totalRow,
+.totalRowStrong {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--foreground-variant);
+}
+
+.totalRowStrong {
+  color: var(--foreground);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.sideColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.infoCard {
+  padding: 1.4rem;
+}
+
+.infoIcon {
+  color: var(--brand);
+}
+
+.infoTitle {
+  margin-top: 0.85rem;
+  font-size: 1.1rem;
+  color: var(--brand);
+}
+
+.infoBody {
+  margin-top: 0.45rem;
+  color: var(--foreground-variant);
+  line-height: 1.65;
+}
+
+.referralCode {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px dashed var(--grey-border);
+  border-radius: 1rem;
+  background: var(--background-container-low);
+  color: var(--brand);
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  word-break: break-word;
+}
+
+.statusBanner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem;
+  border-radius: 1rem;
+  margin: 0 auto 1rem;
+  text-align: center;
+}
+
+.statusBanner p {
+  margin: 0;
+}
+
+.statusBannerPending {
+  background: rgb(255 222 168 / 0.32);
+  color: var(--brown);
+}
+
+.fallbackTitle {
+  font-size: 2rem;
+  color: var(--brand);
+}
+
+.calendarLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: fit-content;
+  margin-top: 1rem;
+  border: 1px solid var(--light-grey-border);
+  border-radius: var(--radius-pill);
+  padding: 0.75rem 1.25rem;
+  background: var(--background-container-lowest);
+  color: var(--foreground);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.calendarLink svg {
+  color: var(--brand);
+}
+
+.calendarLink:hover {
+  transform: translateY(-1px);
+  background: var(--background-container-low);
+  border-color: var(--grey-border);
+}
+
+.calendarLink:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 960px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .hero {
+    min-height: 32rem;
+    padding: 7rem 1rem 6rem;
+  }
+
+  .content,
+  .fallbackWrap {
+    padding: 0 1rem;
+  }
+
+  .card {
+    padding: 1.25rem;
+  }
+
+  .itemRow {
+    grid-template-columns: 1fr;
+  }
+
+  .itemPrice {
+    white-space: normal;
+  }
+}

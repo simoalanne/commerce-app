@@ -1,0 +1,34 @@
+.headerLink {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  text-decoration: none;
+}
+
+.footerLogo {
+  display: inline-flex;
+  margin-bottom: 1rem;
+}
+
+.wordmark {
+  display: block;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.header {
+  font-size: 1.75rem;
+}
+
+.footer {
+  font-size: 2.5rem;
+}
+
+.white {
+  color: white;
+}
+
+.dark {
+  color: var(--brand);
+}

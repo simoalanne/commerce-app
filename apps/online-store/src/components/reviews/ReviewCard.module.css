@@ -1,0 +1,145 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  width: 225px;
+  height: 390px;
+  border: 1px solid rgba(16, 24, 40, 0.08);
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.05),
+    0 2px 4px rgba(16, 24, 40, 0.05);
+  border-radius: 0.5rem;
+  background: #ffffff;
+  overflow: hidden;
+  position: relative;
+}
+
+.cardNoImage {
+  height: 240px;
+}
+
+.imageWrapper {
+  flex-shrink: 0;
+  height: 180px;
+  background: #ffffff;
+  position: relative;
+}
+
+.image {
+  object-fit: cover;
+}
+
+.content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 20px 20px;
+  text-align: center;
+  overflow: hidden;
+  min-height: 0;
+  background: #ffffff;
+}
+
+.comment {
+  max-width: 28ch;
+  margin: 0;
+  color: var(--brand);
+  font-size: 1rem;
+  line-height: 1.65;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: break-word;
+}
+
+.commentNoImage {
+  -webkit-line-clamp: 3;
+}
+
+.commentWrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  width: 100%;
+}
+
+.meta {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  flex-shrink: 0;
+}
+
+.customerRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.customerName {
+  margin: 0;
+  color: var(--brand);
+  font-weight: 700;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.verifiedBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 999px;
+  background: #101828;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.targetText,
+.targetLink {
+  position: relative;
+  display: block;
+  align-items: center;
+  justify-content: center;
+  min-height: auto;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: #636363;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.targetText::after,
+.targetLink::after {
+  display: none;
+}
+
+.targetLink:hover,
+.targetLink:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
+}
+
+.targetLink:focus-visible {
+  outline: none;
+}
+
+@media (max-width: 640px) {
+  .card {
+    width: min(82vw, 320px);
+  }
+}

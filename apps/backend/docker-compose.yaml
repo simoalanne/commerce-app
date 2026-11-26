@@ -1,0 +1,31 @@
+# Tests will automatically use the acme_test db. For local dev db copy below and set in .env:
+# DATABASE_URL=postgresql://postgres:postgres@localhost:5432/acme_dev
+
+services:
+  dev-db:
+    image: postgis/postgis:18-3.6
+    container_name: acme-dev-postgis
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: acme_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pgdata_dev:/var/lib/postgresql
+
+  test-db:
+    image: postgis/postgis:18-3.6
+    container_name: acme-test-postgis
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: acme_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pgdata_test:/var/lib/postgresql
+
+volumes:
+  pgdata_dev:
+  pgdata_test:

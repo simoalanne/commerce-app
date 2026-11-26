@@ -1,0 +1,203 @@
+.page {
+  display: grid;
+  gap: 1.5rem;
+}
+
+/*.intro {
+	align-items: center;
+	justify-content: center;
+	padding: 1rem;
+	border: 1px solid var(--light-grey-border);
+	border-radius: var(--profile-item-radius);
+	background: linear-gradient(
+		180deg,
+		var(--background-container-lowest) 0%,
+		var(--background-container-low) 100%
+	);
+	box-shadow: var(--shadow-ambient);
+}*/
+
+.eyebrow {
+  margin-bottom: 0.5rem;
+  color: var(--brand);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.title {
+  color: var(--brand);
+  font-size: var(--font-size-5xl);
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+/* .description {
+	max-width: 42rem;
+	margin-top: 0.9rem;
+	color: var(--foreground-variant);
+	line-height: 1.7;
+} */
+
+.cardGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.card {
+  display: grid;
+  gap: 1rem;
+  padding: 1.5rem;
+  border: 1px solid rgba(191, 201, 188, 0.9);
+  border-radius: var(--profile-item-radius);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: var(--shadow-ambient);
+}
+
+.dangerCard {
+  border-color: rgba(179, 76, 58, 0.28);
+  background: linear-gradient(180deg, rgba(255, 247, 244, 0.94) 0%, rgba(255, 252, 251, 0.9) 100%);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.cardTitle {
+  color: var(--brand);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+}
+
+.cardText {
+  margin-top: 0.4rem;
+  color: var(--foreground-variant);
+  line-height: 1.6;
+}
+
+.mutedText {
+  color: var(--foreground-variant);
+  font-size: var(--font-size-md);
+  line-height: 1.6;
+}
+
+.infoList {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.infoRow {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(191, 201, 188, 0.8);
+  border-radius: var(--profile-item-radius);
+  background: rgba(249, 249, 249, 0.95);
+}
+
+.infoLabel {
+  color: var(--foreground-variant);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.infoValue {
+  color: var(--foreground);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.actions {
+  display: flex;
+  gap: 20px;
+  justify-content: flex-start;
+}
+
+.primaryButton {
+  padding: 0.9rem 1.3rem;
+  border: none;
+  border-radius: var(--profile-item-radius);
+  background: var(--brand);
+  color: var(--white-text);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.dangerButton {
+  padding: 0.9rem 1.3rem;
+  border: none;
+  border-radius: var(--profile-item-radius);
+  background: var(--error);
+  color: var(--white-text);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.primaryButton:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.dangerButton:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.error {
+  color: var(--error);
+  font-size: var(--font-size-md);
+  line-height: 1.5;
+}
+
+.success {
+  color: var(--brand);
+  font-size: var(--font-size-md);
+  line-height: 1.5;
+}
+
+.passwordTextFieldToggle {
+  composes: passwordTextFieldToggle from "../../components/auth/PasswordTextFieldToggle.module.css";
+}
+
+@media (min-width: 768px) {
+  .card {
+    padding: 1.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .cardGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    align-items: stretch;
+  }
+
+  .column {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .column > *:last-child {
+    flex: 1;
+  }
+
+  .fullWidthCard {
+    grid-column: 1 / -1;
+  }
+}

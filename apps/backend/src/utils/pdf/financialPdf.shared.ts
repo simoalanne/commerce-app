@@ -1,0 +1,113 @@
+import type { Content, TableCell } from "pdfmake";
+import pdfMake from "pdfmake";
+// @ts-expect-error no types available, no point declaring for this usage
+import robotoFonts from "pdfmake/fonts/Roboto.js";
+
+import type { EnvConfig } from "#src/config.ts";
+import { getCompanyContactInformation } from "#src/domain/getCompanyDetails.ts";
+import type { RelevantOrder } from "#src/features/customer-api/orders/relevantOrders.ts";
+
+pdfMake.addFonts(robotoFonts);
+
+export { pdfMake };
+
+export type PdfDocumentDefinition = Parameters<typeof pdfMake.createPdf>[0];
+
+// A text wordmark until the project has a logo.
+export const companyLogo: Content = {
+  text: "Acme",
+  bold: true,
+  fontSize: 20,
+  alignment: "right",
+};
+
+export const roundToCents = (value: number) => Math.round(value * 100) / 100;
+
+export const amountExcludingVat = (amountIncludingVat: number, vatRate: number) =>
+  roundToCents(amountIncludingVat / (1 + vatRate / 100));
+
+export const formatMoney = (value: number) =>
+  new Intl.NumberFormat("en", {
+    style: "currency",
+    currency: "EUR",
+  }).format(roundToCents(value));
+
+export const formatDateTime = (value: Date) =>
+  new Intl.DateTimeFormat("en", {
+    dateStyle: "medium",
+    timeZone: "UTC",
+  }).format(value);
+
+export const rightCell = (text: string): TableCell => ({
+  text,
+  alignment: "right",
+});
+
+export const headerCell = (text: string, alignment?: "right"): TableCell => ({
+  text,
+  style: "tableHeader",
+  ...(alignment ? { alignment } : {}),
+});
+
+export const labelledLine = (label: string, value: string | null | undefined) =>
+  value ? `${label}: ${value}` : undefined;
+
+export const buildTextLines = (rows: Array<string | null | undefined>): Content[] =>
+  rows
+    .filter((row): row is string => Boolean(row))
+    .map((text) => ({
+      text,
+      margin: [0, 0, 0, 2] as [number, number, number, number],
+    }));
+
+export const buildSellerCustomerSection = ({
+  config,
+  order,
+  labels,
+}: {
+  config: EnvConfig;
+  order: RelevantOrder;
+  labels: {
+    seller: string;
+    customer: string;
+    businessId: string;
+    vatId: string;
+  };
+}): Content => {
+  const seller = order.invoice_details.seller;
+  const contact = getCompanyContactInformation(config);
+  const vatId = `FI${seller.businessId.replaceAll("-", "")}`;
+
+  return {
+    columns: [
+      {
+        width: "*",
+        stack: [
+          { text: labels.seller, style: "sectionTitle" },
+          ...buildTextLines([
+            seller.name,
+            labelledLine(labels.businessId, seller.businessId),
+            labelledLine(labels.vatId, vatId),
+            seller.address,
+            contact.email,
+            contact.phone,
+          ]),
+        ],
+      },
+      {
+        width: "*",
+        stack: [
+          { text: labels.customer, style: "sectionTitle" },
+          ...buildTextLines([
+            order.order_details.customer.name,
+            order.order_details.customer.email,
+            order.order_details.customer.phone,
+            order.order_details.delivery.addressLabel,
+          ]),
+        ],
+      },
+    ],
+    columnGap: 30,
+    margin: [0, 0, 0, 18],
+  };
+};

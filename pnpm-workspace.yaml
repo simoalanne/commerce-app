@@ -1,0 +1,12 @@
+packages:
+  - "packages/*"
+  - "apps/*"
+allowBuilds:
+  "@parcel/watcher": false
+  "@prisma/engines": false
+  "@swc/core": false
+  esbuild: false
+  lefthook: true
+  ngrok: false
+  prisma: false
+minimumReleaseAge: 0

@@ -1,0 +1,39 @@
+{
+  "name": "acme",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A general commerce core: Bun API, React dashboard, Next.js store",
+  "type": "commonjs",
+  "main": "",
+  "types": "",
+  "scripts": {
+    "test": "pnpm -r --parallel --no-bail --if-present test",
+    "test:unit": "pnpm -r --parallel --no-bail --if-present test:unit",
+    "test:integration": "pnpm -r --parallel --no-bail --if-present test:integration",
+    "typecheck": "pnpm -r --parallel --no-bail typecheck",
+    "start:backend": "pnpm --filter backend start",
+    "dev:dashboard": "pnpm --filter dashboard dev",
+    "dev:store": "pnpm --filter online-store dev",
+    "clean:cache": "node -e \"const fs = require('fs'); fs.rmSync('apps/online-store/.next/cache', { recursive: true, force: true }); fs.rmSync('.unlighthouse/localhost', { recursive: true, force: true }); console.log('Next.js and Unlighthouse caches cleared successfully!');\"",
+    "lint": "oxlint",
+    "format": "oxfmt",
+    "check": "oxfmt --check && oxlint && pnpm typecheck",
+    "fix": "oxfmt && oxlint --fix"
+  },
+  "dependencies": {
+    "date-fns": "^4.4.0",
+    "ky": "^2.2.0",
+    "ts-pattern": "^5.9.2",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "lefthook": "^2.2.2",
+    "ngrok": "5.0.0-beta.2",
+    "oxfmt": "^0.79.0",
+    "oxlint": "^1.94.0",
+    "oxlint-tsgolint": "^7.0.2008",
+    "typescript": "~7.0.2"
+  },
+  "packageManager": "pnpm@12.21.0"
+}

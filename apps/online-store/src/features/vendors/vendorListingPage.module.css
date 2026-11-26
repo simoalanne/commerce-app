@@ -1,0 +1,28 @@
+.page {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.titleRow {
+  width: 100%;
+  color: var(--brand);
+  max-width: 1400px;
+  margin: 0 auto 20px;
+}
+
+.titleRow h1 {
+  color: var(--brand);
+  font-size: clamp(2rem, 3vw, 2.8rem);
+  font-weight: 500;
+  line-height: 1;
+}

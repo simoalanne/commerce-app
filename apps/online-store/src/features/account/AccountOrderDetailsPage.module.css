@@ -1,0 +1,186 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.backLink {
+  display: inline-flex;
+  margin-bottom: 0.65rem;
+  color: var(--brand);
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.title {
+  color: var(--brand);
+  font-size: var(--font-size-5xl);
+  font-weight: 800;
+  line-height: 0.98;
+}
+
+.subtitle {
+  margin-top: 0.7rem;
+  color: var(--foreground-variant);
+  line-height: 1.6;
+  font-size: var(--font-size-md);
+}
+
+.totalChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 1rem;
+  border-radius: var(--radius-pill);
+  background: var(--background-container-low);
+  color: var(--brand);
+  font-size: var(--font-size-md);
+  font-weight: 800;
+}
+
+.layout {
+  display: grid;
+  gap: 1rem;
+}
+
+.itemsSection,
+.infoCard {
+  padding: 1rem;
+  border: 1px solid var(--light-grey-border);
+  border-radius: var(--profile-item-radius);
+  background: var(--background-container-lowest);
+  box-shadow: var(--shadow-ambient);
+}
+
+.sectionTitle {
+  margin-bottom: 0.9rem;
+  color: var(--foreground-variant);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.itemsList {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.itemCard {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.4rem;
+  padding: 1rem;
+  border: 1px solid var(--light-grey-border);
+  border-radius: var(--profile-item-radius);
+  background: var(--background-container-low);
+}
+
+.itemName {
+  color: var(--foreground);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.itemMeta,
+.itemQuantity {
+  color: var(--foreground-variant);
+  font-size: var(--font-size-sm);
+}
+
+.itemQuantityContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.refundedBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-pill);
+  background: #fee2e2;
+  color: #991b1b;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.itemPrice {
+  color: var(--foreground);
+  font-size: var(--font-size-md);
+  font-weight: 700;
+}
+
+.sidebar {
+  display: grid;
+  gap: 1rem;
+  align-self: start;
+}
+
+.infoGroup + .infoGroup {
+  margin-top: 1rem;
+}
+
+.infoLabel {
+  color: var(--foreground-variant);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.infoValue {
+  margin-top: 0.35rem;
+  color: var(--foreground);
+  font-size: 0.96rem;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.addressBlock {
+  margin-bottom: 1rem;
+}
+
+.divider {
+  margin: 1rem 0;
+  border-top: 1px solid var(--light-grey-border);
+}
+
+.addressLine {
+  margin-top: 0.3rem;
+  color: var(--foreground-variant);
+  line-height: 1.5;
+}
+
+@media (min-width: 720px) {
+  .itemCard {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .layout {
+    grid-template-columns: minmax(0, 1.4fr) minmax(18rem, 0.9fr);
+    align-items: start;
+  }
+}

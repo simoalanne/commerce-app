@@ -1,0 +1,36 @@
+.page {
+  padding: 4em var(--checkout-page-edge) clamp(4rem, 10vw, 6rem);
+}
+
+.pageTitle {
+  margin-bottom: 2rem;
+  color: var(--brand);
+  font-size: var(--font-size-5xl);
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--light-grey-border);
+}
+
+.pageLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
+  gap: 3rem;
+  align-items: flex-start;
+}
+
+.formSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .pageLayout {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .formSection {
+    display: contents;
+  }
+}

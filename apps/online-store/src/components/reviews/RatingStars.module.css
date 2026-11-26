@@ -1,0 +1,38 @@
+.stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--brand);
+}
+
+.starWrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.starWrapper svg {
+  display: block;
+}
+
+.starFillOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.starFillOverlay svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.starFilled {
+  color: var(--brand);
+}
+
+.starEmpty {
+  color: #cbd5e1;
+}

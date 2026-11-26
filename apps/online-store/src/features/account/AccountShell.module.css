@@ -1,0 +1,116 @@
+.shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.hero {
+  margin-bottom: 3rem;
+}
+
+.eyebrow {
+  margin-bottom: 0.5rem;
+  color: var(--brand);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.title {
+  color: var(--brand);
+  font-size: var(--font-size-6xl);
+  font-weight: 800;
+  line-height: 0.95;
+}
+
+.subtitle {
+  margin-top: 0.75rem;
+  color: var(--foreground-variant);
+  font-size: var(--font-size-md);
+}
+
+.mobileNav {
+  margin-bottom: 1.5rem;
+}
+
+.layout {
+  display: block;
+}
+
+.sidebar {
+  display: none;
+}
+
+.content {
+  min-width: 0;
+}
+
+.guestCard {
+  max-width: 42rem;
+  margin: 3rem auto 0;
+  padding: 2rem;
+  border: 1px solid var(--light-grey-border);
+  border-radius: var(--profile-item-radius);
+  background: var(--background-container-lowest);
+  box-shadow: var(--shadow-ambient);
+}
+
+.guestEyebrow {
+  margin-bottom: 0.5rem;
+  color: var(--brand);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.guestTitle {
+  color: var(--brand);
+  font-size: var(--font-size-5xl);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.guestText {
+  margin-top: 1rem;
+  color: var(--foreground-variant);
+  font-size: var(--font-size-md);
+  line-height: 1.6;
+}
+
+.signInButton {
+  margin-top: 1.5rem;
+  padding: 0.9rem 1.4rem;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--brand);
+  color: var(--white-text);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+@media (min-width: 1024px) {
+  .shell {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
+  .mobileNav {
+    display: none;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(16rem, 18rem) minmax(0, 1fr);
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .sidebar {
+    display: block;
+    position: sticky;
+    top: 7rem;
+  }
+}

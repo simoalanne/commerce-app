@@ -1,0 +1,78 @@
+.content {
+  z-index: 300;
+  min-width: max-content;
+  border: 1px solid rgb(145 162 147);
+  border-radius: 10px;
+  background: var(--background-container-lowest);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+  padding: 6px;
+}
+
+.optionList {
+  margin: 0;
+  padding: 8px;
+  list-style: none;
+}
+
+.optionList li + li {
+  margin-top: 0.375rem;
+}
+
+.optionAction {
+  display: flex;
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  padding: 0.5rem 0.75rem;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease;
+}
+
+.optionAction:hover,
+.optionAction:focus-visible {
+  background: #f5f5f5;
+  color: #262626;
+}
+
+.optionActionSelected {
+  background: #f5f5f5;
+  color: #262626;
+}
+
+.optionActionSelected:hover,
+.optionActionSelected:focus-visible {
+  background: #f5f5f5;
+  color: #262626;
+}
+
+.triggerButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 10px;
+  background-color: var(--color-background);
+  padding: 10px 20px;
+  color: var(--brand);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.triggerButton:hover,
+.triggerButton:focus-visible {
+  background: var(--background-container-lowest);
+  box-shadow: 0 0 0 1px rgb(38 38 38 / 0.08);
+  outline: none;
+}

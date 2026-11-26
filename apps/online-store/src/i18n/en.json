@@ -1,0 +1,953 @@
+{
+  "addToCart": "Add to Cart",
+  "metadata": {
+    "defaults": {
+      "title": "Acme",
+      "description": "Acme is an example online store."
+    },
+    "landingPage": {
+      "openGraph": {
+        "openGraphTitle": "Online store | Acme",
+        "openGraphDesc": "Browse products by category and order online."
+      }
+    },
+    "categoriesPage": {
+      "openGraphDesc": "Product categories"
+    },
+    "productPage": {
+      "openGraph": {
+        "openGraphTitle": "{product} by {vendor} | Online store",
+        "openGraphDesc": "Product details, price and availability."
+      }
+    },
+    "vendorPage": {
+      "openGraph": {
+        "openGraphTitle": "{vendor} | Online store",
+        "openGraphDesc": "Products from {vendor}."
+      }
+    },
+    "productListing": {
+      "openGraph": {
+        "openGraphTitle": "Products | Online store",
+        "openGraphDesc": "Browse all products."
+      }
+    },
+    "vendorListing": {
+      "openGraph": {
+        "openGraphTitle": "Vendors | Online store",
+        "openGraphDesc": "Browse vendors. Discover sellers and explore what they offer."
+      }
+    },
+    "contactUsPage": {
+      "openGraphTitle": "Contact us | Acme",
+      "openGraphDesc": "Questions about orders or products? Get in touch."
+    },
+    "noIndex": {
+      "accountAreaTitle": "Account",
+      "accountDetailsTitle": "Account details",
+      "savedAddressesTitle": "Saved addresses",
+      "orderHistoryTitle": "Order history",
+      "paymentTitle": "Checkout - Acme",
+      "paymentSuccessTitle": "Success! Your order is confirmed.",
+      "cartTitle": "Your cart",
+      "favoriteProductsTitle": "Favorite products",
+      "favoriteVendorsTitle": "Favorite vendors",
+      "orderReviewTitle": "Review order"
+    }
+  },
+  "header": {
+    "brand": "Acme",
+    "home": "Home",
+    "categories": "Categories",
+    "orders": "Orders",
+    "vendors": "Vendors",
+    "products": "Products",
+    "contactUs": "Contact us",
+    "search": "Open search",
+    "arialabels": {
+      "toLandingPage": "Acme: Move to Landing Page",
+      "cartBtn": "Open Cart"
+    },
+    "searchModal": {
+      "title": "Search",
+      "description": "Search is not wired here yet.",
+      "noResults": "No Results",
+      "loading": "Loading..."
+    },
+    "cart": {
+      "open": "Open cart",
+      "reviewCart": "Review cart",
+      "goToPayment": "Go to payment"
+    }
+  },
+  "footer": {
+    "tagline": "An example online store.",
+    "footerNavigation": "Footer navigation",
+    "sections": {
+      "info": "Info",
+      "contactUs": "Contact us",
+      "privacyPolicy": "Privacy policy",
+      "termsAndPolicies": "Terms and policies"
+    },
+    "legalLinks": {
+      "orderAndDeliveryTerms": "Order and delivery terms",
+      "returnsAndCancellation": "Returns and cancellation",
+      "privacyNotice": "Privacy notice",
+      "contactInformation": "Contact information"
+    }
+  },
+  "notFound": {
+    "title": "Page not found",
+    "subtitle": "The link may be incorrect, or the page has been removed.",
+    "homePage": "Home Page"
+  },
+  "serverError": {
+    "title": "Something went wrong",
+    "subtitle": "We couldn't load this page right now. Please try again in a moment.",
+    "tryAgain": "Try again",
+    "homePage": "Home Page"
+  },
+  "sideBar": {
+    "close": "Close sidebar",
+    "subtitle": "Online store",
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar"
+  },
+  "modal": {
+    "close": "Close modal",
+    "back": "Go back"
+  },
+  "legalDocument": {
+    "lastUpdated": "Last updated: {date}"
+  },
+  "checkoutHeader": {
+    "returnToShoppingCart": "Back to cart"
+  },
+  "checkout": {
+    "pageTitle": "Cart",
+    "emptyTitle": "Your cart is empty",
+    "emptyContinueShopping": "Continue shopping",
+    "emptySavedCart": {
+      "signInPrompt": "Have an account? <action>Sign in</action> to use saved cart.",
+      "use": "Use saved cart",
+      "delete": "Delete saved cart",
+      "deleting": "Deleting saved cart..."
+    },
+    "remove": "Remove",
+    "decreaseQuantity": "Decrease quantity",
+    "increaseQuantity": "Increase quantity",
+    "unitPrice": "{price} each",
+    "adjustments": {
+      "title": "Cart updated",
+      "quantityValue": "{quantity} pcs",
+      "removedItems": "{count, plural, one {One item was removed because it is no longer available.} other {{count} items were removed because they are no longer available.}}"
+    },
+    "loadingCheckout": "Preparing checkout...",
+    "paymentPage": {
+      "title": "Checkout",
+      "canceledNotice": "Payment was canceled. Your order details are still here so you can try again when you're ready.",
+      "adjustments": {
+        "invalidItems": {
+          "title": "Invalid items",
+          "description": "The following items in your cart are no longer purchasable.",
+          "value": "Remove from order"
+        },
+        "priceChanged": {
+          "title": "Prices changed",
+          "description": "Prices have changed for the following items."
+        },
+        "stockChanged": {
+          "title": "Stock changed",
+          "description": "We were unable to complete your order with the requested stock for the following items.",
+          "requested": "Requested {quantity} pcs",
+          "available": "Available {quantity} pcs"
+        },
+        "purchaseLimitChanged": {
+          "title": "Purchase limit reached",
+          "description": "Some items in your cart exceed the per-order purchase limit.",
+          "limit": "Limit {quantity} pcs"
+        },
+        "actions": {
+          "accept": "Accept changes and stay",
+          "goBack": "Go back to shopping cart"
+        },
+        "cannotResumeEmptyCart": "These changes will empty your cart, so we cannot continue this order from the payment page.",
+        "promoCodeRemoved": "Promo code {code} will be removed due to these changes"
+      },
+      "steps": {
+        "details": "Details",
+        "payment": "Payment"
+      }
+    },
+    "seeAll": "Show all",
+    "productRecommendationsTitle": "Try these too!",
+    "paymentForm": {
+      "title": "Payment",
+      "description": "Enter your card details to pay for this order.",
+      "submit": "Pay now",
+      "submitting": "Confirming payment...",
+      "error": "Payment failed"
+    },
+    "summary": {
+      "estimatedSubtotal": "Estimated subtotal",
+      "note": "Includes taxes. Discounts and exact delivery fee will be calculated at checkout.",
+      "payAtCheckout": "Pay at checkout",
+      "deliveryFeeStartsFrom": "Delivery from",
+      "savedCart": {
+        "signIn": "Sign in to save your cart",
+        "save": "Save cart",
+        "saving": "Saving cart...",
+        "saved": "Cart saved"
+      },
+      "remaining": "Add {remaining} for free delivery",
+      "qualified": "You've unlocked free delivery! 🎉"
+    },
+    "tip": {
+      "customLabel": "Custom tip percentage",
+      "optional": "Optional",
+      "saveAction": "Add tip",
+      "updateAction": "Update tip",
+      "toggleLabel": "Add a tip.",
+      "presetOptionsLabel": "Preset tip percentages",
+      "thankYou": "Thank you for the tip."
+    },
+    "orderSummary": {
+      "title": "Order summary",
+      "description": "Delivery fee and final payment total will be confirmed after the address step.",
+      "quantity": "Qty {quantity}",
+      "subtotal": "Subtotal",
+      "itemsSubtotal": "Items subtotal",
+      "itemDiscount": "Item discount",
+      "discountedItemsSubtotal": "Discounted items subtotal",
+      "tip": "Tip",
+      "tipWithPercentage": "Tip ({percentage}%)",
+      "delivery": "Delivery",
+      "discountedDelivery": "Discounted delivery",
+      "calculating": "Calculating...",
+      "error": "Error occurred",
+      "selectAddress": "Select address",
+      "deliveryDiscount": "Delivery discount",
+      "total": "Total",
+      "includedVat": "Includes VAT {rate}%",
+      "showDetails": "Show order details",
+      "hideDetails": "Hide order details",
+      "promoCode": {
+        "discount": "Promo code"
+      }
+    },
+    "form": {
+      "continue": "Pay now",
+      "promoCode": {
+        "label": "Promo code",
+        "apply": "Apply",
+        "applying": "Applying...",
+        "remove": "Remove",
+        "applied": "Promo code applied.",
+        "errors": {
+          "notFound": "This promo code was not found.",
+          "inactive": "This promo code is not active right now.",
+          "notStarted": "This promo code is not active yet.",
+          "expired": "This promo code has expired.",
+          "usageLimitReached": "This promo code has reached its usage limit.",
+          "minimumItemsValueNotMet": "This promo code requires a minimum order of {minimumItemsValue}.",
+          "discountNotApplicable": "This promo code cannot be applied to the current delivery total.",
+          "unexpected": "Promo code validation failed. Please try again."
+        }
+      },
+      "contact": {
+        "title": "Contact details",
+        "guestOrder": "Guest order",
+        "signIn": "Sign in",
+        "signOut": "Sign out",
+        "signInHint": "Track your order faster and reuse saved details.",
+        "accountMenu": "Account menu",
+        "email": "Email",
+        "phone": "Phone number",
+        "invalidPhone": "Enter a valid phone number",
+        "phoneTooltipTrigger": "Why are we asking for your phone number?",
+        "phoneTooltipBody": "In case we need to contact you regarding this order",
+        "firstName": "First name",
+        "lastName": "Last name"
+      },
+      "address": {
+        "title": "Delivery address",
+        "description": "Add your delivery address details for this order.",
+        "empty": "No delivery address selected yet.",
+        "editAction": "Edit address",
+        "addAction": "Add address",
+        "savedAddresses": "Saved addresses",
+        "invalidPostalCode": "Enter a valid postal code."
+      },
+      "tip": {
+        "title": "Tip",
+        "description": "Choose a tip percentage or enter a custom amount."
+      },
+      "payment": {
+        "title": "Payment method",
+        "secureDescription": "All transactions are safe and encrypted.",
+        "methodLabel": "Online banking, MobilePay, card, Klarna (Paytrail)",
+        "redirectNotice": "You will be redirected to Online banking, MobilePay, card, Klarna (Paytrail) to finalize your order."
+      },
+      "termsAcceptance": {
+        "notice": "By clicking {submitLabel}, you accept Acme's <terms>order and delivery terms</terms>."
+      },
+      "errors": {
+        "requiredField": "{fieldLabel} is required.",
+        "emailRequired": "Email is required.",
+        "deliveryAddressRequired": "Select a delivery address before continuing.",
+        "deliverySlotRequired": "Choose a delivery slot before continuing.",
+        "invalidPromoCode": "The promo code is no longer valid for this order.",
+        "paymentPreparationFailed": "Failed to create the order",
+        "tooManyRequests": "You're trying a bit too quickly. Please wait a moment and try again."
+      }
+    },
+    "success": {
+      "pendingTitle": "We are confirming your order.",
+      "confirmedTitle": "Success! Your order is confirmed.",
+      "pendingBody": "Order #{orderId} is still processing. You can stay on this page while we keep checking the final payment status.",
+      "confirmedBody": "Order #{orderId} is confirmed",
+      "continueShopping": "Continue Shopping",
+      "viewOrderDetails": "View Order Details",
+      "pendingBanner": "Payment is still processing. This page refreshes the order status automatically.",
+      "orderSummaryTitle": "Order Summary",
+      "quantity": "Qty {quantity}",
+      "subtotal": "Subtotal",
+      "itemsSubtotal": "Items subtotal",
+      "itemDiscount": "Item discount",
+      "discountedItemsSubtotal": "Discounted items subtotal",
+      "shipping": "Shipping",
+      "deliveryDiscount": "Delivery discount",
+      "discountedDelivery": "Discounted delivery",
+      "tip": "Tip",
+      "tipWithPercentage": "Tip ({percentage}%)",
+      "total": "Total",
+      "includedVat": "Includes VAT {rate}%",
+      "deliveryAddress": "Delivery Address"
+    },
+    "existingAccountModal": {
+      "title": "An account already exists for this email",
+      "description": "The email address you entered is linked to an existing account. You can sign in or continue placing your order without signing in.",
+      "signIn": "Sign in",
+      "continueAsGuest": "Continue as guest"
+    }
+  },
+  "addressForm": {
+    "address": "Address",
+    "apartment": "Apartment, suite, etc.",
+    "postalCode": "Postal code",
+    "city": "City",
+    "deliveryInstructions": "Delivery instructions",
+    "optional": "Optional"
+  },
+  "landingPage": {
+    "reviews": {
+      "title": "What customers think of us",
+      "summary": "{avgRating} ★ ({count})",
+      "ariaLabelWithCount": "{rating} out of 5 stars, {count} reviews",
+      "ariaLabelStarsOnly": "{rating} out of 5 stars",
+      "verified": "Verified",
+      "anonymous": "Anonymous",
+      "viewProduct": "View Product",
+      "openReview": "Open review from {name}"
+    }
+  },
+  "ordersPage": {
+    "title": "Orders",
+    "loading": "Loading...",
+    "error": "The orders request failed.",
+    "debugLabel": "Response payload",
+    "reorder": {
+      "cta": "Order again",
+      "pending": "Adding to cart...",
+      "error": "We couldn't rebuild this cart right now."
+    }
+  },
+  "asyncBoundary": {
+    "loadingTitle": "Loading content",
+    "loadingMessage": "Fetching the latest data. This shouldn't take long.",
+    "errorTitle": "Something went wrong",
+    "errorMessage": "We couldn't load this section right now. Try again.",
+    "notFoundTitle": "Content not found",
+    "notFoundMessage": "This content may have been removed or the link may be invalid.",
+    "retry": "Try again"
+  },
+  "categoriesPage": {
+    "eyebrow": "Server Component + Client Component",
+    "title": "Categories from customer server API",
+    "description": "This page fetches categories on the server, transforms them into simple card data, and passes that data into a client component for a small interactive layer.",
+    "clientLayerTitle": "Client-side interaction layer",
+    "clientLayerDescription": "The list below was rendered from server-fetched data, but this toggle runs in the browser.",
+    "showAll": "Show all categories",
+    "hideEmpty": "Hide empty categories",
+    "categoryLabel": "Category",
+    "productCount": "{count} products"
+  },
+  "marketplacePage": {
+    "heroTag": "Direct From Soil",
+    "heroTitle": "Welcome to Acme",
+    "heroDescription": "An example store built on an owned commerce core.",
+    "startShopping": "Start Shopping",
+    "vendorStories": "Browse vendors",
+    "seeDirectory": "See directory",
+    "featuredProducts": "Most Popular Products",
+    "seeAll": "See all"
+  },
+  "carousel": {
+    "previous": "Scroll left",
+    "next": "Scroll right"
+  },
+  "productBreadcrumb": {
+    "ariaLabel": "Breadcrumb"
+  },
+  "productPage": {
+    "imageCarousel": {
+      "previousImage": "Previous image",
+      "nextImage": "Next image",
+      "goToImage": "Go to image {index}",
+      "outOfStock": "Out of stock"
+    },
+    "otherProducts": "Other similar products",
+    "ratingSummary": "{rating} average from {count} reviews",
+    "reviewsTitle": "Customer reviews",
+    "anonymousReviewer": "Anonymous",
+    "nutritional": "NUTRITIONAL INFO",
+    "storage": "STORAGE TIPS",
+    "availability": "Availability: {count} pcs",
+    "purchaseLimit": "Limit: {count} pcs",
+    "deliveryInfoTitle": "Delivery information",
+    "deliveryInfoIntro": "How delivery works:",
+    "deliveryInfoStep1": "Delivery time and day is chosen at checkout.",
+    "deliveryInfoStep2": "You will get a confirmation email when your order ships.",
+    "readMore": "Read more",
+    "readLess": "Read less"
+  },
+  "vendorPage": {
+    "readStory": "Read more"
+  },
+  "productListing": {
+    "resultsCount": "{count} products",
+    "card": {
+      "ratingSummary": "{rating} average from {count} reviews"
+    },
+    "product": {
+      "outOfStock": "Out of stock",
+      "pricePerKg": "{value}/kg",
+      "addFavorite": "Save {productName}",
+      "removeFavorite": "Remove {productName} from saved products",
+      "favoriteCta": "Save",
+      "favoriteCtaActive": "Saved"
+    },
+    "favoritesPage": {
+      "title": "Favorite products",
+      "emptyTitle": "No favorite products yet",
+      "emptyDescription": "Products you save to favorites will show up here."
+    },
+    "filters": {
+      "open": "Open filters",
+      "mobile": {
+        "title": "Filter products",
+        "showProducts": "Show products"
+      },
+      "sort": {
+        "label": "Sort",
+        "open": "Open sorting options",
+        "clear": "Clear selection",
+        "options": {
+          "nameAsc": "Alphabetical order",
+          "ratingDesc": "Highest rated first",
+          "priceAsc": "Lowest price first",
+          "priceDesc": "Highest price first"
+        }
+      },
+      "price": {
+        "label": "Price",
+        "open": "Open price filter",
+        "maxPrice": "Highest price is {value}",
+        "setMinPrice": "Set minimum price",
+        "setMaxPrice": "Set maximum price"
+      }
+    },
+    "search": {
+      "placeholder": "Search products",
+      "ariaLabel": "Search products",
+      "clearAriaLabel": "Clear search",
+      "button": "Search",
+      "buttonAriaLabel": "Search"
+    }
+  },
+  "vendorListing": {
+    "resultsCount": "{count} vendors",
+    "filters": {
+      "open": "Open vendor filters",
+      "category": {
+        "label": "Category",
+        "all": "All categories"
+      },
+      "sort": {
+        "label": "Sort",
+        "options": {
+          "default": "Recommended",
+          "nameAsc": "Alphabetical order",
+          "ratingDesc": "Highest rated first",
+          "reviewsDesc": "Most reviewed first"
+        }
+      }
+    },
+    "card": {
+      "noReviews": "No reviews yet",
+      "ratingSummary": "{rating} average from {count} reviews"
+    },
+    "vendor": {
+      "addFavorite": "Save {vendorName}",
+      "removeFavorite": "Remove {vendorName} from favorite vendors",
+      "favoriteCta": "Save",
+      "favoriteCtaActive": "Saved"
+    },
+    "favoritesPage": {
+      "title": "Favorite vendors",
+      "emptyTitle": "No favorite vendors yet",
+      "emptyDescription": "Vendors you save to favorites will show up here."
+    },
+    "empty": {
+      "title": "No vendors match this filter",
+      "description": "Try another category or sorting choice."
+    }
+  },
+  "vendorReviews": {
+    "title": "Vendor reviews",
+    "anonymous": "Anonymous",
+    "actions": {
+      "edit": "Edit review",
+      "delete": "Delete",
+      "deleting": "Deleting..."
+    },
+    "modal": {
+      "title": "Rate {vendorName}",
+      "subtitleCreate": "Tell us how your experience with this vendor was.",
+      "subtitleEdit": "Update your rating or comment for this vendor",
+      "close": "Close review modal",
+      "delete": "Delete review",
+      "ratingLabel": "Vendor rating",
+      "ratingValue": "Rate {value} out of 5",
+      "commentLabel": "Comment",
+      "placeholder": "Add a review (optional)",
+      "pending": "Sending...",
+      "save": "Save review",
+      "finish": "Finish review"
+    },
+    "vendorPage": {
+      "eyebrow": "Temporary review action",
+      "title": "Review this vendor",
+      "add": "Add review",
+      "edit": "Edit review",
+      "loading": "Loading review...",
+      "signInRequired": "Sign in to leave a review for this vendor.",
+      "addHint": "Tell other customers what stood out about this vendor.",
+      "editHint": "You already reviewed {vendorName}. You can update it here anytime."
+    },
+    "contactForms": {
+      "submit": "Send",
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone Number",
+      "msg": "Message",
+      "submitting": "Sending...",
+      "contactMethodHint": "Enter an email address or phone number. At least one contact method is required.",
+      "contactMethodRequired": "Enter an email address or phone number before submitting.",
+      "success": "Your message was sent. We'll get back to you as soon as possible.",
+      "unexpectedError": "Sending failed. Please try again in a moment."
+    }
+  },
+  "contactPage": {
+    "submit": "Send",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone Number",
+    "msg": "Message",
+    "submitting": "Sending...",
+    "contactMethodHint": "Enter an email address or phone number. At least one contact method is required.",
+    "contactMethodRequired": "Enter an email address or phone number before submitting.",
+    "success": "Your message was sent. We'll get back to you as soon as possible.",
+    "unexpectedError": "Sending failed. Please try again in a moment."
+  },
+  "contactForms": {
+    "submit": "Send",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone Number",
+    "msg": "Message",
+    "submitting": "Sending...",
+    "contactMethodHint": "Enter an email address or phone number. At least one contact method is required.",
+    "contactMethodRequired": "Enter an email address or phone number before submitting.",
+    "emailInvalid": "Enter a valid email address.",
+    "phoneInvalid": "Enter a valid phone number.",
+    "success": "Your message was sent. We'll get back to you as soon as possible.",
+    "unexpectedError": "Sending failed. Please try again in a moment."
+  },
+  "contactUsPage": {
+    "heroTitle": "How can we help?",
+    "heroSubtitle": "We're here to help. Whether you have a question or feedback, feel free to reach out.",
+    "cta": "Scroll to form",
+    "title": "Questions or feedback?",
+    "lead": "Questions about an order or a product? Send us a message.",
+    "body": "We reply to messages within two business days.",
+    "contact": {
+      "email": "hello@example.com"
+    }
+  },
+  "accountPage": {
+    "account": "Account",
+    "welcomeBack": "Welcome back, {firstName}!",
+    "signInToView": "Sign in to view your account",
+    "authenticatedContent": "Account pages are scaffolded and ready for authenticated content.",
+    "intro": {
+      "eyebrow": "Account details",
+      "title": "Personal information and sign-in settings",
+      "description": "This page stays focused on who is signed in and the core details tied to the account."
+    },
+    "profile": {
+      "title": "Personal information",
+      "description": "Email and phone are shown from your current Clerk profile.",
+      "emailLabel": "Email",
+      "phoneLabel": "Phone number",
+      "noEmailAddress": "No email address",
+      "noPhoneNumber": "No phone number",
+      "fullNameLabel": "Full name",
+      "preferredLanguageLabel": "Communication language",
+      "success": "Profile details updated.",
+      "errors": {
+        "fullNameRequired": "Enter your full name before saving.",
+        "generic": "We could not update your profile details."
+      }
+    },
+    "password": {
+      "titleUpdate": "Update password",
+      "titleCreate": "Set password",
+      "descriptionUpdate": "Update the password used to sign in to this account.",
+      "descriptionCreate": "This account currently signs in through another method. Add a password if you want password sign-in too.",
+      "currentPasswordLabel": "Current password",
+      "newPasswordLabel": "New password",
+      "confirmPasswordLabel": "Confirm new password",
+      "successUpdated": "Password updated.",
+      "successCreated": "Password created.",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "errors": {
+        "newPasswordRequired": "Enter a new password.",
+        "passwordsDoNotMatch": "New password and confirmation must match.",
+        "currentPasswordRequired": "Enter your current password.",
+        "generic": "We could not update your password."
+      }
+    },
+    "export": {
+      "title": "Download account data",
+      "description": "Download a JSON file containing your account data, including personal details and order history.",
+      "action": "Download account data",
+      "downloading": "Preparing download...",
+      "success": "Your download should begin shortly.",
+      "error": "Failed to download account data. Please try again."
+    },
+    "delete": {
+      "title": "Delete account",
+      "description": "Permanently delete your account and remove access to your saved profile data.",
+      "warning": "This action is irreversible. Delivered and cancelled orders may be retained in anonymized form, but your account and saved personal data will be removed.",
+      "action": "Delete account",
+      "cancelAction": "Keep account",
+      "confirmAction": "Delete permanently",
+      "deleting": "Deleting account...",
+      "success": "Your account is being deleted.",
+      "confirmation": "Delete your account permanently? This cannot be undone.",
+      "errors": {
+        "paidOrders": "You cannot delete your account while you still have paid orders that require handling.",
+        "generic": "We could not delete your account. Please try again."
+      }
+    },
+    "actions": {
+      "saving": "Saving...",
+      "saveProfile": "Save profile",
+      "updatePassword": "Update password",
+      "setPassword": "Set password"
+    }
+  },
+  "authModal": {
+    "shell": {
+      "modalTitle": "Authentication",
+      "heroTitle": "Your account",
+      "heroCard": "Sign in to manage orders, track deliveries, and keep your favorite vendors close."
+    },
+    "signIn": {
+      "title": "Welcome back",
+      "subtitle": "Sign in to continue shopping from your favorite vendors.",
+      "google": "Google",
+      "apple": "Apple",
+      "separator": "Or use email",
+      "emailLabel": "Email address",
+      "passwordLabel": "Password",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "forgotPassword": "Forgot password?",
+      "submit": "Sign in",
+      "footerPrompt": "Don't have an account?",
+      "footerAction": "Create one"
+    },
+    "signUp": {
+      "title": "Create account",
+      "subtitle": "Create an account to track orders, manage addresses, and check out faster.",
+      "google": "Continue with Google",
+      "apple": "Apple",
+      "separator": "Or use email",
+      "firstNameLabel": "First name",
+      "lastNameLabel": "Last name",
+      "emailLabel": "Email address",
+      "passwordLabel": "Password",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "submit": "Create account",
+      "privacyNotice": "By creating an account, I agree to Acme's <link>Privacy Policy</link>.",
+      "footerPrompt": "Already have an account?",
+      "footerAction": "Sign in"
+    },
+    "verify": {
+      "title": "Verify your email",
+      "subtitle": "We sent a one-time code to {email}. Enter it below to complete account creation.",
+      "fallbackEmail": "your email",
+      "codeLabel": "Verification code",
+      "submit": "Verify email",
+      "footerPrompt": "Already have an account?",
+      "footerAction": "Sign in"
+    },
+    "resetPassword": {
+      "title": "Reset your password",
+      "subtitle": "Enter the email address for your account and we'll send you a password reset code.",
+      "emailLabel": "Email address",
+      "submit": "Send reset code",
+      "footerPrompt": "Remembered your password?",
+      "footerAction": "Sign in"
+    },
+    "resetPasswordVerify": {
+      "title": "Set a new password",
+      "subtitle": "Enter the reset code we sent to {email} and choose a new password.",
+      "fallbackEmail": "your email",
+      "codeLabel": "Reset code",
+      "passwordLabel": "New password",
+      "confirmPasswordLabel": "Confirm new password",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "submit": "Update password",
+      "footerPrompt": "Want to return to sign in?",
+      "footerAction": "Sign in"
+    },
+    "clientTrust": {
+      "title": "Verify this device",
+      "subtitle": "Enter the one-time code sent to your email to finish signing in.",
+      "codeLabel": "Verification code",
+      "submit": "Verify",
+      "footerPrompt": "Want to return to sign in?",
+      "footerAction": "Sign in"
+    },
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "emailRequired": "Email address is required.",
+      "invalidEmail": "Enter a valid email address.",
+      "signInAdditionalVerification": "Additional verification is required to finish sign in.",
+      "passwordsDoNotMatch": "Passwords do not match.",
+      "passwordTooShort": "Password must be at least 8 characters.",
+      "invalidPhone": "Enter a valid phone number",
+      "verificationCodeRequired": "Verification code is required.",
+      "verificationNotComplete": "Verification is not complete yet.",
+      "resetPasswordNotComplete": "Password reset is not complete yet.",
+      "resetPasswordSecondFactor": "Two-factor authentication is required to finish password reset."
+    }
+  },
+  "authMenu": {
+    "avatarLabel": "Open account menu",
+    "menuLabel": "Account menu",
+    "profile": "Profile",
+    "orders": "Orders",
+    "signOut": "Sign out",
+    "signIn": "Sign in",
+    "signInLabel": "Sign in to your account",
+    "accountHeader": "Account"
+  },
+  "accountHeader": {
+    "browseStore": "Browse store"
+  },
+  "accountNav": {
+    "accountDetails": "Account details",
+    "orderHistory": "Order history",
+    "savedAddresses": "Saved addresses",
+    "signOut": "Sign out",
+    "memberSince": "Member since {year}",
+    "accountNavigation": "Account navigation",
+    "accountArea": "Account area",
+    "memberFallback": "Member",
+    "backToShop": "Back to shop"
+  },
+  "accountAddressesPage": {
+    "title": "Saved addresses",
+    "description": "Keep a few delivery addresses ready to fill into checkout faster.",
+    "count": "{count, plural, one {# address} other {# addresses}}",
+    "add": "Add address",
+    "empty": {
+      "title": "No saved addresses yet",
+      "description": "Add your first address here so checkout is quicker next time."
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleting": "Deleting...",
+      "cancel": "Cancel",
+      "create": "Save address",
+      "save": "Save changes",
+      "saving": "Saving..."
+    },
+    "delete": {
+      "confirmation": "Delete the address at {address}?"
+    },
+    "fields": {
+      "address": "Address",
+      "city": "City"
+    },
+    "validation": {
+      "requiredField": "Enter {field}.",
+      "invalidPostalCode": "Enter a valid postal code.",
+      "genericSaveError": "We could not save this address. Please try again."
+    },
+    "modal": {
+      "createTitle": "Add address",
+      "editTitle": "Edit address",
+      "subtitle": "Store the address details you want available in your account."
+    }
+  },
+  "accountAddresses": {
+    "title": "Saved addresses",
+    "description": "Manage the delivery addresses attached to your account.",
+    "count": "{count, plural, one {# address} other {# addresses}}",
+    "add": "Add address",
+    "addressBook": "Address book",
+    "noAddressesTitle": "No saved addresses yet",
+    "noAddressesDescription": "Add your first delivery address to make checkout faster.",
+    "deleteConfirm": "Delete the address at {address}?",
+    "typeApartment": "Apartment",
+    "typeHouse": "House",
+    "typeDefault": "Address",
+    "entranceLabel": "Entrance {value}",
+    "floorLabel": "Floor {value}",
+    "apartmentLabel": "Apartment {value}",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleting": "Deleting..."
+  },
+  "orderReviewPage": {
+    "eyebrow": "Delivered order review",
+    "title": "Review order #{orderId}",
+    "description": "Tell us how the products turned out and how the overall delivery experience felt.",
+    "orderLabel": "Delivered order",
+    "loadingTitle": "Opening your review page",
+    "loadingBody": "We are loading the review form for your delivered order.",
+    "invalidTitle": "This review link is not available",
+    "invalidBody": "The link may be invalid, expired, or the order is not ready for reviews yet.",
+    "saved": "Your feedback has been saved. You can still update it from this page anytime.",
+    "saveError": "We could not save your feedback. Please try again.",
+    "productSectionLabel": "Products from",
+    "productSectionTitle": "Product reviews",
+    "vendorSectionLabel": "Vendor review",
+    "vendorPrompt": "How was your experience with {name}?",
+    "vendorCommentLabel": "Comment about this vendor",
+    "productPrompt": "How was this product?",
+    "productCommentLabel": "Comment about this product",
+    "storeSectionLabel": "Store review",
+    "storeTitle": "Your experience",
+    "storePrompt": "How was your overall experience?",
+    "storeCommentLabel": "Comment about the store",
+    "commentPlaceholder": "Add an optional comment",
+    "imageLabel": "Photo",
+    "imageHint": "Upload one optional image for this review.",
+    "imageDelete": "Remove image",
+    "ratingLabel": "Review rating",
+    "ratingValue": "Rate {value} out of 5",
+    "showReviewerName": "Show my name publicly with this review",
+    "readyToSave": "{count} review sections ready to save",
+    "emptyHint": "Pick at least one star rating before saving.",
+    "save": "Save feedback",
+    "savePending": "Saving...",
+    "uploadError": "We could not upload one of the images. Please try again.",
+    "loadingCard": "Loading",
+    "invalidCard": "Unavailable",
+    "ariaLabels": {
+      "uploadImage": "Upload image for the review"
+    }
+  },
+  "accountOrders": {
+    "title": "Your orders",
+    "description": "Track active deliveries, revisit past purchases, and open the order you need fast.",
+    "openCount": "{count, plural, one {# open order} other {# open orders}}",
+    "closedCount": "{count, plural, one {# past order} other {# past orders}}",
+    "tabsLabel": "Order status filters",
+    "openTab": "Open orders ({count})",
+    "closedTab": "Closed orders ({count})",
+    "sectionTitleOpen": "Open orders",
+    "sectionTitleClosed": "Closed orders",
+    "emptyTitleOpen": "No open orders right now",
+    "emptyTitleClosed": "No past orders yet",
+    "emptyTextOpen": "Once you place a new order, it will appear here with its current status and delivery window.",
+    "emptyTextClosed": "Finished and canceled orders will collect here once you have some order history."
+  },
+  "accountOrderDetails": {
+    "statusAwaitingDelivery": "Awaiting delivery",
+    "statusDelivered": "Delivered",
+    "refundedTotal": "Total refunded",
+    "refundedDeliveryFee": "Refunded delivery fee",
+    "refundedTipAmount": "Refunded tip",
+    "refundedQty": "{quantity} refunded",
+    "defaultItemName": "Product",
+    "backToOrders": "Back to orders",
+    "orderTitle": "Order #{id}",
+    "placed": "Placed {date}",
+    "itemsTitle": "Items",
+    "qty": "Qty {quantity}",
+    "sku": "SKU {sku}",
+    "deliveryTitle": "Delivery",
+    "vendor": "Vendor",
+    "status": "Status",
+    "deliveryAddress": "Delivery address",
+    "deliveryInstructions": "Delivery instructions",
+    "access": "Access: {access}",
+    "doorCode": "Door code: {code}",
+    "reviewOrder": "Review order",
+    "downloadInvoice": "Download invoice",
+    "downloadRefundReceipt": "Download refund receipt {number}",
+    "invoiceDownloading": "Downloading...",
+    "refundReceiptDownloading": "Downloading...",
+    "invoiceDownloadError": "We could not download the invoice. Please try again.",
+    "refundReceiptDownloadError": "We could not download the refund receipt. Please try again."
+  },
+  "orderListItem": {
+    "statusAwaitingDelivery": "Awaiting delivery",
+    "statusDelivered": "Delivered",
+    "statusUnknown": "Unknown",
+    "paymentPaid": "Paid",
+    "paymentUnknown": "Unknown",
+    "defaultItemName": "Order items",
+    "more": "more",
+    "placedLabel": "Placed",
+    "paymentLabel": "Payment",
+    "itemCount": "{count, plural, one {# item} other {# items}}",
+    "error": "We couldn't rebuild this cart right now.",
+    "reviewOrder": "Review order"
+  },
+  "sideMenu": {
+    "title": "Filter products",
+    "favorites": "Favorites",
+    "favoritesOnly": "Favorites only",
+    "categories": "Categories",
+    "vendors": "Vendors",
+    "price": "Price (€)",
+    "availability": "Availability",
+    "clear": "Clear filters",
+    "status": {
+      "inStock": "In stock",
+      "outOfStock": "Out of stock"
+    }
+  }
+}

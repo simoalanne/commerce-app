@@ -1,0 +1,16 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "sortImports": true,
+  "ignorePatterns": ["pnpm-lock.yaml", "**/*.mjml"],
+  "overrides": [
+    {
+      "files": ["apps/dashboard/**"],
+      "options": {
+        "sortTailwindcss": {
+          "stylesheet": "./apps/dashboard/src/index.css",
+          "functions": ["cn", "cva"]
+        }
+      }
+    }
+  ]
+}
