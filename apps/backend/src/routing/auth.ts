@@ -25,11 +25,11 @@ type AuthDependencies = {
 
 const findUserRecord = (db: Db, userId: string) =>
   db.query.user.findFirst({
-    where: { clerk_id: userId },
-    columns: { clerk_id: true },
+    where: { clerkId: userId },
+    columns: { clerkId: true },
     with: {
-      customer_account: { columns: { id: true } },
-      admin_account: { columns: { id: true } },
+      customerAccount: { columns: { id: true } },
+      adminAccount: { columns: { id: true } },
     },
   });
 
@@ -49,15 +49,15 @@ const getOrCreateUserRecord = async (
 
   try {
     const createdUser = await db.transaction(async (tx) => {
-      await tx.insert(userTable).values({ clerk_id: userId });
+      await tx.insert(userTable).values({ clerkId: userId });
       const [customerAccount] = await tx
         .insert(customerAccountTable)
-        .values({ user_id: userId })
+        .values({ userId })
         .returning({ id: customerAccountTable.id });
       const createdUser = {
-        clerk_id: userId,
-        customer_account: customerAccount,
-        admin_account: null,
+        clerkId: userId,
+        customerAccount,
+        adminAccount: null,
       };
 
       const normalizedEmail = authUser.email?.trim().toLowerCase();
@@ -67,12 +67,12 @@ const getOrCreateUserRecord = async (
 
       await tx
         .update(orderTable)
-        .set({ customer_id: customerAccount.id, has_been_linked_to_customer_account: true })
+        .set({ customerId: customerAccount.id, hasBeenLinkedToCustomerAccount: true })
         .where(
           and(
-            isNull(orderTable.customer_id),
-            eq(orderTable.has_been_linked_to_customer_account, false),
-            sql`${orderTable.order_details}->'customer'->>'email' = ${normalizedEmail}`,
+            isNull(orderTable.customerId),
+            eq(orderTable.hasBeenLinkedToCustomerAccount, false),
+            sql`${orderTable.orderDetails}->'customer'->>'email' = ${normalizedEmail}`,
           ),
         );
 
@@ -110,7 +110,7 @@ const tryBuildAuthContext = (
   accessLevel: AccessLevel,
   userRecord: LocalUserRecord,
 ): AuthContext | null => {
-  const customerId = userRecord.customer_account?.id;
+  const customerId = userRecord.customerAccount?.id;
 
   if (!customerId) {
     throw new Error(
@@ -120,9 +120,9 @@ const tryBuildAuthContext = (
 
   const authContext = {
     isAuthenticated: true,
-    clerkId: userRecord.clerk_id,
+    clerkId: userRecord.clerkId,
     customerId,
-    adminId: userRecord.admin_account?.id ?? null,
+    adminId: userRecord.adminAccount?.id ?? null,
   };
 
   if (accessLevel === "ADMIN" && !authContext.adminId) return null;
@@ -138,8 +138,8 @@ const AccessLevelToRoleMap: { [K in AccessLevel]: string } = {
 
 const getUserCurrentRoles = (userRecord: LocalUserRecord) => {
   const roles: string[] = [];
-  if (userRecord.customer_account) roles.push("Customer");
-  if (userRecord.admin_account) roles.push("Admin");
+  if (userRecord.customerAccount) roles.push("Customer");
+  if (userRecord.adminAccount) roles.push("Admin");
   return roles.join(", ") || "No roles";
 };
 

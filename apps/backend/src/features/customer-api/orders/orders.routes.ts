@@ -18,11 +18,11 @@ import {
 } from "./relevantOrders.ts";
 
 function buildOrderDetail(storage: ObjectStorageProvider, order: RelevantOrder) {
-  const details = order.order_details;
+  const details = order.orderDetails;
   const pricing = buildOrderPricing(order);
 
   const firstVendorItem = order.orderItems[0];
-  const vendorName = firstVendorItem?.vendor_name ?? "Unknown Farm";
+  const vendorName = firstVendorItem?.vendorName ?? "Unknown Farm";
   const vendorImage = firstVendorItem?.vendor
     ? getFirstLinkedImageUrl(storage, firstVendorItem.vendor.images)
     : undefined;
@@ -34,16 +34,16 @@ function buildOrderDetail(storage: ObjectStorageProvider, order: RelevantOrder) 
       : IMAGE_PLACEHOLDER_URL,
     quantity: item.quantity,
     refundedQuantity: order.refundSummary.refundedQuantityByOrderItemId.get(item.id) ?? 0,
-    unitPriceCents: item.unit_sales_price_cents,
+    unitPriceCents: item.unitSalesPriceCents,
   }));
 
   return {
     id: order.id,
     status: order.status,
-    totalCents: order.charged_total_cents,
+    totalCents: order.chargedTotalCents,
     pricing,
     refundReceipts: order.refundReceipts,
-    createdAt: order.created_at,
+    createdAt: order.createdAt,
     vendorName,
     vendorImage,
     hasSubmittedReview: order.hasSubmittedReview,
@@ -170,7 +170,7 @@ export const ordersRoutes = {
       const order = await context.db.query.order.findFirst({
         where: {
           id: orderId,
-          customer_id: authContext.customerId,
+          customerId: authContext.customerId,
           status: scope === "order:review" ? "DELIVERED" : { in: [...relevantOrderStatuses] },
         },
         columns: { id: true },

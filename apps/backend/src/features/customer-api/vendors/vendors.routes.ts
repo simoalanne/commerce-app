@@ -56,7 +56,7 @@ export const vendorsRoutes = {
           id: vendor.id,
           slug: vendor.slug,
           name: vendor.name,
-          isFeatured: vendor.is_featured,
+          isFeatured: vendor.isFeatured,
           imageUrl: getFirstLinkedImageUrl(context.storage, vendor.images),
           tags: vendor.tags,
           ...getReviewSummary(vendor.reviews),
@@ -92,7 +92,7 @@ export const vendorsRoutes = {
         id: vendor.id,
         slug: vendor.slug,
         name: vendor.name,
-        isFeatured: vendor.is_featured,
+        isFeatured: vendor.isFeatured,
         imageUrl: getFirstLinkedImageUrl(context.storage, vendor.images),
         tags: vendor.tags,
         ...getReviewSummary(vendor.reviews),
@@ -127,27 +127,27 @@ export const vendorsRoutes = {
         where: {
           kind: "VENDOR",
           status: "APPROVED",
-          vendor_id: id,
+          vendorId: id,
         },
         orderBy: {
-          updated_at: "desc",
+          updatedAt: "desc",
         },
         limit,
       });
 
       return toResponse(
         reviews.map((review) => {
-          const displayName = review.show_reviewer_name ? review.reviewer_name.trim() : "Anonymous";
+          const displayName = review.showReviewerName ? review.reviewerName.trim() : "Anonymous";
 
           return {
             id: review.id,
-            vendorId: review.vendor_id ?? id,
+            vendorId: review.vendorId ?? id,
             rating: review.rating,
             comment: review.comment ?? null,
-            createdAt: review.created_at,
-            updatedAt: review.updated_at,
+            createdAt: review.createdAt,
+            updatedAt: review.updatedAt,
             reviewer: {
-              isAnonymous: !review.show_reviewer_name,
+              isAnonymous: !review.showReviewerName,
               displayName,
             },
           };

@@ -40,7 +40,7 @@ export const tagsRoutes = {
       },
       extras: {
         productCount: (tag) =>
-          context.db.$count(productTagTable, eq(productTagTable.tag_id, tag.id)),
+          context.db.$count(productTagTable, eq(productTagTable.tagId, tag.id)),
       },
       orderBy: { id: "asc" },
     });
@@ -130,7 +130,7 @@ export const tagsRoutes = {
       // Tags are a shared library: deleting one removes it from every product
       // that uses it (the dashboard confirms first). Unlink before deleting so
       // the ProductTag restrict constraint is satisfied.
-      await context.db.delete(productTagTable).where(eq(productTagTable.tag_id, params.id));
+      await context.db.delete(productTagTable).where(eq(productTagTable.tagId, params.id));
       const deleted = (
         await context.db.delete(tagTable).where(eq(tagTable.id, params.id)).returning()
       )[0];

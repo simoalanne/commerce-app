@@ -23,14 +23,14 @@ const toImageResponse = (
   storage: AppContext["storage"],
   image: {
     id: number;
-    storage_key: string;
+    storageKey: string;
     name?: string | null;
     alt?: LocalizedString | null;
-    created_at: Date;
+    createdAt: Date;
   },
 ) => ({
   ...image,
-  url: storage.getPublicUrl(image.storage_key),
+  url: storage.getPublicUrl(image.storageKey),
 });
 
 export const imagesRoutes = {
@@ -38,21 +38,21 @@ export const imagesRoutes = {
     const images = await context.db.query.image.findMany({
       columns: {
         id: true,
-        storage_key: true,
+        storageKey: true,
         name: true,
-        created_at: true,
+        createdAt: true,
       },
       where: {
         kind: "CMS",
       },
-      orderBy: { created_at: "desc", id: "desc" },
+      orderBy: { createdAt: "desc", id: "desc" },
     });
     return toResponse(
       images.map((img) => ({
         id: img.id,
-        url: context.storage.getPublicUrl(img.storage_key),
+        url: context.storage.getPublicUrl(img.storageKey),
         name: img.name,
-        created_at: img.created_at,
+        createdAt: img.createdAt,
       })),
       context.locale,
     );
@@ -124,7 +124,7 @@ export const imagesRoutes = {
 
       // Last, so a failed row delete keeps the file and a failed file delete
       // rolls the row back.
-      await context.storage.deleteObject(image.storage_key);
+      await context.storage.deleteObject(image.storageKey);
 
       return toResponse(toImageResponse(context.storage, deleted), context.locale);
     }),
@@ -172,7 +172,7 @@ export const imagesRoutes = {
         .values({
           name: body.name,
           alt: toLocalizedString(body.alt, context.locale),
-          storage_key: body.objectKey,
+          storageKey: body.objectKey,
           kind: "CMS",
         })
         .returning();

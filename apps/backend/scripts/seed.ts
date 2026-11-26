@@ -53,7 +53,7 @@ const createImage = async (label: string, color: string) => {
   });
   const [image] = await db
     .insert(imageTable)
-    .values({ name: label, alt: en(label), storage_key: storageKey })
+    .values({ name: label, alt: en(label), storageKey })
     .returning();
   return image;
 };
@@ -88,7 +88,7 @@ for (const { name, color } of categoryDefinitions) {
   const image = await createImage(name, color);
   const [category] = await db
     .insert(categoryTable)
-    .values({ name: en(name), slug: en(slugify(name)), image_id: image.id })
+    .values({ name: en(name), slug: en(slugify(name)), imageId: image.id })
     .returning();
   categories[name] = category.id;
 }
@@ -118,10 +118,10 @@ for (const definition of vendorDefinitions) {
       slogan: en(definition.slogan),
       story: en(`${definition.name} is a demo vendor created by the seed script.`),
       tags: en([...definition.tags]),
-      is_featured: true,
+      isFeatured: true,
     })
     .returning();
-  await db.insert(vendorImageTable).values({ vendor_id: vendor.id, image_id: image.id });
+  await db.insert(vendorImageTable).values({ vendorId: vendor.id, imageId: image.id });
   vendors[definition.name] = vendor.id;
 }
 
@@ -148,17 +148,17 @@ for (const [index, definition] of productDefinitions.entries()) {
       slug: en(slugify(name)),
       name: en(name),
       headline: en(`${name} from ${vendor}`),
-      full_description: en(`${name} is a demo product created by the seed script.`),
-      weight_grams: weightGrams,
-      is_featured: index < 4,
-      category_id: categories[category],
-      vendor_id: vendors[vendor],
-      cost_price_cents: costPriceCents,
-      sales_price_cents: salesPriceCents,
-      current_stock: stock,
+      fullDescription: en(`${name} is a demo product created by the seed script.`),
+      weightGrams,
+      isFeatured: index < 4,
+      categoryId: categories[category],
+      vendorId: vendors[vendor],
+      costPriceCents,
+      salesPriceCents,
+      currentStock: stock,
     })
     .returning();
-  await db.insert(productImageTable).values({ product_id: product.id, image_id: image.id });
+  await db.insert(productImageTable).values({ productId: product.id, imageId: image.id });
   const tagIds = [
     ...(index % 3 === 0 ? [tags.new.id] : []),
     ...(index < 2 ? [tags.bestseller.id] : []),
@@ -166,14 +166,14 @@ for (const [index, definition] of productDefinitions.entries()) {
   if (tagIds.length > 0) {
     await db
       .insert(productTagTable)
-      .values(tagIds.map((tagId) => ({ product_id: product.id, tag_id: tagId })));
+      .values(tagIds.map((tagId) => ({ productId: product.id, tagId })));
   }
   productIds.push(product.id);
 }
 
 await db
   .insert(promotionCodeTable)
-  .values({ code: "WELCOME10", discount_type: "PERCENT", discount_value: 10 });
+  .values({ code: "WELCOME10", discountType: "PERCENT", discountValue: 10 });
 
 const legalDocuments = {
   PRIVACY_NOTICE: "Privacy notice",

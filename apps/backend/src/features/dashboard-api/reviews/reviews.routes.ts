@@ -26,22 +26,22 @@ export const reviewsRoutes = {
     .handler(async ({ query, context }) => {
       const reviews = await context.db.query.review.findMany({
         where: query.status ? { status: query.status } : {},
-        orderBy: { updated_at: "desc", id: "desc" },
+        orderBy: { updatedAt: "desc", id: "desc" },
         columns: {
           id: true,
           kind: true,
           status: true,
           rating: true,
           comment: true,
-          order_id: true,
-          created_at: true,
-          updated_at: true,
+          orderId: true,
+          createdAt: true,
+          updatedAt: true,
         },
         with: {
           images: {
             columns: {
               id: true,
-              storage_key: true,
+              storageKey: true,
             },
           },
           vendor: {
@@ -64,15 +64,15 @@ export const reviewsRoutes = {
             status: review.status,
             rating: review.rating,
             comment: review.comment,
-            orderId: review.order_id,
+            orderId: review.orderId,
             image: review.images[0]
               ? {
                   id: review.images[0].id,
-                  url: context.storage.getPublicUrl(review.images[0].storage_key),
+                  url: context.storage.getPublicUrl(review.images[0].storageKey),
                 }
               : null,
-            createdAt: review.created_at,
-            updatedAt: review.updated_at,
+            createdAt: review.createdAt,
+            updatedAt: review.updatedAt,
           };
 
           switch (review.kind) {
@@ -120,8 +120,8 @@ export const reviewsRoutes = {
         columns: {
           status: true,
           kind: true,
-          product_id: true,
-          vendor_id: true,
+          productId: true,
+          vendorId: true,
         },
       });
       if (!existingReview) throw new RouteError("NOT_FOUND", { status: 404 });
@@ -132,8 +132,8 @@ export const reviewsRoutes = {
         .where(eq(reviewTable.id, params.id))
         .returning({
           kind: reviewTable.kind,
-          product_id: reviewTable.product_id,
-          vendor_id: reviewTable.vendor_id,
+          productId: reviewTable.productId,
+          vendorId: reviewTable.vendorId,
         });
 
       await logAdminAction(context.db, {
@@ -147,8 +147,8 @@ export const reviewsRoutes = {
           fromStatus: existingReview.status,
           toStatus: body.status,
           kind: review.kind,
-          productId: review.product_id,
-          vendorId: review.vendor_id,
+          productId: review.productId,
+          vendorId: review.vendorId,
         },
       });
 

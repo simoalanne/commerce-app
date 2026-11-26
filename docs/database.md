@@ -6,8 +6,8 @@ The backend uses [Drizzle](https://orm.drizzle.team) 1.0 with node-postgres. Thi
 
 ## Layout
 
-- `apps/backend/src/db/schema.ts`: tables and enums. Tables are exported as `<entity>Table` (`productTable`), enums as `<name>Enum` with a matching union type (`OrderStatus`). Column keys are the column names (`created_at`), as they were under Prisma.
-- `src/db/relations.ts`: the relations for relational queries. Query names are the entity names (`db.query.product`), relation names are the former Prisma relation fields (`product.images`, `order.order_items`).
+- `apps/backend/src/db/schema.ts`: tables and enums. Tables are exported as `<entity>Table` (`productTable`), enums as `<name>Enum` with a matching union type (`OrderStatus`). Tables use `snakeCase.table`: keys are camelCase (`createdAt`) and the columns snake_case (`created_at`), so query results are already in the API's shape and handlers return them without renaming fields. Raw SQL uses the column names; alias them to camelCase (`AS "createdAt"`) where rows are returned.
+- `src/db/relations.ts`: the relations for relational queries. Query names are the entity names (`db.query.product`), relation names are camelCase (`product.images`, `order.orderItems`).
 - `src/db/json.ts`: the types of the JSON columns, attached with `.$type<T>()`.
 - `src/db/client.ts`: the `db` instance and the `Db` type, which is the database or a transaction.
 - `src/db/errors.ts`: `isUniqueViolation`, `isForeignKeyViolation`.
@@ -23,16 +23,16 @@ Schema changes: edit `schema.ts`, then `pnpm --filter backend db:push` (`drizzle
 
 ## Reads
 
-| Prisma                                                                 | Drizzle                                                                                    |
-| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `db.product.findMany({ where, select, include, orderBy, take, skip })` | `db.query.product.findMany({ where, columns, with, orderBy, limit, offset })`              |
-| `findUnique` / `findFirst`                                             | `findFirst` (returns `undefined`, not `null`)                                              |
-| `select: { id: true, vendor: { select: { name: true } } }`             | `columns: { id: true }, with: { vendor: { columns: { name: true } } }`                     |
-| `include: { images: true }`                                            | `with: { images: true }` (all columns are selected by default)                             |
-| `orderBy: { created_at: "desc" }` or an array of those                 | `orderBy: { created_at: "desc" }` (one object, keys in priority order)                     |
-| `_count: { select: { reviews: true } }`                                | `extras: { reviewCount: (t) => db.$count(reviewTable, eq(reviewTable.product_id, t.id)) }` |
-| `count({ where })`                                                     | `db.$count(table, condition)`                                                              |
-| `aggregate` / `groupBy`                                                | `db.select({ total: sum(t.x).mapWith(Number) }).from(t).where(...).groupBy(...)`           |
+| Prisma                                                                 | Drizzle                                                                                   |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `db.product.findMany({ where, select, include, orderBy, take, skip })` | `db.query.product.findMany({ where, columns, with, orderBy, limit, offset })`             |
+| `findUnique` / `findFirst`                                             | `findFirst` (returns `undefined`, not `null`)                                             |
+| `select: { id: true, vendor: { select: { name: true } } }`             | `columns: { id: true }, with: { vendor: { columns: { name: true } } }`                    |
+| `include: { images: true }`                                            | `with: { images: true }` (all columns are selected by default)                            |
+| `orderBy: { created_at: "desc" }` or an array of those                 | `orderBy: { createdAt: "desc" }` (one object, keys in priority order)                     |
+| `_count: { select: { reviews: true } }`                                | `extras: { reviewCount: (t) => db.$count(reviewTable, eq(reviewTable.productId, t.id)) }` |
+| `count({ where })`                                                     | `db.$count(table, condition)`                                                             |
+| `aggregate` / `groupBy`                                                | `db.select({ total: sum(t.x).mapWith(Number) }).from(t).where(...).groupBy(...)`          |
 
 A missing row in a route is a 404: `if (!row) throw new RouteError("NOT_FOUND", { status: 404 })`. It is not declared with `.error(...)` on routes; clients handle 404 in their generic error handling. Jobs throw a plain `Error`.
 
@@ -41,11 +41,11 @@ A missing row in a route is a 404: `if (!row) throw new RouteError("NOT_FOUND", 
 Relational queries take an object filter like Prisma's, with these differences:
 
 - **`undefined` throws** (`Unexpected 'undefined' in filter value`), for a field and for `where` itself. Prisma ignored it, so optional filters were written as `{ status: query.status }`. Spread them in only when set: `...(query.status && { status: query.status })`, and leave `where` out rather than passing `undefined`. TypeScript does not catch this.
-- **`null` is not `IS NULL`.** Write `{ customer_id: { isNull: true } }`; Prisma's `{ not: null }` is `{ isNotNull: true }`.
+- **`null` is not `IS NULL`.** Write `{ customerId: { isNull: true } }`; Prisma's `{ not: null }` is `{ isNotNull: true }`.
 - Operators: `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `in`, `notIn`, `like`, `ilike`, `isNull`, `isNotNull`, and `AND`, `OR`, `NOT` at either level. An empty `in` array matches nothing, as in Prisma; an empty `OR`/`AND` array throws.
 - `contains` with `mode: "insensitive"` is `ilike: `%${term}%``; `startsWith` is `like: `${term}%``.
 - A relation key filters by existence: `{ reviews: { status: "APPROVED" } }` is Prisma's `some`; `{ reviews: true }` means at least one. `none` is `NOT: { reviews: {...} }`; `every` is `NOT: { reviews: { NOT: {...} } }`.
-- Anything else, such as JSON paths, is `RAW: (t) => sql`...``. Prisma's `order_details: { path: ["customer", "email"], equals: email }` is `RAW: (t) => sql`${t.order_details}->'customer'->>'email' = ${email}``.
+- Anything else, such as JSON paths, is `RAW: (t) => sql`...``. Prisma's `order_details: { path: ["customer", "email"], equals: email }` is `RAW: (t) => sql`${t.orderDetails}->'customer'->>'email' = ${email}``.
 
 Core queries (`db.select()`, `db.update()`, `db.delete()`) take conditions built with `eq`, `and`, `inArray`, ... from `drizzle-orm`; `and(...)` skips `undefined` arguments, so optional conditions are fine there.
 

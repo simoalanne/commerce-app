@@ -48,39 +48,39 @@ export const buildCustomerDataExport = async (
     with: {
       customerSavedCartItems: {
         columns: {
-          product_id: true,
+          productId: true,
           quantity: true,
-          added_at: true,
+          addedAt: true,
         },
         orderBy: {
-          added_at: "desc",
+          addedAt: "desc",
         },
       },
       customerFavoriteProducts: {
         columns: {
-          product_id: true,
-          added_at: true,
+          productId: true,
+          addedAt: true,
         },
         orderBy: {
-          added_at: "desc",
+          addedAt: "desc",
         },
       },
       customerFavoriteVendors: {
         columns: {
-          vendor_id: true,
-          added_at: true,
+          vendorId: true,
+          addedAt: true,
         },
         orderBy: {
-          added_at: "desc",
+          addedAt: "desc",
         },
       },
       addresses: {
         columns: {
           street: true,
-          street_number: true,
-          postal_code: true,
+          streetNumber: true,
+          postalCode: true,
           city: true,
-          delivery_details: true,
+          deliveryDetails: true,
         },
         orderBy: {
           id: "desc",
@@ -89,12 +89,12 @@ export const buildCustomerDataExport = async (
       orders: {
         columns: {
           id: true,
-          items_subtotal_cents: true,
-          items_discount_cents: true,
-          charged_total_cents: true,
+          itemsSubtotalCents: true,
+          itemsDiscountCents: true,
+          chargedTotalCents: true,
           status: true,
-          created_at: true,
-          order_details: true,
+          createdAt: true,
+          orderDetails: true,
         },
         with: {
           reviews: {
@@ -103,15 +103,15 @@ export const buildCustomerDataExport = async (
               kind: true,
               rating: true,
               comment: true,
-              show_reviewer_name: true,
-              product_id: true,
-              vendor_id: true,
-              created_at: true,
+              showReviewerName: true,
+              productId: true,
+              vendorId: true,
+              createdAt: true,
             },
             with: {
               images: {
                 columns: {
-                  storage_key: true,
+                  storageKey: true,
                 },
               },
             },
@@ -119,20 +119,20 @@ export const buildCustomerDataExport = async (
               id: "asc",
             },
           },
-          order_items: {
+          orderItems: {
             orderBy: {
               id: "asc",
             },
             columns: {
               name: true,
               quantity: true,
-              unit_sales_price_cents: true,
-              vendor_name: true,
+              unitSalesPriceCents: true,
+              vendorName: true,
             },
           },
         },
         orderBy: {
-          created_at: "desc",
+          createdAt: "desc",
         },
       },
     },
@@ -147,37 +147,37 @@ export const buildCustomerDataExport = async (
     firstName,
     lastName,
     savedCart: customerAccount.customerSavedCartItems.map((item) => ({
-      productId: item.product_id,
+      productId: item.productId,
       quantity: item.quantity,
-      addedAt: item.added_at,
+      addedAt: item.addedAt,
     })),
     favoriteProducts: customerAccount.customerFavoriteProducts.map((item) => ({
-      id: item.product_id,
-      addedAt: item.added_at,
+      id: item.productId,
+      addedAt: item.addedAt,
     })),
     favoriteVendors: customerAccount.customerFavoriteVendors.map((item) => ({
-      id: item.vendor_id,
-      addedAt: item.added_at,
+      id: item.vendorId,
+      addedAt: item.addedAt,
     })),
     addresses: customerAccount.addresses.map((address) => {
       return {
-        streetAddress: [address.street, address.street_number].filter(Boolean).join(" "),
-        streetNumber: address.street_number,
-        postalCode: address.postal_code,
+        streetAddress: [address.street, address.streetNumber].filter(Boolean).join(" "),
+        streetNumber: address.streetNumber,
+        postalCode: address.postalCode,
         city: address.city,
-        addressType: address.delivery_details.addressType ?? null,
-        entrance: address.delivery_details.entrance ?? null,
-        floor: address.delivery_details.floor ?? null,
-        apartment: address.delivery_details.apartment ?? null,
-        deliveryInstructions: toNullableInstructions(address.delivery_details.deliveryInstructions),
+        addressType: address.deliveryDetails.addressType ?? null,
+        entrance: address.deliveryDetails.entrance ?? null,
+        floor: address.deliveryDetails.floor ?? null,
+        apartment: address.deliveryDetails.apartment ?? null,
+        deliveryInstructions: toNullableInstructions(address.deliveryDetails.deliveryInstructions),
       };
     }),
     orders: customerAccount.orders.map((order) => {
-      const details = order.order_details;
+      const details = order.orderDetails;
       return {
         orderNumber: order.id,
         status: statusLabels[order.status] ?? order.status.toLowerCase(),
-        createdAt: order.created_at,
+        createdAt: order.createdAt,
         recipient: {
           name: details.customer.name,
           email: details.customer.email,
@@ -186,22 +186,22 @@ export const buildCustomerDataExport = async (
         deliveryAddress: details.delivery.addressLabel,
         city: details.delivery.city,
         deliveryInstructions: toNullableInstructions(details.delivery.instructions ?? undefined),
-        subtotalCents: order.items_subtotal_cents - order.items_discount_cents,
-        totalCents: order.charged_total_cents,
-        items: order.order_items.map((item) => ({
+        subtotalCents: order.itemsSubtotalCents - order.itemsDiscountCents,
+        totalCents: order.chargedTotalCents,
+        items: order.orderItems.map((item) => ({
           productName: item.name,
-          vendorName: item.vendor_name,
+          vendorName: item.vendorName,
           quantity: item.quantity,
-          unitPriceCents: item.unit_sales_price_cents,
+          unitPriceCents: item.unitSalesPriceCents,
         })),
         reviews: order.reviews.map((review) => ({
           kind: review.kind,
           rating: review.rating,
           comment: review.comment ?? null,
-          showReviewerName: review.show_reviewer_name,
-          createdAt: review.created_at,
-          imageUrl: review.images?.[0]?.storage_key
-            ? storage.getPublicUrl(review.images[0].storage_key)
+          showReviewerName: review.showReviewerName,
+          createdAt: review.createdAt,
+          imageUrl: review.images?.[0]?.storageKey
+            ? storage.getPublicUrl(review.images[0].storageKey)
             : null,
         })),
       };
@@ -212,10 +212,10 @@ export const buildCustomerDataExport = async (
         kind: review.kind,
         rating: review.rating,
         comment: review.comment ?? null,
-        showReviewerName: review.show_reviewer_name,
-        createdAt: review.created_at,
-        imageUrl: review.images?.[0]?.storage_key
-          ? storage.getPublicUrl(review.images[0].storage_key)
+        showReviewerName: review.showReviewerName,
+        createdAt: review.createdAt,
+        imageUrl: review.images?.[0]?.storageKey
+          ? storage.getPublicUrl(review.images[0].storageKey)
           : null,
       })),
     ),

@@ -6,29 +6,29 @@ import { buildTag } from "./buildTags.ts";
 
 type ReviewInvalidationTarget = {
   kind: string;
-  product_id?: number | null;
-  vendor_id?: number | null;
+  productId?: number | null;
+  vendorId?: number | null;
 };
 
 export const buildReviewInvalidationTags = (reviews: ReviewInvalidationTarget[]) => [
   ...new Set([
     buildTag(customerReviewsRoutes.list),
     ...reviews.flatMap((review) => {
-      if (review.kind === "PRODUCT" && review.product_id != null) {
+      if (review.kind === "PRODUCT" && review.productId != null) {
         return [
-          buildTag(customerReviewsRoutes.getByProduct, review.product_id),
+          buildTag(customerReviewsRoutes.getByProduct, review.productId),
           // Product list/detail responses include review aggregates.
           buildTag(customerProductsRoutes.getAll),
-          buildTag(customerProductsRoutes.getById, review.product_id),
+          buildTag(customerProductsRoutes.getById, review.productId),
         ];
       }
 
-      if (review.kind === "VENDOR" && review.vendor_id != null) {
+      if (review.kind === "VENDOR" && review.vendorId != null) {
         return [
-          buildTag(customerVendorsRoutes.getReviews, review.vendor_id),
+          buildTag(customerVendorsRoutes.getReviews, review.vendorId),
           // Vendor list/detail responses include review aggregates.
           buildTag(customerVendorsRoutes.getAll),
-          buildTag(customerVendorsRoutes.getById, review.vendor_id),
+          buildTag(customerVendorsRoutes.getById, review.vendorId),
         ];
       }
 

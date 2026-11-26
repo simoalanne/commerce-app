@@ -42,26 +42,26 @@ const findRefundForReceipt = (db: Db, refundId: number, orderId: number) =>
   db.query.refund.findFirst({
     where: {
       id: refundId,
-      order_id: orderId,
+      orderId,
       status: "SUCCEEDED",
     },
     columns: {
       id: true,
-      order_id: true,
-      provider_refund_id: true,
-      total_amount_cents: true,
+      orderId: true,
+      providerRefundId: true,
+      totalAmountCents: true,
       reason: true,
-      created_at: true,
+      createdAt: true,
     },
     with: {
-      refund_items: {
+      refundItems: {
         orderBy: { id: "asc" },
         columns: {
           quantity: true,
-          amount_cents: true,
+          amountCents: true,
         },
         with: {
-          order_item: {
+          orderItem: {
             columns: {
               name: true,
             },
@@ -124,20 +124,20 @@ const renderRefundReceiptPdf = async ({
   locale: string;
 }) => {
   const t = getTranslation(locale);
-  const vatRate = order.vat_rate;
+  const vatRate = order.vatRate;
   const receiptNumber = `RR-${refund.id}`;
-  const lineRows: RefundReceiptLineRow[] = refund.refund_items.map((refundItem) => {
-    const amount = refundItem.amount_cents;
+  const lineRows: RefundReceiptLineRow[] = refund.refundItems.map((refundItem) => {
+    const amount = refundItem.amountCents;
 
     return {
-      description: refundItem.order_item.name,
+      description: refundItem.orderItem.name,
       quantity: String(-(refundItem.quantity ?? 0)),
       vatRate,
       amount,
       includedVat: includedVatFor(amount, vatRate),
     };
   });
-  const totalAmount = refund.total_amount_cents;
+  const totalAmount = refund.totalAmountCents;
   const includedVatAmount = lineRows.reduce((total, row) => total + row.includedVat, 0);
   const tableRows: TableCell[][] = lineRows.map((row) => [
     { text: row.description, bold: true },
@@ -176,16 +176,16 @@ const renderRefundReceiptPdf = async ({
             width: "*",
             stack: buildTextLines([
               labelledLine(t.receiptNumber, receiptNumber),
-              labelledLine(t.receiptDate, formatDateTime(refund.created_at)),
+              labelledLine(t.receiptDate, formatDateTime(refund.createdAt)),
               labelledLine(t.originalOrderNumber, String(order.id)),
             ]),
           },
           {
             width: "*",
             stack: buildTextLines([
-              labelledLine(t.paymentProvider, order.payment_provider),
-              labelledLine(t.paymentId, order.payment_id),
-              labelledLine(t.refundProviderId, refund.provider_refund_id),
+              labelledLine(t.paymentProvider, order.paymentProvider),
+              labelledLine(t.paymentId, order.paymentId),
+              labelledLine(t.refundProviderId, refund.providerRefundId),
             ]),
           },
         ],
@@ -280,13 +280,13 @@ export const generateRefundReceiptPdf = async (
             status: "SUCCEEDED",
           },
           columns: {
-            order_id: true,
+            orderId: true,
           },
         })
-      : { order_id: input.orderId };
+      : { orderId: input.orderId };
   if (!refundForOrder) throw new RouteError("NOT_FOUND", { status: 404 });
   const order = await findRelevantOrderById(db, {
-    orderId: refundForOrder.order_id,
+    orderId: refundForOrder.orderId,
     ...(input.access === "customer" ? { customerId: input.customerId } : {}),
   });
   const refund = await findRefundForReceipt(db, input.refundId, order.id);
@@ -296,6 +296,6 @@ export const generateRefundReceiptPdf = async (
     config,
     order,
     refund,
-    locale: input.locale ?? order.preferred_locale,
+    locale: input.locale ?? order.preferredLocale,
   });
 };

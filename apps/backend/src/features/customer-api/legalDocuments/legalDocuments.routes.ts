@@ -26,8 +26,8 @@ export const legalDocumentsRoutes = {
           key: document.key,
           title: document.title,
           content: document.content,
-          createdAt: document.created_at,
-          updatedAt: document.updated_at,
+          createdAt: document.createdAt,
+          updatedAt: document.updatedAt,
         },
         context.locale,
       );

@@ -9,12 +9,12 @@ export const authRoutes = {
     .meta({ access: "AUTHENTICATED" })
     .handler(async ({ context }) => {
       const user = await context.db.query.user.findFirst({
-        where: { clerk_id: context.authContext.clerkId },
-        columns: { clerk_id: true },
-        with: { admin_account: { columns: { id: true } } },
+        where: { clerkId: context.authContext.clerkId },
+        columns: { clerkId: true },
+        with: { adminAccount: { columns: { id: true } } },
       });
       if (!user) throw new RouteError("NOT_FOUND", { status: 404 });
 
-      return toResponse({ role: user.admin_account ? ("ADMIN" as const) : null }, context.locale);
+      return toResponse({ role: user.adminAccount ? ("ADMIN" as const) : null }, context.locale);
     }),
 };

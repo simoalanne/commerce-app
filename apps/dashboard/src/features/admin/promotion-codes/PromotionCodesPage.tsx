@@ -7,10 +7,10 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
 });
 
-const formatDiscount = (promotionCode: { discount_type: string; discount_value: number }) =>
-  promotionCode.discount_type.endsWith("PERCENT")
-    ? `${promotionCode.discount_value}%`
-    : formatCents(promotionCode.discount_value);
+const formatDiscount = (promotionCode: { discountType: string; discountValue: number }) =>
+  promotionCode.discountType.endsWith("PERCENT")
+    ? `${promotionCode.discountValue}%`
+    : formatCents(promotionCode.discountValue);
 
 export default function PromotionCodesPage() {
   return (
@@ -49,48 +49,48 @@ export default function PromotionCodesPage() {
           header: "Code",
         },
         {
-          accessorKey: "is_active",
+          accessorKey: "isActive",
           header: "Status",
-          cell: ({ row }) => (row.original.is_active ? "Active" : "Inactive"),
+          cell: ({ row }) => (row.original.isActive ? "Active" : "Inactive"),
         },
         {
           id: "discount",
           header: "Discount",
-          accessorFn: (row) => `${row.discount_type}:${row.discount_value.toString()}`,
+          accessorFn: (row) => `${row.discountType}:${row.discountValue.toString()}`,
           cell: ({ row }) =>
-            `${formatDiscount(row.original)} ${row.original.discount_type.startsWith("ITEMS") ? "items" : "delivery"}`,
+            `${formatDiscount(row.original)} ${row.original.discountType.startsWith("ITEMS") ? "items" : "delivery"}`,
         },
         {
-          accessorKey: "minimum_items_value_cents",
+          accessorKey: "minimumItemsValueCents",
           header: "Minimum",
           cell: ({ row }) =>
-            row.original.minimum_items_value_cents == null
+            row.original.minimumItemsValueCents == null
               ? "-"
-              : formatCents(row.original.minimum_items_value_cents),
+              : formatCents(row.original.minimumItemsValueCents),
         },
         {
-          accessorKey: "usage_limit",
+          accessorKey: "usageLimit",
           header: "Usage",
           cell: ({ row }) =>
-            row.original.usage_limit == null
-              ? `${row.original.times_used} / unlimited`
-              : `${row.original.times_used} / ${row.original.usage_limit}`,
+            row.original.usageLimit == null
+              ? `${row.original.timesUsed} / unlimited`
+              : `${row.original.timesUsed} / ${row.original.usageLimit}`,
         },
         {
-          accessorKey: "valid_from",
+          accessorKey: "validFrom",
           header: "Starts",
           cell: ({ row }) =>
-            row.original.valid_from == null
+            row.original.validFrom == null
               ? "-"
-              : dateFormatter.format(new Date(row.original.valid_from)),
+              : dateFormatter.format(new Date(row.original.validFrom)),
         },
         {
-          accessorKey: "valid_until",
+          accessorKey: "validUntil",
           header: "Ends",
           cell: ({ row }) =>
-            row.original.valid_until == null
+            row.original.validUntil == null
               ? "-"
-              : dateFormatter.format(new Date(row.original.valid_until)),
+              : dateFormatter.format(new Date(row.original.validUntil)),
         },
       ]}
     />

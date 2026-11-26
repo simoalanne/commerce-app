@@ -7,7 +7,7 @@ type ProductScopeInput = {
 };
 
 export const activeStorefrontVendorWhere = ({ vendorId }: { vendorId?: number | null } = {}) => ({
-  storefront_visibility: "ACTIVE" as const,
+  storefrontVisibility: "ACTIVE" as const,
   ...(vendorId != null ? { id: vendorId } : {}),
 });
 
@@ -18,10 +18,10 @@ export const activeStorefrontProductWhere = ({
   categoryId,
   vendorId,
 }: ProductScopeInput = {}) => ({
-  storefront_visibility: "ACTIVE" as const,
+  storefrontVisibility: "ACTIVE" as const,
   ...(productId != null ? { id: productId } : {}),
   ...(productIds ? { id: { in: productIds } } : {}),
   ...(skus ? { sku: { in: skus } } : {}),
-  ...(categoryId != null ? { category_id: categoryId } : {}),
+  ...(categoryId != null ? { categoryId } : {}),
   vendor: activeStorefrontVendorWhere({ vendorId }),
 });

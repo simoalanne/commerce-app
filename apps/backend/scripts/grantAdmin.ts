@@ -47,9 +47,9 @@ try {
 }
 
 await db.transaction(async (tx) => {
-  await tx.insert(userTable).values({ clerk_id: clerkId }).onConflictDoNothing();
-  await tx.delete(adminAccountTable).where(eq(adminAccountTable.user_id, clerkId));
-  await tx.insert(adminAccountTable).values({ user_id: clerkId });
+  await tx.insert(userTable).values({ clerkId }).onConflictDoNothing();
+  await tx.delete(adminAccountTable).where(eq(adminAccountTable.userId, clerkId));
+  await tx.insert(adminAccountTable).values({ userId: clerkId });
 });
 
 await db.$client.end();

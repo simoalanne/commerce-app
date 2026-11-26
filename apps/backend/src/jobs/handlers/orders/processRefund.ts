@@ -24,9 +24,9 @@ export async function processRefund(
     .where(and(eq(refundTable.id, refundId), eq(refundTable.status, "PENDING")))
     .returning({
       id: refundTable.id,
-      idempotency_key: refundTable.idempotency_key,
-      total_amount_cents: refundTable.total_amount_cents,
-      order_id: refundTable.order_id,
+      idempotencyKey: refundTable.idempotencyKey,
+      totalAmountCents: refundTable.totalAmountCents,
+      orderId: refundTable.orderId,
     });
   const refund = claimedRefund && {
     ...claimedRefund,
@@ -34,12 +34,12 @@ export async function processRefund(
       await db
         .select({
           id: orderTable.id,
-          payment_id: orderTable.payment_id,
-          payment_provider: orderTable.payment_provider,
-          order_details: orderTable.order_details,
+          paymentId: orderTable.paymentId,
+          paymentProvider: orderTable.paymentProvider,
+          orderDetails: orderTable.orderDetails,
         })
         .from(orderTable)
-        .where(eq(orderTable.id, claimedRefund.order_id))
+        .where(eq(orderTable.id, claimedRefund.orderId))
     )[0],
   };
 
@@ -51,24 +51,24 @@ export async function processRefund(
     return;
   }
 
-  if (!refund.order.payment_id) {
+  if (!refund.order.paymentId) {
     throw new Error("REFUND_ORDER_PAYMENT_ID_MISSING");
   }
 
-  const orderDetails = refund.order.order_details;
-  const refundedPayment = await getPaymentProvider(refund.order.payment_provider).refundPayment({
-    paymentId: refund.order.payment_id,
-    amountCents: refund.total_amount_cents,
+  const orderDetails = refund.order.orderDetails;
+  const refundedPayment = await getPaymentProvider(refund.order.paymentProvider).refundPayment({
+    paymentId: refund.order.paymentId,
+    amountCents: refund.totalAmountCents,
     receiptEmail: orderDetails.customer.email,
     orderId: refund.order.id,
     refundId: refund.id,
-    refundKey: refund.idempotency_key,
+    refundKey: refund.idempotencyKey,
   });
 
   if (refundedPayment.status === "failed") {
     await db
       .update(refundTable)
-      .set({ status: "FAILED", failure_reason: refundedPayment.reason })
+      .set({ status: "FAILED", failureReason: refundedPayment.reason })
       .where(eq(refundTable.id, refund.id));
     return;
   }
@@ -76,7 +76,7 @@ export async function processRefund(
   if (refundedPayment.status === "requires_manual_review") {
     await db
       .update(refundTable)
-      .set({ status: "REQUIRES_MANUAL_REVIEW", failure_reason: refundedPayment.reason })
+      .set({ status: "REQUIRES_MANUAL_REVIEW", failureReason: refundedPayment.reason })
       .where(eq(refundTable.id, refund.id));
     return;
   }
@@ -85,7 +85,7 @@ export async function processRefund(
     await db.transaction(async (tx) => {
       const updated = await tx
         .update(refundTable)
-        .set({ status: "SUCCEEDED", provider_refund_id: refundedPayment.refundId })
+        .set({ status: "SUCCEEDED", providerRefundId: refundedPayment.refundId })
         .where(and(eq(refundTable.id, refund.id), eq(refundTable.status, "PROCESSING")))
         .returning({ id: refundTable.id });
 
@@ -109,7 +109,7 @@ export async function processRefund(
   if (refundedPayment.status === "pending") {
     await db
       .update(refundTable)
-      .set({ provider_refund_id: refundedPayment.refundId })
+      .set({ providerRefundId: refundedPayment.refundId })
       .where(eq(refundTable.id, refund.id));
 
     logger.info("Refund is pending provider confirmation", {

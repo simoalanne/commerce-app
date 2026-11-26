@@ -26,7 +26,7 @@ const imageStorageKey = (kind: string, slug: string) =>
   `${kind}s/${slug}/${uniqueValue("image")}.jpg`;
 
 const insertImage = async (storageKey: string) =>
-  (await db.insert(imageTable).values({ storage_key: storageKey }).returning())[0];
+  (await db.insert(imageTable).values({ storageKey }).returning())[0];
 
 export const createCategory = async (
   overrides: Partial<typeof categoryTable.$inferInsert> = {},
@@ -38,7 +38,7 @@ export const createCategory = async (
 
   const [category] = await db
     .insert(categoryTable)
-    .values({ name, slug, image_id: image.id, ...overrides })
+    .values({ name, slug, imageId: image.id, ...overrides })
     .returning();
   return category;
 };
@@ -51,7 +51,7 @@ export const createImage = async (overrides: Partial<typeof imageTable.$inferIns
     .values({
       name: "Test image",
       alt: {},
-      storage_key: imageStorageKey("asset", slug),
+      storageKey: imageStorageKey("asset", slug),
       ...overrides,
     })
     .returning();
@@ -61,7 +61,7 @@ export const createImage = async (overrides: Partial<typeof imageTable.$inferIns
 export const createUser = async (overrides: Partial<typeof userTable.$inferInsert> = {}) => {
   const [user] = await db
     .insert(userTable)
-    .values({ clerk_id: uniqueValue("clerk"), ...overrides })
+    .values({ clerkId: uniqueValue("clerk"), ...overrides })
     .returning();
   return user;
 };
@@ -69,12 +69,12 @@ export const createUser = async (overrides: Partial<typeof userTable.$inferInser
 export const createCustomerAccount = async ({
   user: providedUser,
   ...overrides
-}: Partial<typeof customerAccountTable.$inferInsert> & { user?: { clerk_id: string } } = {}) => {
+}: Partial<typeof customerAccountTable.$inferInsert> & { user?: { clerkId: string } } = {}) => {
   const user = providedUser ?? (await createUser());
 
   const [account] = await db
     .insert(customerAccountTable)
-    .values({ user_id: user.clerk_id, ...overrides })
+    .values({ userId: user.clerkId, ...overrides })
     .returning();
   return account;
 };
@@ -95,7 +95,7 @@ export const createVendor = async (overrides: Partial<typeof vendorTable.$inferI
     })
     .returning();
   const image = await insertImage(imageStorageKey("vendor", slug));
-  await db.insert(vendorImageTable).values({ vendor_id: vendor.id, image_id: image.id });
+  await db.insert(vendorImageTable).values({ vendorId: vendor.id, imageId: image.id });
   return vendor;
 };
 
@@ -103,10 +103,10 @@ export const createProduct = async ({
   categoryIds,
   ...overrides
 }: Partial<typeof productTable.$inferInsert> & { categoryIds?: number[] } = {}) => {
-  const vendorId = overrides.vendor_id ?? (await createVendor()).id;
+  const vendorId = overrides.vendorId ?? (await createVendor()).id;
   const categoryId =
     categoryIds?.[0] ??
-    (overrides.category_id === undefined ? (await createCategory()).id : overrides.category_id);
+    (overrides.categoryId === undefined ? (await createCategory()).id : overrides.categoryId);
   const name = overrides.name ?? { en: "Test product" };
   const slug = overrides.slug ?? buildLocalizedSlugFromLocalizedText(name);
   const imageSlug = typeof slug.en === "string" ? slug.en : uniqueValue("product");
@@ -117,16 +117,16 @@ export const createProduct = async ({
       sku: uniqueValue("sku"),
       slug,
       name,
-      weight_grams: 500,
+      weightGrams: 500,
       headline: { en: "Test headline" },
-      full_description: { en: "Test description" },
-      cost_price_cents: 990,
-      sales_price_cents: 990,
-      current_stock: 10,
-      storefront_visibility: "ACTIVE",
+      fullDescription: { en: "Test description" },
+      costPriceCents: 990,
+      salesPriceCents: 990,
+      currentStock: 10,
+      storefrontVisibility: "ACTIVE",
       ...overrides,
-      category_id: categoryId,
-      vendor_id: vendorId,
+      categoryId,
+      vendorId,
     })
     .returning();
 
@@ -134,38 +134,36 @@ export const createProduct = async ({
     .insert(tagTable)
     .values({ name: { en: "test" }, color: "#16a34a" })
     .returning();
-  await db.insert(productTagTable).values({ product_id: product.id, tag_id: tag.id });
+  await db.insert(productTagTable).values({ productId: product.id, tagId: tag.id });
   const image = await insertImage(imageStorageKey("product", imageSlug));
-  await db.insert(productImageTable).values({ product_id: product.id, image_id: image.id });
+  await db.insert(productImageTable).values({ productId: product.id, imageId: image.id });
   return product;
 };
 
-type OrderItemInput = Omit<typeof orderItemTable.$inferInsert, "order_id">;
+type OrderItemInput = Omit<typeof orderItemTable.$inferInsert, "orderId">;
 
 export const createOrder = async (
   {
-    order_items: orderItems = [],
+    orderItems = [],
     ...overrides
-  }: Partial<typeof orderTable.$inferInsert> & { order_items?: OrderItemInput[] } = {},
+  }: Partial<typeof orderTable.$inferInsert> & { orderItems?: OrderItemInput[] } = {},
   status: OrderStatus = "PENDING",
 ) => {
   const customerId =
-    overrides.customer_id === undefined
-      ? (await createCustomerAccount()).id
-      : overrides.customer_id;
+    overrides.customerId === undefined ? (await createCustomerAccount()).id : overrides.customerId;
 
   const [order] = await db
     .insert(orderTable)
     .values({
-      items_subtotal_cents: 1990,
-      items_discount_cents: 0,
-      charged_total_cents: 1990,
-      vat_rate: 20,
-      included_vat_cents: 332,
-      total_weight_grams: 500,
-      payment_provider: "STRIPE",
+      itemsSubtotalCents: 1990,
+      itemsDiscountCents: 0,
+      chargedTotalCents: 1990,
+      vatRate: 20,
+      includedVatCents: 332,
+      totalWeightGrams: 500,
+      paymentProvider: "STRIPE",
       status,
-      order_details: {
+      orderDetails: {
         customer: {
           name: "Test Customer",
           email: "customer@example.com",
@@ -178,16 +176,16 @@ export const createOrder = async (
         },
       },
       // Tests that read invoice details set them.
-      invoice_details: {} as typeof orderTable.$inferInsert.invoice_details,
+      invoiceDetails: {} as typeof orderTable.$inferInsert.invoiceDetails,
       ...overrides,
-      customer_id: customerId,
+      customerId,
     })
     .returning();
 
   if (orderItems.length > 0) {
     await db
       .insert(orderItemTable)
-      .values(orderItems.map((item) => ({ ...item, order_id: order.id })));
+      .values(orderItems.map((item) => ({ ...item, orderId: order.id })));
   }
   return order;
 };
@@ -195,21 +193,21 @@ export const createOrder = async (
 const createReview = async (
   kind: "VENDOR" | "PRODUCT",
   overrides: Partial<typeof reviewTable.$inferInsert>,
-  defaults: { vendor_id?: number; product_id?: number },
+  defaults: { vendorId?: number; productId?: number },
 ) => {
-  const orderId = overrides.order_id === undefined ? (await createOrder()).id : overrides.order_id;
+  const orderId = overrides.orderId === undefined ? (await createOrder()).id : overrides.orderId;
 
   const [review] = await db
     .insert(reviewTable)
     .values({
       kind,
-      reviewer_name: "Test Reviewer",
-      show_reviewer_name: true,
+      reviewerName: "Test Reviewer",
+      showReviewerName: true,
       rating: 4,
       comment: "Test review",
       ...defaults,
       ...overrides,
-      order_id: orderId,
+      orderId,
     })
     .returning();
   return review;
@@ -219,12 +217,12 @@ export const createVendorReview = async (
   overrides: Partial<typeof reviewTable.$inferInsert> = {},
 ) =>
   createReview("VENDOR", overrides, {
-    vendor_id: overrides.vendor_id ?? (await createVendor()).id,
+    vendorId: overrides.vendorId ?? (await createVendor()).id,
   });
 
 export const createProductReview = async (
   overrides: Partial<typeof reviewTable.$inferInsert> = {},
 ) =>
   createReview("PRODUCT", overrides, {
-    product_id: overrides.product_id ?? (await createProduct()).id,
+    productId: overrides.productId ?? (await createProduct()).id,
   });

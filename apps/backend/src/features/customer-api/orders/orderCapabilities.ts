@@ -42,7 +42,7 @@ export const createOrderCapabilityJwt = async (
   { db, config }: { db: Db; config: EnvConfig },
   { token, orderId, customerId, scope }: CreateOrderCapabilityParams,
 ) => {
-  const whereClause = orderId ? { id: orderId, customer_id: customerId } : { claim_token: token };
+  const whereClause = orderId ? { id: orderId, customerId } : { claimToken: token };
   const order = await db.query.order.findFirst({
     where: whereClause,
     columns: {

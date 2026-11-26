@@ -5,7 +5,7 @@ import { FIRST_LINKED_IMAGE_SELECT } from "#src/utils/imageUrl.ts";
 import { type RelevantOrderStatus, relevantOrderStatuses } from "#src/utils/orderStatus.ts";
 
 const relevantOrderWith = {
-  order_items: {
+  orderItems: {
     orderBy: {
       id: "asc",
     },
@@ -36,15 +36,15 @@ const relevantOrderWith = {
     columns: {
       id: true,
       status: true,
-      total_amount_cents: true,
-      created_at: true,
+      totalAmountCents: true,
+      createdAt: true,
     },
     with: {
-      refund_items: {
+      refundItems: {
         columns: {
-          order_item_id: true,
+          orderItemId: true,
           quantity: true,
-          amount_cents: true,
+          amountCents: true,
         },
       },
     },
@@ -58,11 +58,11 @@ const findRelevantOrderRows = (
   db.query.order.findMany({
     where: {
       ...(where.orderId != null && { id: where.orderId }),
-      ...(where.customerId != null && { customer_id: where.customerId }),
-      ...(where.token && { claim_token: where.token }),
+      ...(where.customerId != null && { customerId: where.customerId }),
+      ...(where.token && { claimToken: where.token }),
       status: { in: [...relevantOrderStatuses] },
     },
-    orderBy: { created_at: "desc" },
+    orderBy: { createdAt: "desc" },
     with: relevantOrderWith,
   });
 
@@ -73,27 +73,27 @@ const parseRelevantOrder = (order: RelevantOrderRow) => {
   const refundedQuantityByOrderItemId = new Map<number, number>();
 
   for (const refund of succeededRefunds) {
-    for (const refundItem of refund.refund_items) {
+    for (const refundItem of refund.refundItems) {
       if (refundItem.quantity == null) {
         continue;
       }
 
       refundedQuantityByOrderItemId.set(
-        refundItem.order_item_id,
-        (refundedQuantityByOrderItemId.get(refundItem.order_item_id) ?? 0) + refundItem.quantity,
+        refundItem.orderItemId,
+        (refundedQuantityByOrderItemId.get(refundItem.orderItemId) ?? 0) + refundItem.quantity,
       );
     }
   }
 
   const refundedCents = succeededRefunds.reduce(
-    (total, refund) => total + refund.total_amount_cents,
+    (total, refund) => total + refund.totalAmountCents,
     0,
   );
   const refundReceipts = succeededRefunds.map((refund) => ({
     refundId: refund.id,
     number: `RR-${refund.id}`,
-    createdAt: refund.created_at,
-    totalCents: refund.total_amount_cents,
+    createdAt: refund.createdAt,
+    totalCents: refund.totalAmountCents,
   }));
 
   return {
@@ -104,7 +104,7 @@ const parseRelevantOrder = (order: RelevantOrderRow) => {
       refundedQuantityByOrderItemId,
     },
     refundReceipts,
-    orderItems: order.order_items,
+    orderItems: order.orderItems,
     hasSubmittedReview: (order.reviews?.length ?? 0) > 0,
   };
 };
@@ -112,13 +112,13 @@ const parseRelevantOrder = (order: RelevantOrderRow) => {
 export type RelevantOrder = ReturnType<typeof parseRelevantOrder>;
 
 export const buildOrderPricing = (order: RelevantOrder) => ({
-  itemsSubtotalCents: order.items_subtotal_cents,
-  itemsDiscountCents: order.items_discount_cents > 0 ? order.items_discount_cents : null,
+  itemsSubtotalCents: order.itemsSubtotalCents,
+  itemsDiscountCents: order.itemsDiscountCents > 0 ? order.itemsDiscountCents : null,
   discountedItemsSubtotalCents:
-    order.items_discount_cents > 0 ? order.items_subtotal_cents - order.items_discount_cents : null,
-  chargedTotalCents: order.charged_total_cents,
-  vatRate: order.vat_rate,
-  includedVatCents: order.included_vat_cents,
+    order.itemsDiscountCents > 0 ? order.itemsSubtotalCents - order.itemsDiscountCents : null,
+  chargedTotalCents: order.chargedTotalCents,
+  vatRate: order.vatRate,
+  includedVatCents: order.includedVatCents,
   refundedCents: order.refundSummary.refundedCents,
 });
 

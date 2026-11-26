@@ -12,7 +12,7 @@ export const findCustomerIdByEmail = async (
   if (!authUser) return null;
 
   const account = await db.query.customerAccount.findFirst({
-    where: { user_id: authUser.id },
+    where: { userId: authUser.id },
     columns: { id: true },
   });
 

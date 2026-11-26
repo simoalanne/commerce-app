@@ -17,19 +17,14 @@ const idParams = z.object({ id: z.coerce.number<number>().int().positive() });
 
 const toPromotionCodeWriteData = <
   T extends {
-    created_at?: Date;
-    updated_at?: Date;
-    times_used?: number;
+    createdAt?: Date;
+    updatedAt?: Date;
+    timesUsed?: number;
   },
 >(
   request: T,
 ) => {
-  const {
-    created_at: _createdAt,
-    updated_at: _updatedAt,
-    times_used: _timesUsed,
-    ...data
-  } = request;
+  const { createdAt: _createdAt, updatedAt: _updatedAt, timesUsed: _timesUsed, ...data } = request;
 
   return data;
 };
@@ -38,7 +33,7 @@ export const promotionCodesRoutes = {
   getAll: promotionCodeRoute.get("/promotion-codes").handler(async ({ context }) =>
     toResponse(
       await context.db.query.promotionCode.findMany({
-        orderBy: { created_at: "desc", id: "desc" },
+        orderBy: { createdAt: "desc", id: "desc" },
       }),
       context.locale,
     ),

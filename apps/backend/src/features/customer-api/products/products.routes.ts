@@ -17,7 +17,7 @@ const productWith = {
   vendor: { columns: { name: true } },
   category: { columns: { name: true } },
   tags: {
-    orderBy: { tag_id: "asc" },
+    orderBy: { tagId: "asc" },
     columns: {},
     with: { tag: { columns: { name: true, color: true } } },
   },
@@ -61,11 +61,11 @@ const toProductSummary = (storage: ObjectStorageProvider, product: ProductWithRe
   vendorName: product.vendor?.name || "Tuntematon",
   tags: product.tags.map((productTag) => productTag.tag),
   imageUrl: getFirstLinkedImageUrl(storage, product.images),
-  priceCents: product.sales_price_cents,
-  availableStock: product.current_stock - product.reserved_stock,
-  purchaseLimitPerOrder: product.purchase_limit_per_order,
-  isOutOfStock: product.current_stock - product.reserved_stock <= 0,
-  isFeatured: product.is_featured,
+  priceCents: product.salesPriceCents,
+  availableStock: product.currentStock - product.reservedStock,
+  purchaseLimitPerOrder: product.purchaseLimitPerOrder,
+  isOutOfStock: product.currentStock - product.reservedStock <= 0,
+  isFeatured: product.isFeatured,
   ...getProductReviewSummary(product),
 });
 
@@ -80,7 +80,7 @@ export const productsRoutes = {
       return toResponse(
         {
           ...toProductSummary(context.storage, product),
-          fullDescription: product.full_description,
+          fullDescription: product.fullDescription,
           imageUrls: getLinkedImageUrls(context.storage, product.images),
         },
         context.locale,

@@ -31,16 +31,16 @@ export const enqueueOrderRefundSucceededSideEffectJobs = async ({
 }) => {
   const restockItems = await transaction.query.refundItem.findMany({
     where: {
-      refund_id: refundId,
-      restock_quantity: { gt: 0 },
+      refundId,
+      restockQuantity: { gt: 0 },
     },
     columns: {
-      restock_quantity: true,
+      restockQuantity: true,
     },
     with: {
-      order_item: {
+      orderItem: {
         columns: {
-          product_id: true,
+          productId: true,
         },
       },
     },
@@ -48,14 +48,14 @@ export const enqueueOrderRefundSucceededSideEffectJobs = async ({
 
   await restockProductStock({
     items: restockItems.map((item) => ({
-      product_id: item.order_item.product_id,
-      quantity: item.restock_quantity,
+      productId: item.orderItem.productId,
+      quantity: item.restockQuantity,
     })),
     transaction,
   });
 
   const restockedProductIds = restockItems.flatMap((item) =>
-    item.order_item.product_id == null ? [] : [item.order_item.product_id],
+    item.orderItem.productId == null ? [] : [item.orderItem.productId],
   );
   if (restockedProductIds.length) {
     await enqueueProductStockInvalidationJobs({

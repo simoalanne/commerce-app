@@ -58,19 +58,19 @@ export const buildOrderPaidPayload = async (orderId: number): Promise<OrderPaidP
     columns: {
       id: true,
       status: true,
-      items_subtotal_cents: true,
-      items_discount_cents: true,
-      charged_total_cents: true,
-      vat_rate: true,
-      included_vat_cents: true,
-      claim_token: true,
-      customer_id: true,
-      preferred_locale: true,
-      created_at: true,
-      order_details: true,
+      itemsSubtotalCents: true,
+      itemsDiscountCents: true,
+      chargedTotalCents: true,
+      vatRate: true,
+      includedVatCents: true,
+      claimToken: true,
+      customerId: true,
+      preferredLocale: true,
+      createdAt: true,
+      orderDetails: true,
     },
     with: {
-      order_items: {
+      orderItems: {
         orderBy: { id: "asc" },
         with: {
           product: {
@@ -85,13 +85,13 @@ export const buildOrderPaidPayload = async (orderId: number): Promise<OrderPaidP
   });
   if (!order) throw new Error(`Order ${orderId} not found`);
 
-  const orderDetails = order.order_details;
-  const locale = order.preferred_locale ?? "en";
+  const orderDetails = order.orderDetails;
+  const locale = order.preferredLocale ?? "en";
 
-  const isGuestOrder = order.customer_id === null;
+  const isGuestOrder = order.customerId === null;
   const recipientName = orderDetails.customer.name;
   const recipientPhone = orderDetails.customer.phone ?? null;
-  const claimToken = order.claim_token;
+  const claimToken = order.claimToken;
 
   if (!claimToken) {
     throw new Error(`Missing claim token for order ${order.id}`);
@@ -99,28 +99,28 @@ export const buildOrderPaidPayload = async (orderId: number): Promise<OrderPaidP
 
   return {
     orderId: order.id,
-    placedAt: order.created_at,
+    placedAt: order.createdAt,
     locale,
     recipientEmail: orderDetails.customer.email,
     recipientPhone,
     recipientName,
     recipientFirstName: recipientName.split(/\s+/)[0] ?? recipientName,
     formattedAddress: orderDetails.delivery.addressLabel.replaceAll(", ", "\n"),
-    items: order.order_items.map((item) => {
+    items: order.orderItems.map((item) => {
       return {
         sku: item.sku,
         name: (getLocalizedValue(item.product?.name, locale) as string | undefined) ?? item.name,
-        vendorName: item.vendor_name,
+        vendorName: item.vendorName,
         imageUrl: getFirstLinkedImageUrl(ObjectStorage, item.product?.images),
         quantity: item.quantity,
-        unitPriceCents: item.unit_sales_price_cents,
-        lineTotalCents: item.unit_sales_price_cents * item.quantity,
+        unitPriceCents: item.unitSalesPriceCents,
+        lineTotalCents: item.unitSalesPriceCents * item.quantity,
       };
     }),
-    subtotalCents: order.items_subtotal_cents - order.items_discount_cents,
-    totalCents: order.charged_total_cents,
-    vatRate: order.vat_rate,
-    includedVatCents: order.included_vat_cents,
+    subtotalCents: order.itemsSubtotalCents - order.itemsDiscountCents,
+    totalCents: order.chargedTotalCents,
+    vatRate: order.vatRate,
+    includedVatCents: order.includedVatCents,
     claimToken,
     viewOrderUrl: buildViewOrderUrl({
       baseUrl: getOnlineStoreUrl(envConfig, "/"),

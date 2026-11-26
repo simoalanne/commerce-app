@@ -171,35 +171,35 @@ const createPaymentInternal = async (
     const [order] = await tx
       .insert(orderTable)
       .values({
-        customer_id: customerId,
-        has_been_linked_to_customer_account: customerId != null,
-        items_subtotal_cents: pricingSnapshot.itemsSubtotalCents,
-        items_discount_cents: pricingSnapshot.itemsDiscountCents ?? 0,
-        charged_total_cents: pricingSnapshot.chargedTotalCents,
-        vat_rate: pricingSnapshot.vatRate,
-        included_vat_cents: pricingSnapshot.includedVatCents,
-        payment_provider: provider,
-        order_details: orderDetails,
-        invoice_details: getCompanyDetails(config),
-        applied_promo_code: validatedPromoCode ? promoCode : null,
-        total_weight_grams: orderItems.reduce(
+        customerId,
+        hasBeenLinkedToCustomerAccount: customerId != null,
+        itemsSubtotalCents: pricingSnapshot.itemsSubtotalCents,
+        itemsDiscountCents: pricingSnapshot.itemsDiscountCents ?? 0,
+        chargedTotalCents: pricingSnapshot.chargedTotalCents,
+        vatRate: pricingSnapshot.vatRate,
+        includedVatCents: pricingSnapshot.includedVatCents,
+        paymentProvider: provider,
+        orderDetails,
+        invoiceDetails: getCompanyDetails(config),
+        appliedPromoCode: validatedPromoCode ? promoCode : null,
+        totalWeightGrams: orderItems.reduce(
           (sum, item) => sum + item.weightGrams * item.quantity,
           0,
         ),
-        preferred_locale: context.locale,
+        preferredLocale: context.locale,
       })
       .returning();
     await tx.insert(orderItemTable).values(
       orderItems.map((item) => ({
-        order_id: order.id,
+        orderId: order.id,
         sku: item.sku,
         name: item.productName,
         quantity: item.quantity,
-        unit_cost_price_cents: item.unitCostPriceCents,
-        unit_sales_price_cents: item.unitPriceCents,
-        product_id: item.productId,
-        vendor_id: item.vendorId,
-        vendor_name: item.vendorName,
+        unitCostPriceCents: item.unitCostPriceCents,
+        unitSalesPriceCents: item.unitPriceCents,
+        productId: item.productId,
+        vendorId: item.vendorId,
+        vendorName: item.vendorName,
       })),
     );
 
@@ -223,7 +223,7 @@ const createPaymentInternal = async (
       receiptEmail: recipient.email,
       metadata: {
         orderId: order.id,
-        claimToken: order.claim_token,
+        claimToken: order.claimToken,
         locale: context.locale,
         ...(customerId != null ? { customerId } : {}),
       },
@@ -237,7 +237,7 @@ const createPaymentInternal = async (
     await db.transaction(async (tx) => {
       await tx
         .update(orderTable)
-        .set({ payment_id: payment.paymentId })
+        .set({ paymentId: payment.paymentId })
         .where(eq(orderTable.id, order.id));
       const enqueueJob: EnqueueJob = (job) => context.jobQueue.enqueue(tx, job);
 
@@ -319,23 +319,23 @@ const getValidatedPromoCode = async (
 
   const now = new Date();
 
-  if (!promo.is_active) {
+  if (!promo.isActive) {
     throw new PromoCodeInactive();
   }
 
-  if (promo.valid_from && isBefore(now, promo.valid_from)) {
+  if (promo.validFrom && isBefore(now, promo.validFrom)) {
     throw new PromoCodeNotStarted();
   }
 
-  if (promo.valid_until && isAfter(now, promo.valid_until)) {
+  if (promo.validUntil && isAfter(now, promo.validUntil)) {
     throw new PromoCodeExpired();
   }
 
-  if (promo.usage_limit && promo.times_used >= promo.usage_limit) {
+  if (promo.usageLimit && promo.timesUsed >= promo.usageLimit) {
     throw new PromoCodeUsageLimitReached();
   }
 
-  const minimumItemsValueCents = promo.minimum_items_value_cents;
+  const minimumItemsValueCents = promo.minimumItemsValueCents;
 
   if (minimumItemsValueCents && itemsSubtotalCents < minimumItemsValueCents) {
     throw new PromoCodeMinimumItemsValueNotMet({
@@ -344,8 +344,8 @@ const getValidatedPromoCode = async (
   }
 
   return {
-    discountType: promo.discount_type,
-    discountValue: promo.discount_value,
+    discountType: promo.discountType,
+    discountValue: promo.discountValue,
     minimumItemsValueCents: minimumItemsValueCents ?? null,
   };
 };
@@ -430,7 +430,7 @@ export const checkoutRoutes = {
       });
       const order = await context.db.query.order.findFirst({
         where: { id: capability.orderId },
-        columns: { status: true, payment_id: true },
+        columns: { status: true, paymentId: true },
       });
 
       if (!order) {

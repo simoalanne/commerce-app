@@ -48,7 +48,7 @@ afterEach(async () => {
   }
 
   if (createdUserIds.size > 0) {
-    await db.delete(userTable).where(inArray(userTable.clerk_id, [...createdUserIds]));
+    await db.delete(userTable).where(inArray(userTable.clerkId, [...createdUserIds]));
     createdUserIds.clear();
   }
 });
@@ -62,11 +62,11 @@ describe("customerApi.reviews", () => {
     createdCategoryIds.add(category.id);
 
     const requestedProduct = await createProduct({
-      vendor_id: vendor.id,
+      vendorId: vendor.id,
       categoryIds: [category.id],
     });
     const otherProduct = await createProduct({
-      vendor_id: vendor.id,
+      vendorId: vendor.id,
       categoryIds: [category.id],
     });
     createdProductIds.add(requestedProduct.id);
@@ -74,27 +74,27 @@ describe("customerApi.reviews", () => {
 
     const namedReviewer = await createUser();
     const anonymousReviewer = await createUser();
-    createdUserIds.add(namedReviewer.clerk_id);
-    createdUserIds.add(anonymousReviewer.clerk_id);
+    createdUserIds.add(namedReviewer.clerkId);
+    createdUserIds.add(anonymousReviewer.clerkId);
 
     const namedReview = await createProductReview({
-      product_id: requestedProduct.id,
-      reviewer_name: "Test Reviewer",
-      show_reviewer_name: true,
+      productId: requestedProduct.id,
+      reviewerName: "Test Reviewer",
+      showReviewerName: true,
       status: "APPROVED",
       rating: 4,
       comment: "Named review",
     });
     const anonymousReview = await createProductReview({
-      product_id: requestedProduct.id,
-      reviewer_name: "Anonymous Reviewer",
-      show_reviewer_name: false,
+      productId: requestedProduct.id,
+      reviewerName: "Anonymous Reviewer",
+      showReviewerName: false,
       status: "APPROVED",
       rating: 5,
       comment: "Anonymous review",
     });
     const unrelatedReview = await createProductReview({
-      product_id: otherProduct.id,
+      productId: otherProduct.id,
       rating: 1,
       comment: "Should not be returned",
     });
@@ -104,11 +104,11 @@ describe("customerApi.reviews", () => {
 
     await db
       .update(reviewTable)
-      .set({ updated_at: new Date("2026-02-01T10:00:00.000Z") })
+      .set({ updatedAt: new Date("2026-02-01T10:00:00.000Z") })
       .where(eq(reviewTable.id, namedReview.id));
     await db
       .update(reviewTable)
-      .set({ updated_at: new Date("2026-02-02T10:00:00.000Z") })
+      .set({ updatedAt: new Date("2026-02-02T10:00:00.000Z") })
       .where(eq(reviewTable.id, anonymousReview.id));
 
     const { body: result } = await client.reviews.getByProduct({

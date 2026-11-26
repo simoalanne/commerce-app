@@ -70,19 +70,19 @@ export function ProductFormContent({ entityData, onSuccess }: ProductFormProps) 
   const fallbackDefaults: FormOutput = {
     sku: "",
     name: "",
-    weight_grams: 0,
+    weightGrams: 0,
     headline: "",
-    full_description: "",
-    storefront_visibility: "INACTIVE",
-    is_featured: false,
-    category_id: null,
+    fullDescription: "",
+    storefrontVisibility: "INACTIVE",
+    isFeatured: false,
+    categoryId: null,
     tags: [],
     images: [],
-    cost_price_cents: 0,
-    sales_price_cents: 0,
-    current_stock: 0,
-    purchase_limit_per_order: 0,
-    vendor_id: 0,
+    costPriceCents: 0,
+    salesPriceCents: 0,
+    currentStock: 0,
+    purchaseLimitPerOrder: 0,
+    vendorId: 0,
   };
 
   const form = useForm<FormInput, unknown, FormOutput>({
@@ -91,22 +91,22 @@ export function ProductFormContent({ entityData, onSuccess }: ProductFormProps) 
       ? { ...entityData }
       : {
           ...fallbackDefaults,
-          vendor_id: defaultVendorId ?? fallbackDefaults.vendor_id ?? 0,
+          vendorId: defaultVendorId ?? fallbackDefaults.vendorId ?? 0,
         },
   });
   const [markupPercent, setMarkupPercent] = useState(() =>
     getMarkupPercent(
-      entityData?.cost_price_cents ?? fallbackDefaults.cost_price_cents,
-      entityData?.sales_price_cents ?? fallbackDefaults.sales_price_cents,
+      entityData?.costPriceCents ?? fallbackDefaults.costPriceCents,
+      entityData?.salesPriceCents ?? fallbackDefaults.salesPriceCents,
     ),
   );
   const isPending = createMutation.isPending || updateMutation.isPending;
   const categoryId = useWatch({
     control: form.control,
-    name: "category_id",
+    name: "categoryId",
   });
-  const costPrice = useWatch({ control: form.control, name: "cost_price_cents" }) ?? 0;
-  const salesPrice = useWatch({ control: form.control, name: "sales_price_cents" }) ?? 0;
+  const costPrice = useWatch({ control: form.control, name: "costPriceCents" }) ?? 0;
+  const salesPrice = useWatch({ control: form.control, name: "salesPriceCents" }) ?? 0;
   const categoryMarkupPercent = productMarkupDefaults?.categories.find(
     (category) => category.id === categoryId,
   )?.markupPercent;
@@ -127,7 +127,7 @@ export function ProductFormContent({ entityData, onSuccess }: ProductFormProps) 
   }, [costPrice, expectedMarkupPercent, salesPrice]);
 
   const updateSalesPriceFromMarkup = (nextMarkupPercent: number) => {
-    form.setValue("sales_price_cents", getSalesPriceFromMarkup(costPrice, nextMarkupPercent), {
+    form.setValue("salesPriceCents", getSalesPriceFromMarkup(costPrice, nextMarkupPercent), {
       shouldDirty: true,
       shouldValidate: true,
     });
@@ -192,7 +192,7 @@ export function ProductFormContent({ entityData, onSuccess }: ProductFormProps) 
         />
 
         <Controller
-          name="vendor_id"
+          name="vendorId"
           control={form.control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
@@ -238,7 +238,7 @@ export function ProductFormContent({ entityData, onSuccess }: ProductFormProps) 
         />
 
         <Controller
-          name="category_id"
+          name="categoryId"
           control={form.control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
@@ -273,7 +273,7 @@ export function ProductFormContent({ entityData, onSuccess }: ProductFormProps) 
         />
 
         <Controller
-          name="full_description"
+          name="fullDescription"
           control={form.control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
@@ -293,22 +293,22 @@ export function ProductFormContent({ entityData, onSuccess }: ProductFormProps) 
         <Field>
           <FieldLabel>Weight</FieldLabel>
           <NumberInput
-            name="weight_grams"
+            name="weightGrams"
             control={form.control}
             min={0}
             step={1}
             endSymbol="g"
             placeholder="0"
           />
-          {form.formState.errors.weight_grams ? (
-            <FieldError errors={[form.formState.errors.weight_grams]} />
+          {form.formState.errors.weightGrams ? (
+            <FieldError errors={[form.formState.errors.weightGrams]} />
           ) : null}
         </Field>
 
         <Field>
           <FieldLabel>Cost Price</FieldLabel>
           <NumberInput
-            name="cost_price_cents"
+            name="costPriceCents"
             control={form.control}
             startSymbol="€"
             cents
@@ -317,7 +317,7 @@ export function ProductFormContent({ entityData, onSuccess }: ProductFormProps) 
             onValueChange={(nextCostPrice) => {
               if (canBootstrapPriceFromMarkup && nextCostPrice != null && nextCostPrice > 0) {
                 form.setValue(
-                  "sales_price_cents",
+                  "salesPriceCents",
                   getSalesPriceFromMarkup(nextCostPrice, markupPercent),
                   {
                     shouldDirty: true,
@@ -330,8 +330,8 @@ export function ProductFormContent({ entityData, onSuccess }: ProductFormProps) 
               setMarkupPercent(getMarkupPercent(nextCostPrice ?? 0, salesPrice));
             }}
           />
-          {form.formState.errors.cost_price_cents ? (
-            <FieldError errors={[form.formState.errors.cost_price_cents]} />
+          {form.formState.errors.costPriceCents ? (
+            <FieldError errors={[form.formState.errors.costPriceCents]} />
           ) : null}
         </Field>
 
@@ -365,7 +365,7 @@ export function ProductFormContent({ entityData, onSuccess }: ProductFormProps) 
         <Field>
           <FieldLabel>Sales Price</FieldLabel>
           <NumberInput
-            name="sales_price_cents"
+            name="salesPriceCents"
             control={form.control}
             startSymbol="€"
             cents
@@ -374,7 +374,7 @@ export function ProductFormContent({ entityData, onSuccess }: ProductFormProps) 
             onValueChange={(nextSalesPrice) => {
               if (canBootstrapPriceFromMarkup && nextSalesPrice != null && nextSalesPrice > 0) {
                 form.setValue(
-                  "cost_price_cents",
+                  "costPriceCents",
                   getCostPriceFromMarkup(nextSalesPrice, markupPercent),
                   {
                     shouldDirty: true,
@@ -387,8 +387,8 @@ export function ProductFormContent({ entityData, onSuccess }: ProductFormProps) 
               setMarkupPercent(getMarkupPercent(costPrice, nextSalesPrice ?? 0));
             }}
           />
-          {form.formState.errors.sales_price_cents ? (
-            <FieldError errors={[form.formState.errors.sales_price_cents]} />
+          {form.formState.errors.salesPriceCents ? (
+            <FieldError errors={[form.formState.errors.salesPriceCents]} />
           ) : null}
         </Field>
 
@@ -401,29 +401,29 @@ export function ProductFormContent({ entityData, onSuccess }: ProductFormProps) 
         <Field>
           <FieldLabel>Current Stock</FieldLabel>
           <NumberInput
-            name="current_stock"
+            name="currentStock"
             control={form.control}
             min={0}
             step={1}
             placeholder="0"
           />
-          {form.formState.errors.current_stock ? (
-            <FieldError errors={[form.formState.errors.current_stock]} />
+          {form.formState.errors.currentStock ? (
+            <FieldError errors={[form.formState.errors.currentStock]} />
           ) : null}
         </Field>
 
         <Field>
           <FieldLabel>Purchase limit per order</FieldLabel>
           <NumberInput
-            name="purchase_limit_per_order"
+            name="purchaseLimitPerOrder"
             control={form.control}
             min={0}
             max={99}
             step={1}
             placeholder="0 for no limit"
           />
-          {form.formState.errors.purchase_limit_per_order ? (
-            <FieldError errors={[form.formState.errors.purchase_limit_per_order]} />
+          {form.formState.errors.purchaseLimitPerOrder ? (
+            <FieldError errors={[form.formState.errors.purchaseLimitPerOrder]} />
           ) : null}
         </Field>
 

@@ -70,10 +70,10 @@ const isDate = (value: unknown): value is Date =>
 // The form edits Dates, while the response carries ISO strings.
 const toFormValues = (promotionCode: PromotionCode): FormOutput => ({
   ...promotionCode,
-  valid_from: promotionCode.valid_from ? new Date(promotionCode.valid_from) : null,
-  valid_until: promotionCode.valid_until ? new Date(promotionCode.valid_until) : null,
-  created_at: new Date(promotionCode.created_at),
-  updated_at: new Date(promotionCode.updated_at),
+  validFrom: promotionCode.validFrom ? new Date(promotionCode.validFrom) : null,
+  validUntil: promotionCode.validUntil ? new Date(promotionCode.validUntil) : null,
+  createdAt: new Date(promotionCode.createdAt),
+  updatedAt: new Date(promotionCode.updatedAt),
 });
 
 type NumberFieldProps<TFieldValues extends FieldValues> = {
@@ -240,16 +240,16 @@ export default function PromotionCodeForm({ entityData, onSuccess }: PromotionCo
 
   const fallbackDefaults: FormOutput = {
     code: "",
-    is_active: true,
-    valid_from: null,
-    valid_until: null,
-    minimum_items_value_cents: null,
-    discount_type: "PERCENT",
-    discount_value: 0,
-    usage_limit: null,
-    times_used: 0,
-    created_at: undefined,
-    updated_at: undefined,
+    isActive: true,
+    validFrom: null,
+    validUntil: null,
+    minimumItemsValueCents: null,
+    discountType: "PERCENT",
+    discountValue: 0,
+    usageLimit: null,
+    timesUsed: 0,
+    createdAt: undefined,
+    updatedAt: undefined,
   };
 
   const formDefaults = entityData ? toFormValues(entityData) : fallbackDefaults;
@@ -263,7 +263,7 @@ export default function PromotionCodeForm({ entityData, onSuccess }: PromotionCo
   const isPending = createMutation.isPending || updateMutation.isPending;
   const discountType = useWatch({
     control: form.control,
-    name: "discount_type",
+    name: "discountType",
   });
   const isPercentDiscount = discountType?.endsWith("PERCENT") ?? false;
 
@@ -339,7 +339,7 @@ export default function PromotionCodeForm({ entityData, onSuccess }: PromotionCo
           />
 
           <Controller
-            name="is_active"
+            name="isActive"
             control={form.control}
             render={({ field, fieldState }) => (
               <Field orientation="horizontal" data-invalid={fieldState.invalid}>
@@ -367,7 +367,7 @@ export default function PromotionCodeForm({ entityData, onSuccess }: PromotionCo
       >
         <FieldGroup>
           <Controller
-            name="discount_type"
+            name="discountType"
             control={form.control}
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
@@ -391,7 +391,7 @@ export default function PromotionCodeForm({ entityData, onSuccess }: PromotionCo
 
           <NumberField
             control={form.control}
-            name="discount_value"
+            name="discountValue"
             label="Discount value"
             placeholder={isPercentDiscount ? "10" : "5.00"}
             endSymbol={isPercentDiscount ? "%" : undefined}
@@ -404,7 +404,7 @@ export default function PromotionCodeForm({ entityData, onSuccess }: PromotionCo
 
           <NumberField
             control={form.control}
-            name="minimum_items_value_cents"
+            name="minimumItemsValueCents"
             label="Minimum items subtotal"
             placeholder="50.00"
             startSymbol="€"
@@ -418,7 +418,7 @@ export default function PromotionCodeForm({ entityData, onSuccess }: PromotionCo
 
           <DateField
             control={form.control}
-            name="valid_from"
+            name="validFrom"
             label="Valid from"
             description="The code cannot be applied before this date. Leave empty for immediate availability."
             boundary="start"
@@ -427,7 +427,7 @@ export default function PromotionCodeForm({ entityData, onSuccess }: PromotionCo
 
           <DateField
             control={form.control}
-            name="valid_until"
+            name="validUntil"
             label="Valid until"
             description="The code cannot be applied after this date. Leave empty for no expiration."
             boundary="end"
@@ -436,7 +436,7 @@ export default function PromotionCodeForm({ entityData, onSuccess }: PromotionCo
 
           <NumberField
             control={form.control}
-            name="usage_limit"
+            name="usageLimit"
             label="Usage limit"
             placeholder="100"
             step={1}
@@ -456,22 +456,18 @@ export default function PromotionCodeForm({ entityData, onSuccess }: PromotionCo
           <FieldGroup>
             <Field>
               <FieldLabel>Times used</FieldLabel>
-              <div className="text-sm font-medium">{entityData.times_used}</div>
+              <div className="text-sm font-medium">{entityData.timesUsed}</div>
             </Field>
             <Field>
               <FieldLabel>Created at</FieldLabel>
               <div className="text-sm font-medium">
-                {entityData.created_at
-                  ? dateFormatter.format(new Date(entityData.created_at))
-                  : "-"}
+                {entityData.createdAt ? dateFormatter.format(new Date(entityData.createdAt)) : "-"}
               </div>
             </Field>
             <Field>
               <FieldLabel>Updated at</FieldLabel>
               <div className="text-sm font-medium">
-                {entityData.updated_at
-                  ? dateFormatter.format(new Date(entityData.updated_at))
-                  : "-"}
+                {entityData.updatedAt ? dateFormatter.format(new Date(entityData.updatedAt)) : "-"}
               </div>
             </Field>
           </FieldGroup>

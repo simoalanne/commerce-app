@@ -22,7 +22,7 @@ export const getProductReviewSummaryMap = async (db: Db, productIds: number[]) =
 
   const groupedReviews = await db
     .select({
-      productId: reviewTable.product_id,
+      productId: reviewTable.productId,
       avgRating: avg(reviewTable.rating),
       reviewCount: count(),
     })
@@ -31,10 +31,10 @@ export const getProductReviewSummaryMap = async (db: Db, productIds: number[]) =
       and(
         eq(reviewTable.kind, "PRODUCT"),
         eq(reviewTable.status, "APPROVED"),
-        inArray(reviewTable.product_id, productIds),
+        inArray(reviewTable.productId, productIds),
       ),
     )
-    .groupBy(reviewTable.product_id);
+    .groupBy(reviewTable.productId);
 
   for (const groupedReview of groupedReviews) {
     if (groupedReview.productId == null) {

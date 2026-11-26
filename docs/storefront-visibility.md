@@ -22,9 +22,9 @@ is_featured: boolean().notNull().default(false),
 - `ACTIVE`
 - `INACTIVE`
 
-`storefront_visibility` controls whether the entity is customer-visible.
+`storefrontVisibility` controls whether the entity is customer-visible.
 
-`is_featured` is separate because featuring is a display/ranking concern, not a visibility concern. An inactive entity should not be returned to customers just because it is featured.
+`isFeatured` is separate because featuring is a display/ranking concern, not a visibility concern. An inactive entity should not be returned to customers just because it is featured.
 
 ## Entities
 

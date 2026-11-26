@@ -34,10 +34,10 @@ const addressBody = z.object({
 
 const toAddressData = (body: z.output<typeof addressBody>) => ({
   street: body.street,
-  street_number: body.streetNumber,
-  postal_code: body.postalCode,
+  streetNumber: body.streetNumber,
+  postalCode: body.postalCode,
   city: body.city,
-  delivery_details: {
+  deliveryDetails: {
     addressType: body.addressType,
     entrance: body.entrance,
     floor: body.floor,
@@ -49,23 +49,23 @@ const toAddressData = (body: z.output<typeof addressBody>) => ({
 const toAddressResponse = (address: typeof customerAddressTable.$inferSelect) => ({
   id: address.id,
   street: address.street,
-  streetNumber: address.street_number,
-  postalCode: address.postal_code,
+  streetNumber: address.streetNumber,
+  postalCode: address.postalCode,
   city: address.city,
-  addressType: address.delivery_details.addressType ?? null,
-  entrance: address.delivery_details.entrance ?? null,
-  floor: address.delivery_details.floor ?? null,
-  apartment: address.delivery_details.apartment ?? null,
-  deliveryInstructions: address.delivery_details.deliveryInstructions ?? {},
+  addressType: address.deliveryDetails.addressType ?? null,
+  entrance: address.deliveryDetails.entrance ?? null,
+  floor: address.deliveryDetails.floor ?? null,
+  apartment: address.deliveryDetails.apartment ?? null,
+  deliveryInstructions: address.deliveryDetails.deliveryInstructions ?? {},
 });
 
 const ownAddress = (addressId: number, customerId: number) =>
-  and(eq(customerAddressTable.id, addressId), eq(customerAddressTable.customer_id, customerId));
+  and(eq(customerAddressTable.id, addressId), eq(customerAddressTable.customerId, customerId));
 
 export const addressesRoutes = {
   list: addressRoute.get("/users/address").handler(async ({ context }) => {
     const addresses = await context.db.query.customerAddress.findMany({
-      where: { customer_id: context.authContext.customerId },
+      where: { customerId: context.authContext.customerId },
       orderBy: { id: "desc" },
     });
 
@@ -79,7 +79,7 @@ export const addressesRoutes = {
       const [address] = await context.db
         .insert(customerAddressTable)
         .values({
-          customer_id: context.authContext.customerId,
+          customerId: context.authContext.customerId,
           ...toAddressData(body),
         })
         .returning();

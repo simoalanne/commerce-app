@@ -60,7 +60,7 @@ export const getChangedFields = (
   const keys = Object.keys(before).filter((key) => key in after);
 
   for (const key of keys) {
-    if (key === "updated_at") {
+    if (key === "updatedAt") {
       continue;
     }
 
@@ -148,11 +148,11 @@ export async function logAdminAction(db: Db, input: LogAdminActionInput) {
   }
 
   await db.insert(adminActionLogTable).values({
-    admin_account_id: input.actor.adminId,
-    admin_email: identity.email,
+    adminAccountId: input.actor.adminId,
+    adminEmail: identity.email,
     action: input.action,
     entity: input.entity,
-    entity_id: input.entityId != null ? String(input.entityId) : null,
+    entityId: input.entityId != null ? String(input.entityId) : null,
     details,
   });
 }

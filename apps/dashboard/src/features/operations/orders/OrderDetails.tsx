@@ -50,14 +50,14 @@ export default function OrderDetails({ entityData: order }: OrderDetailsProps) {
             <RefundStatusBadge refundSummary={order.refundSummary} />
           </div>
           <p className="text-sm text-muted-foreground">
-            Placed {dateTimeFormatter.format(new Date(order.created_at))}
+            Placed {dateTimeFormatter.format(new Date(order.createdAt))}
           </p>
         </div>
         <div className="grid shrink-0 gap-3 text-sm sm:grid-cols-2 sm:text-right">
           <div>
             <div className="text-muted-foreground">Customer</div>
             <div className="font-medium break-all">
-              {order.customer_id ? `#${order.customer_id}` : "Guest checkout"}
+              {order.customerId ? `#${order.customerId}` : "Guest checkout"}
             </div>
           </div>
           <div>
@@ -94,8 +94,8 @@ export default function OrderDetails({ entityData: order }: OrderDetailsProps) {
               />
               <DetailField
                 label="Customer ID"
-                value={order.customer_id ? `#${order.customer_id}` : "Guest checkout"}
-                copyValue={order.customer_id ? `#${order.customer_id}` : "Guest checkout"}
+                value={order.customerId ? `#${order.customerId}` : "Guest checkout"}
+                copyValue={order.customerId ? `#${order.customerId}` : "Guest checkout"}
               />
             </div>
           </CardContent>

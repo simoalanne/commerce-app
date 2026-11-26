@@ -119,21 +119,21 @@ describe("checkout.utils", () => {
           id: 1,
           sku: "SKU1",
           name: { en: "Product 1" },
-          vendor_id: 10,
+          vendorId: 10,
           vendor: { name: "Vendor 1" },
-          cost_price_cents: 80,
-          sales_price_cents: 100,
-          weight_grams: 250,
+          costPriceCents: 80,
+          salesPriceCents: 100,
+          weightGrams: 250,
         },
         {
           id: 2,
           sku: "SKU2",
           name: { en: "Product 2" },
-          vendor_id: 20,
+          vendorId: 20,
           vendor: { name: "Vendor 2" },
-          cost_price_cents: 150,
-          sales_price_cents: 200,
-          weight_grams: 500,
+          costPriceCents: 150,
+          salesPriceCents: 200,
+          weightGrams: 500,
         },
       ] as any;
 
@@ -172,9 +172,9 @@ describe("checkout.utils", () => {
       const products = [
         {
           sku: "SKU1",
-          cost_price_cents: 80,
-          sales_price_cents: 100,
-          weight_grams: 250,
+          costPriceCents: 80,
+          salesPriceCents: 100,
+          weightGrams: 250,
         },
       ] as any;
 
@@ -194,7 +194,7 @@ describe("checkout.utils", () => {
 
   describe("validateCartUnitPrices", () => {
     it("does nothing when client and database prices match", () => {
-      const products = [{ sku: "SKU1", sales_price_cents: 100 }] as any;
+      const products = [{ sku: "SKU1", salesPriceCents: 100 }] as any;
 
       expect(() =>
         validateCartUnitPrices(products, {
@@ -205,8 +205,8 @@ describe("checkout.utils", () => {
 
     it("throws a domain error when a unit price has changed", () => {
       const products = [
-        { sku: "SKU1", sales_price_cents: 125 },
-        { sku: "SKU2", sales_price_cents: 200 },
+        { sku: "SKU1", salesPriceCents: 125 },
+        { sku: "SKU2", salesPriceCents: 200 },
       ] as any;
 
       try {

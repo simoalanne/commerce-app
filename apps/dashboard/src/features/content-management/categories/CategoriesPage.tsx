@@ -40,10 +40,10 @@ export default function CategoriesPage() {
           cell: ({ row }) => row.original.name,
         },
         {
-          accessorKey: "markup_percent",
+          accessorKey: "markupPercent",
           header: "Product Markup",
           cell: ({ row }) =>
-            row.original.markup_percent == null ? "Not set" : `${row.original.markup_percent}%`,
+            row.original.markupPercent == null ? "Not set" : `${row.original.markupPercent}%`,
         },
       ]}
     />

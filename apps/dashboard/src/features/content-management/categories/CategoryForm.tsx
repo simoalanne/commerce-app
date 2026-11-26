@@ -35,12 +35,12 @@ export function CategoryForm({ entityData, onSuccess }: CategoryFormProps) {
 
   const createMutation = useMutation(queryUtils.categories.create.mutationOptions());
   const updateMutation = useMutation(queryUtils.categories.update.mutationOptions());
-  const [markupEnabled, setMarkupEnabled] = useState(entityData?.markup_percent != null);
+  const [markupEnabled, setMarkupEnabled] = useState(entityData?.markupPercent != null);
 
   const fallbackDefaults: FormOutput = {
     name: entityData?.name ?? "",
-    markup_percent: entityData?.markup_percent ?? null,
-    image_id: entityData?.image_id ?? 0,
+    markupPercent: entityData?.markupPercent ?? null,
+    imageId: entityData?.imageId ?? 0,
   };
 
   const form = useForm<FormInput, unknown, FormOutput>({
@@ -52,14 +52,14 @@ export function CategoryForm({ entityData, onSuccess }: CategoryFormProps) {
 
   function setMarkupEditing(enabled: boolean) {
     setMarkupEnabled(enabled);
-    form.setValue("markup_percent", enabled ? 0 : null, {
+    form.setValue("markupPercent", enabled ? 0 : null, {
       shouldDirty: true,
       shouldValidate: true,
     });
   }
 
   function resetForm() {
-    setMarkupEnabled(entityData?.markup_percent != null);
+    setMarkupEnabled(entityData?.markupPercent != null);
     form.reset(fallbackDefaults);
   }
 
@@ -133,7 +133,7 @@ export function CategoryForm({ entityData, onSuccess }: CategoryFormProps) {
             Products belonging to this category suggest this markup as their default value.
           </FieldDescription>
           <NumberInput
-            name="markup_percent"
+            name="markupPercent"
             control={form.control}
             min={0}
             step={0.1}
@@ -141,13 +141,13 @@ export function CategoryForm({ entityData, onSuccess }: CategoryFormProps) {
             disabled={!markupEnabled}
             emptyValue={null}
           />
-          {form.formState.errors.markup_percent ? (
-            <FieldError errors={[form.formState.errors.markup_percent]} />
+          {form.formState.errors.markupPercent ? (
+            <FieldError errors={[form.formState.errors.markupPercent]} />
           ) : null}
         </Field>
 
         <Controller
-          name="image_id"
+          name="imageId"
           control={form.control}
           render={({ field }) => (
             <MultiImagePicker

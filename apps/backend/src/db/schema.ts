@@ -1,6 +1,8 @@
 // The database schema. `drizzle-kit push` applies it; relations.ts adds the
 // relations the relational queries (`db.query.*`) use.
 //
+// Keys are camelCase; snakeCase.table names the columns in snake_case.
+//
 // Side-effect free, so route modules may import it at runtime.
 import { sql } from "drizzle-orm";
 import {
@@ -13,10 +15,10 @@ import {
   jsonb,
   numeric,
   pgEnum,
-  pgTable,
   primaryKey,
   serial,
   smallint,
+  snakeCase,
   text,
   timestamp,
   uuid,
@@ -84,12 +86,12 @@ export type OrderStatus = (typeof orderStatusEnum.enumValues)[number];
 export type PaymentProvider = (typeof paymentProviderEnum.enumValues)[number];
 export type RefundStatus = (typeof refundStatusEnum.enumValues)[number];
 
-export const userTable = pgTable("user", {
-  clerk_id: text().primaryKey(),
-  created_at: createdAt(),
+export const userTable = snakeCase.table("user", {
+  clerkId: text().primaryKey(),
+  createdAt: createdAt(),
 });
 
-export const contactSubmissionTable = pgTable("contact_submission", {
+export const contactSubmissionTable = snakeCase.table("contact_submission", {
   id: serial().primaryKey(),
   topic: contactSubmissionTopicEnum().notNull(),
   name: text().notNull(),
@@ -98,379 +100,379 @@ export const contactSubmissionTable = pgTable("contact_submission", {
   message: text().notNull(),
   locale: text().notNull(),
   status: contactSubmissionStatusEnum().notNull().default("OPEN"),
-  created_at: createdAt(),
-  updated_at: updatedAt(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
 });
 
-export const customerAccountTable = pgTable("customer_account", {
+export const customerAccountTable = snakeCase.table("customer_account", {
   id: serial().primaryKey(),
-  user_id: text()
+  userId: text()
     .notNull()
     .unique()
-    .references(() => userTable.clerk_id, { onDelete: "cascade" }),
-  preferred_locale: text().notNull().default("en"),
+    .references(() => userTable.clerkId, { onDelete: "cascade" }),
+  preferredLocale: text().notNull().default("en"),
 });
 
-export const customerFavoriteProductTable = pgTable(
+export const customerFavoriteProductTable = snakeCase.table(
   "customer_favorite_product",
   {
-    customer_account_id: integer()
+    customerAccountId: integer()
       .notNull()
       .references(() => customerAccountTable.id, { onDelete: "cascade" }),
-    product_id: integer()
+    productId: integer()
       .notNull()
       .references(() => productTable.id, { onDelete: "cascade" }),
-    added_at: createdAt(),
+    addedAt: createdAt(),
   },
-  (t) => [primaryKey({ columns: [t.customer_account_id, t.product_id] })],
+  (t) => [primaryKey({ columns: [t.customerAccountId, t.productId] })],
 );
 
-export const customerFavoriteVendorTable = pgTable(
+export const customerFavoriteVendorTable = snakeCase.table(
   "customer_favorite_vendor",
   {
-    customer_account_id: integer()
+    customerAccountId: integer()
       .notNull()
       .references(() => customerAccountTable.id, { onDelete: "cascade" }),
-    vendor_id: integer()
+    vendorId: integer()
       .notNull()
       .references(() => vendorTable.id, { onDelete: "cascade" }),
-    added_at: createdAt(),
+    addedAt: createdAt(),
   },
-  (t) => [primaryKey({ columns: [t.customer_account_id, t.vendor_id] })],
+  (t) => [primaryKey({ columns: [t.customerAccountId, t.vendorId] })],
 );
 
-export const customerSavedCartItemTable = pgTable(
+export const customerSavedCartItemTable = snakeCase.table(
   "customer_saved_cart_item",
   {
-    customer_account_id: integer()
+    customerAccountId: integer()
       .notNull()
       .references(() => customerAccountTable.id, { onDelete: "cascade" }),
-    product_id: integer()
+    productId: integer()
       .notNull()
       .references(() => productTable.id, { onDelete: "cascade" }),
     quantity: integer().notNull(),
-    added_at: createdAt(),
+    addedAt: createdAt(),
   },
-  (t) => [primaryKey({ columns: [t.customer_account_id, t.product_id] })],
+  (t) => [primaryKey({ columns: [t.customerAccountId, t.productId] })],
 );
 
-export const adminAccountTable = pgTable("admin_account", {
+export const adminAccountTable = snakeCase.table("admin_account", {
   id: serial().primaryKey(),
-  user_id: text()
+  userId: text()
     .notNull()
     .unique()
-    .references(() => userTable.clerk_id, { onDelete: "cascade" }),
+    .references(() => userTable.clerkId, { onDelete: "cascade" }),
 });
 
-export const promotionCodeTable = pgTable(
+export const promotionCodeTable = snakeCase.table(
   "promotion_code",
   {
     id: serial().primaryKey(),
     // Stored upper case, so the unique constraint and lookups ignore case.
     code: text().notNull().unique(),
-    is_active: boolean().notNull().default(true),
-    valid_from: timestamp({ precision: 3, withTimezone: true }),
-    valid_until: timestamp({ precision: 3, withTimezone: true }),
-    minimum_items_value_cents: integer(),
-    discount_type: promotionCodeDiscountTypeEnum().notNull(),
+    isActive: boolean().notNull().default(true),
+    validFrom: timestamp({ precision: 3, withTimezone: true }),
+    validUntil: timestamp({ precision: 3, withTimezone: true }),
+    minimumItemsValueCents: integer(),
+    discountType: promotionCodeDiscountTypeEnum().notNull(),
     // Percent for PERCENT codes, cents for FIXED codes.
-    discount_value: integer().notNull(),
-    usage_limit: integer(),
-    times_used: integer().notNull().default(0),
-    created_at: createdAt(),
-    updated_at: updatedAt(),
+    discountValue: integer().notNull(),
+    usageLimit: integer(),
+    timesUsed: integer().notNull().default(0),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
   },
   (t) => [check("promotion_code_code_upper", sql`${t.code} = upper(${t.code})`)],
 );
 
-export const orderTable = pgTable("order", {
+export const orderTable = snakeCase.table("order", {
   id: serial().primaryKey(),
-  items_subtotal_cents: integer().notNull(),
-  items_discount_cents: integer().notNull().default(0),
-  charged_total_cents: integer().notNull(),
+  itemsSubtotalCents: integer().notNull(),
+  itemsDiscountCents: integer().notNull().default(0),
+  chargedTotalCents: integer().notNull(),
   // Whole percent.
-  vat_rate: integer().notNull(),
-  included_vat_cents: integer().notNull(),
-  total_weight_grams: integer().notNull().default(0),
+  vatRate: integer().notNull(),
+  includedVatCents: integer().notNull(),
+  totalWeightGrams: integer().notNull().default(0),
   status: orderStatusEnum().notNull().default("PENDING"),
-  payment_id: text().unique(),
-  payment_provider: paymentProviderEnum().notNull(),
-  claim_token: uuidv7(),
-  has_been_linked_to_customer_account: boolean().notNull().default(false),
-  preferred_locale: text().notNull().default("en"),
-  applied_promo_code: text(),
-  order_details: jsonb().$type<OrderDetails>().notNull(),
-  invoice_details: jsonb().$type<OrderInvoiceDetails>().notNull(),
-  paid_at: timestamp({ precision: 3, withTimezone: true }),
-  created_at: createdAt(),
-  updated_at: updatedAt(),
-  customer_id: integer().references(() => customerAccountTable.id, { onDelete: "set null" }),
+  paymentId: text().unique(),
+  paymentProvider: paymentProviderEnum().notNull(),
+  claimToken: uuidv7(),
+  hasBeenLinkedToCustomerAccount: boolean().notNull().default(false),
+  preferredLocale: text().notNull().default("en"),
+  appliedPromoCode: text(),
+  orderDetails: jsonb().$type<OrderDetails>().notNull(),
+  invoiceDetails: jsonb().$type<OrderInvoiceDetails>().notNull(),
+  paidAt: timestamp({ precision: 3, withTimezone: true }),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+  customerId: integer().references(() => customerAccountTable.id, { onDelete: "set null" }),
 });
 
-export const orderItemTable = pgTable(
+export const orderItemTable = snakeCase.table(
   "order_item",
   {
     id: serial().primaryKey(),
     sku: text().notNull(),
     name: text().notNull(),
     quantity: integer().notNull(),
-    uncommitted_quantity: integer().notNull().default(0),
-    unit_cost_price_cents: integer().notNull(),
-    unit_sales_price_cents: integer().notNull(),
-    product_id: integer().references(() => productTable.id, { onDelete: "set null" }),
-    vendor_id: integer().references(() => vendorTable.id, { onDelete: "set null" }),
-    vendor_name: text().notNull(),
-    order_id: integer()
+    uncommittedQuantity: integer().notNull().default(0),
+    unitCostPriceCents: integer().notNull(),
+    unitSalesPriceCents: integer().notNull(),
+    productId: integer().references(() => productTable.id, { onDelete: "set null" }),
+    vendorId: integer().references(() => vendorTable.id, { onDelete: "set null" }),
+    vendorName: text().notNull(),
+    orderId: integer()
       .notNull()
       .references(() => orderTable.id, { onDelete: "cascade" }),
   },
-  (t) => [index().on(t.order_id), index().on(t.vendor_id)],
+  (t) => [index().on(t.orderId), index().on(t.vendorId)],
 );
 
-export const refundTable = pgTable(
+export const refundTable = snakeCase.table(
   "refund",
   {
     id: serial().primaryKey(),
-    idempotency_key: uuidv7().unique(),
-    order_id: integer()
+    idempotencyKey: uuidv7().unique(),
+    orderId: integer()
       .notNull()
       .references(() => orderTable.id, { onDelete: "cascade" }),
-    provider_refund_id: text(),
+    providerRefundId: text(),
     status: refundStatusEnum().notNull().default("PENDING"),
-    total_amount_cents: integer().notNull(),
+    totalAmountCents: integer().notNull(),
     reason: text().notNull(),
-    internal_notes: text(),
-    failure_reason: text(),
-    created_at: createdAt(),
-    updated_at: updatedAt(),
+    internalNotes: text(),
+    failureReason: text(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
   },
-  (t) => [index().on(t.order_id), index().on(t.provider_refund_id)],
+  (t) => [index().on(t.orderId), index().on(t.providerRefundId)],
 );
 
-export const refundItemTable = pgTable(
+export const refundItemTable = snakeCase.table(
   "refund_item",
   {
     id: serial().primaryKey(),
-    refund_id: integer()
+    refundId: integer()
       .notNull()
       .references(() => refundTable.id, { onDelete: "cascade" }),
-    order_item_id: integer()
+    orderItemId: integer()
       .notNull()
       .references(() => orderItemTable.id, { onDelete: "cascade" }),
     quantity: integer().notNull(),
-    restock_quantity: integer(),
-    amount_cents: integer().notNull(),
+    restockQuantity: integer(),
+    amountCents: integer().notNull(),
   },
-  (t) => [index().on(t.refund_id), index().on(t.order_item_id)],
+  (t) => [index().on(t.refundId), index().on(t.orderItemId)],
 );
 
-export const customerAddressTable = pgTable("customer_address", {
+export const customerAddressTable = snakeCase.table("customer_address", {
   id: serial().primaryKey(),
-  customer_id: integer()
+  customerId: integer()
     .notNull()
     .references(() => customerAccountTable.id, { onDelete: "cascade" }),
   street: text().notNull(),
-  street_number: text(),
-  postal_code: text().notNull(),
+  streetNumber: text(),
+  postalCode: text().notNull(),
   city: text().notNull(),
-  delivery_details: jsonb().$type<CustomerAddressDeliveryDetails>().notNull(),
+  deliveryDetails: jsonb().$type<CustomerAddressDeliveryDetails>().notNull(),
 });
 
-export const categoryTable = pgTable(
+export const categoryTable = snakeCase.table(
   "category",
   {
     id: serial().primaryKey(),
     name: jsonb().$type<LocalizedString>().notNull(),
     slug: jsonb().$type<LocalizedString>().notNull(),
-    markup_percent: numeric({ precision: 5, scale: 2, mode: "number" }),
-    image_id: integer()
+    markupPercent: numeric({ precision: 5, scale: 2, mode: "number" }),
+    imageId: integer()
       .notNull()
       .references(() => imageTable.id, { onDelete: "restrict" }),
-    created_at: createdAt(),
-    updated_at: updatedAt(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
   },
-  (t) => [index().on(t.image_id)],
+  (t) => [index().on(t.imageId)],
 );
 
-export const productTable = pgTable(
+export const productTable = snakeCase.table(
   "product",
   {
     id: serial().primaryKey(),
     sku: text().notNull().unique(),
     slug: jsonb().$type<LocalizedString>().notNull(),
     name: jsonb().$type<LocalizedString>().notNull(),
-    weight_grams: integer().notNull().default(0),
+    weightGrams: integer().notNull().default(0),
     headline: jsonb().$type<LocalizedString>().notNull(),
-    full_description: jsonb().$type<LocalizedString>().notNull(),
-    storefront_visibility: storefrontVisibilityEnum().notNull().default("ACTIVE"),
-    is_featured: boolean().notNull().default(false),
-    category_id: integer().references(() => categoryTable.id, { onDelete: "set null" }),
-    cost_price_cents: integer().notNull(),
-    sales_price_cents: integer().notNull(),
-    current_stock: integer().notNull(),
-    reserved_stock: integer().notNull().default(0),
-    vendor_id: integer()
+    fullDescription: jsonb().$type<LocalizedString>().notNull(),
+    storefrontVisibility: storefrontVisibilityEnum().notNull().default("ACTIVE"),
+    isFeatured: boolean().notNull().default(false),
+    categoryId: integer().references(() => categoryTable.id, { onDelete: "set null" }),
+    costPriceCents: integer().notNull(),
+    salesPriceCents: integer().notNull(),
+    currentStock: integer().notNull(),
+    reservedStock: integer().notNull().default(0),
+    vendorId: integer()
       .notNull()
       .references(() => vendorTable.id, { onDelete: "cascade" }),
-    purchase_limit_per_order: smallint().notNull().default(0),
-    created_at: createdAt(),
-    updated_at: updatedAt(),
+    purchaseLimitPerOrder: smallint().notNull().default(0),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
   },
-  (t) => [index().on(t.category_id)],
+  (t) => [index().on(t.categoryId)],
 );
 
-export const vendorTable = pgTable("vendor", {
+export const vendorTable = snakeCase.table("vendor", {
   id: serial().primaryKey(),
   name: text().notNull().unique(),
   slug: text().notNull().unique(),
   slogan: jsonb().$type<LocalizedString>().notNull(),
   story: jsonb().$type<LocalizedString>().notNull(),
-  storefront_visibility: storefrontVisibilityEnum().notNull().default("ACTIVE"),
-  is_featured: boolean().notNull().default(false),
+  storefrontVisibility: storefrontVisibilityEnum().notNull().default("ACTIVE"),
+  isFeatured: boolean().notNull().default(false),
   tags: jsonb().$type<LocalizedStringArray>().notNull(),
-  created_at: createdAt(),
-  updated_at: updatedAt(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
 });
 
-export const imageTable = pgTable("image", {
+export const imageTable = snakeCase.table("image", {
   id: serial().primaryKey(),
   name: text(),
   kind: imageKindEnum().notNull().default("CMS"),
   alt: jsonb().$type<LocalizedString>(),
-  storage_key: text().notNull().unique(),
-  created_at: createdAt(),
-  vendor_id: integer(),
+  storageKey: text().notNull().unique(),
+  createdAt: createdAt(),
+  vendorId: integer(),
   // Annotated to break the circular type: Category → Image → Review → Product → Category.
-  review_id: integer().references((): AnyPgColumn => reviewTable.id, { onDelete: "set null" }),
+  reviewId: integer().references((): AnyPgColumn => reviewTable.id, { onDelete: "set null" }),
 });
 
-export const legalDocumentTable = pgTable("legal_document", {
+export const legalDocumentTable = snakeCase.table("legal_document", {
   id: serial().primaryKey(),
   key: text().notNull().unique(),
   title: jsonb().$type<LocalizedString>().notNull(),
   content: jsonb().$type<LocalizedString>().notNull(),
-  created_at: createdAt(),
-  updated_at: updatedAt(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
 });
 
-export const productImageTable = pgTable(
+export const productImageTable = snakeCase.table(
   "product_image",
   {
-    product_id: integer()
+    productId: integer()
       .notNull()
       .references(() => productTable.id, { onDelete: "cascade" }),
-    image_id: integer()
+    imageId: integer()
       .notNull()
       .references(() => imageTable.id, { onDelete: "cascade" }),
   },
-  (t) => [primaryKey({ columns: [t.product_id, t.image_id] }), index().on(t.image_id)],
+  (t) => [primaryKey({ columns: [t.productId, t.imageId] }), index().on(t.imageId)],
 );
 
-export const tagTable = pgTable("tag", {
+export const tagTable = snakeCase.table("tag", {
   id: serial().primaryKey(),
   name: jsonb().$type<LocalizedString>().notNull(),
   // Hex color, e.g. "#22c55e"
   color: text().notNull(),
 });
 
-export const productTagTable = pgTable(
+export const productTagTable = snakeCase.table(
   "product_tag",
   {
-    product_id: integer()
+    productId: integer()
       .notNull()
       .references(() => productTable.id, { onDelete: "cascade" }),
-    tag_id: integer()
+    tagId: integer()
       .notNull()
       .references(() => tagTable.id, { onDelete: "restrict" }),
   },
-  (t) => [primaryKey({ columns: [t.product_id, t.tag_id] }), index().on(t.tag_id)],
+  (t) => [primaryKey({ columns: [t.productId, t.tagId] }), index().on(t.tagId)],
 );
 
-export const vendorImageTable = pgTable(
+export const vendorImageTable = snakeCase.table(
   "vendor_image",
   {
-    vendor_id: integer()
+    vendorId: integer()
       .notNull()
       .references(() => vendorTable.id, { onDelete: "cascade" }),
-    image_id: integer()
+    imageId: integer()
       .notNull()
       .references(() => imageTable.id, { onDelete: "cascade" }),
   },
-  (t) => [primaryKey({ columns: [t.vendor_id, t.image_id] }), index().on(t.image_id)],
+  (t) => [primaryKey({ columns: [t.vendorId, t.imageId] }), index().on(t.imageId)],
 );
 
-export const webhookSubscriptionTable = pgTable("webhook_subscription", {
+export const webhookSubscriptionTable = snakeCase.table("webhook_subscription", {
   id: serial().primaryKey(),
   event: text().notNull(),
   url: text().notNull(),
 });
 
-export const reviewTable = pgTable(
+export const reviewTable = snakeCase.table(
   "review",
   {
     id: serial().primaryKey(),
     kind: text().$type<"VENDOR" | "PRODUCT" | "STORE_EXPERIENCE">().notNull(),
-    reviewer_name: text().notNull(),
-    reviewer_email: text(),
-    show_reviewer_name: boolean().notNull().default(true),
-    is_verified: boolean().notNull().default(false),
-    customer_id: integer().references(() => customerAccountTable.id, { onDelete: "set null" }),
-    order_id: integer().references(() => orderTable.id, { onDelete: "set null" }),
-    vendor_id: integer().references(() => vendorTable.id, { onDelete: "cascade" }),
-    product_id: integer().references(() => productTable.id, { onDelete: "cascade" }),
+    reviewerName: text().notNull(),
+    reviewerEmail: text(),
+    showReviewerName: boolean().notNull().default(true),
+    isVerified: boolean().notNull().default(false),
+    customerId: integer().references(() => customerAccountTable.id, { onDelete: "set null" }),
+    orderId: integer().references(() => orderTable.id, { onDelete: "set null" }),
+    vendorId: integer().references(() => vendorTable.id, { onDelete: "cascade" }),
+    productId: integer().references(() => productTable.id, { onDelete: "cascade" }),
     status: reviewStatusEnum().notNull().default("PENDING"),
     rating: integer().notNull(),
     comment: text(),
-    admin_reply: text(),
-    created_at: createdAt(),
-    updated_at: updatedAt(),
+    adminReply: text(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
   },
   (t) => [
-    index().on(t.kind, t.vendor_id),
-    index().on(t.kind, t.product_id),
-    index().on(t.order_id),
-    index().on(t.customer_id),
+    index().on(t.kind, t.vendorId),
+    index().on(t.kind, t.productId),
+    index().on(t.orderId),
+    index().on(t.customerId),
   ],
 );
 
-export const productSearchDocumentTable = pgTable(
+export const productSearchDocumentTable = snakeCase.table(
   "product_search_document",
   {
-    product_id: integer().notNull(),
+    productId: integer().notNull(),
     locale: text().notNull(),
-    product_search_text: text().notNull(),
-    vendor_search_text: text().notNull(),
-    category_search_text: text().notNull(),
-    search_data: jsonb().$type<ProductSearchDocumentData>().notNull(),
-    search_vector: tsvector().notNull(),
-    created_at: createdAt(),
-    updated_at: updatedAt(),
+    productSearchText: text().notNull(),
+    vendorSearchText: text().notNull(),
+    categorySearchText: text().notNull(),
+    searchData: jsonb().$type<ProductSearchDocumentData>().notNull(),
+    searchVector: tsvector().notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
   },
   (t) => [
-    primaryKey({ columns: [t.product_id, t.locale] }),
+    primaryKey({ columns: [t.productId, t.locale] }),
     index().on(t.locale),
-    index().using("gin", t.search_vector),
+    index().using("gin", t.searchVector),
   ],
 );
 
-export const adminActionLogTable = pgTable(
+export const adminActionLogTable = snakeCase.table(
   "admin_action_log",
   {
     id: serial().primaryKey(),
-    admin_account_id: integer().references(() => adminAccountTable.id, {
+    adminAccountId: integer().references(() => adminAccountTable.id, {
       onDelete: "set null",
     }),
-    admin_email: text().notNull(),
+    adminEmail: text().notNull(),
     action: adminActionTypeEnum().notNull(),
     entity: text().notNull(),
-    entity_id: text(),
+    entityId: text(),
     details: jsonb().$type<JsonValue>(),
-    created_at: createdAt(),
+    createdAt: createdAt(),
   },
   (t) => [
-    index().on(t.admin_account_id),
-    index().on(t.created_at),
-    index().on(t.entity, t.entity_id),
+    index().on(t.adminAccountId),
+    index().on(t.createdAt),
+    index().on(t.entity, t.entityId),
     index().on(t.action),
   ],
 );

@@ -256,7 +256,7 @@ class PostgresSearchProvider implements SearchProvider {
       if (notIndexedProductIds.length > 0) {
         await tx
           .delete(productSearchDocumentTable)
-          .where(inArray(productSearchDocumentTable.product_id, notIndexedProductIds));
+          .where(inArray(productSearchDocumentTable.productId, notIndexedProductIds));
       }
     });
   }
@@ -273,11 +273,11 @@ class PostgresSearchProvider implements SearchProvider {
         id: true,
         name: true,
         slug: true,
-        sales_price_cents: true,
-        current_stock: true,
-        reserved_stock: true,
-        is_featured: true,
-        created_at: true,
+        salesPriceCents: true,
+        currentStock: true,
+        reservedStock: true,
+        isFeatured: true,
+        createdAt: true,
       },
       with: {
         images: FIRST_LINKED_IMAGE_SELECT,
@@ -298,7 +298,7 @@ class PostgresSearchProvider implements SearchProvider {
           with: {
             image: {
               columns: {
-                storage_key: true,
+                storageKey: true,
               },
             },
           },
@@ -339,8 +339,8 @@ class PostgresSearchProvider implements SearchProvider {
               name: buildSearchText(locale, [product.name]),
               slug: buildSearchText(locale, [product.slug]),
               imageUrl: getFirstLinkedImageUrl(ObjectStorage, product.images),
-              priceCents: product.sales_price_cents,
-              outOfStock: product.current_stock - product.reserved_stock <= 0,
+              priceCents: product.salesPriceCents,
+              outOfStock: product.currentStock - product.reservedStock <= 0,
             },
             vendor: {
               id: product.vendor.id,
@@ -353,12 +353,12 @@ class PostgresSearchProvider implements SearchProvider {
                   id: product.category.id,
                   name: categorySearchText,
                   slug: buildSearchText(locale, [product.category.slug]),
-                  imageUrl: ObjectStorage.getPublicUrl(product.category.image.storage_key),
+                  imageUrl: ObjectStorage.getPublicUrl(product.category.image.storageKey),
                 }
               : null,
             ranking: {
-              isFeatured: product.is_featured,
-              createdAt: product.created_at.toISOString(),
+              isFeatured: product.isFeatured,
+              createdAt: product.createdAt.toISOString(),
             },
           },
           searchText: buildSearchText(locale, [

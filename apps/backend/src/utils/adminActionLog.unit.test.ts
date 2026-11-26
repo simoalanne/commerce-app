@@ -38,14 +38,14 @@ describe("adminActionLog utils", () => {
             de: "Gemuese",
           },
           prices: [4.5],
-          created_at: date,
+          createdAt: date,
         }),
       ).toEqual({
         name: {
           de: "Gemuese",
         },
         prices: [4.5],
-        created_at: "2026-07-12T15:53:38.105Z",
+        createdAt: "2026-07-12T15:53:38.105Z",
       });
     });
   });
@@ -72,7 +72,7 @@ describe("adminActionLog utils", () => {
             en: "English content",
             de: "New German content",
           },
-          updated_at: "2026-07-12T15:53:38.105Z",
+          updatedAt: "2026-07-12T15:53:38.105Z",
         },
       );
 

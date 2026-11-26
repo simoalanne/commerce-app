@@ -50,9 +50,9 @@ const buildOrderRefundSummary = (order: RelevantOrder) => {
   const pendingRefunds = order.refunds.filter((refund) =>
     pendingRefundStatuses.includes(refund.status as (typeof pendingRefundStatuses)[number]),
   );
-  const originalAmountCents = order.charged_total_cents;
-  const refundedAmountCents = sum(succeededRefunds.map((refund) => refund.total_amount_cents));
-  const pendingAmountCents = sum(pendingRefunds.map((refund) => refund.total_amount_cents));
+  const originalAmountCents = order.chargedTotalCents;
+  const refundedAmountCents = sum(succeededRefunds.map((refund) => refund.totalAmountCents));
+  const pendingAmountCents = sum(pendingRefunds.map((refund) => refund.totalAmountCents));
   const requiresManualReview = order.refunds.some(
     (refund) => refund.status === "REQUIRES_MANUAL_REVIEW",
   );
@@ -99,24 +99,24 @@ const buildOrderRefundability = (order: RelevantOrder) => {
   const refundedAmountCentsByOrderItemId = new Map<number, number>();
 
   for (const refund of succeededRefunds) {
-    for (const refundItem of refund.refund_items) {
+    for (const refundItem of refund.refundItems) {
       if (refundItem.quantity != null) {
         refundedQuantityByOrderItemId.set(
-          refundItem.order_item_id,
-          (refundedQuantityByOrderItemId.get(refundItem.order_item_id) ?? 0) + refundItem.quantity,
+          refundItem.orderItemId,
+          (refundedQuantityByOrderItemId.get(refundItem.orderItemId) ?? 0) + refundItem.quantity,
         );
       }
 
       refundedAmountCentsByOrderItemId.set(
-        refundItem.order_item_id,
-        (refundedAmountCentsByOrderItemId.get(refundItem.order_item_id) ?? 0) +
-          refundItem.amount_cents,
+        refundItem.orderItemId,
+        (refundedAmountCentsByOrderItemId.get(refundItem.orderItemId) ?? 0) +
+          refundItem.amountCents,
       );
     }
   }
 
   const items = order.orderItems.map((item) => {
-    const originalAmountCents = item.unit_sales_price_cents * item.quantity;
+    const originalAmountCents = item.unitSalesPriceCents * item.quantity;
     const refundedAmountCents = refundedAmountCentsByOrderItemId.get(item.id) ?? 0;
     const refundedQuantity = refundedQuantityByOrderItemId.get(item.id) ?? 0;
 
@@ -144,7 +144,7 @@ const buildOrderRefundability = (order: RelevantOrder) => {
     ? "REFUND_ALREADY_PENDING"
     : !REFUNDABLE_STATUSES.includes(order.status as (typeof REFUNDABLE_STATUSES)[number])
       ? "ORDER_NOT_REFUNDABLE"
-      : !order.payment_id
+      : !order.paymentId
         ? "MISSING_PAYMENT"
         : !hasRefundableTarget
           ? "NOTHING_REFUNDABLE"
@@ -156,8 +156,8 @@ const buildOrderRefundability = (order: RelevantOrder) => {
     pendingRefund: pendingRefund
       ? {
           id: pendingRefund.id,
-          totalAmountCents: pendingRefund.total_amount_cents,
-          createdAt: pendingRefund.created_at,
+          totalAmountCents: pendingRefund.totalAmountCents,
+          createdAt: pendingRefund.createdAt,
         }
       : undefined,
     items,
@@ -179,14 +179,14 @@ export const ordersRoutes = {
 
       return toResponse(
         orders.map((order) => {
-          const orderDetails = order.order_details;
+          const orderDetails = order.orderDetails;
 
           return {
             id: order.id,
-            totalCents: order.charged_total_cents,
+            totalCents: order.chargedTotalCents,
             status: order.status,
-            created_at: order.created_at,
-            customer_id: order.customer_id,
+            createdAt: order.createdAt,
+            customerId: order.customerId,
             contact: {
               name: orderDetails.customer.name,
               email: orderDetails.customer.email,
@@ -212,7 +212,7 @@ export const ordersRoutes = {
         orderId: params.id,
       });
 
-      const orderDetails = order.order_details;
+      const orderDetails = order.orderDetails;
       const refundability = buildOrderRefundability(order);
       const refundSummary = buildOrderRefundSummary(order);
       const refundableItemById = new Map(
@@ -222,9 +222,9 @@ export const ordersRoutes = {
       const strippedOrder = {
         id: order.id,
         status: order.status,
-        created_at: order.created_at,
-        customer_id: order.customer_id,
-        preferredLocale: order.preferred_locale,
+        createdAt: order.createdAt,
+        customerId: order.customerId,
+        preferredLocale: order.preferredLocale,
       };
       const pricing = buildOrderPricing(order);
 
@@ -244,16 +244,16 @@ export const ordersRoutes = {
             id: item.id,
             sku: item.sku,
             quantity: item.quantity,
-            uncommittedQuantity: item.uncommitted_quantity,
+            uncommittedQuantity: item.uncommittedQuantity,
             refundedQuantity: refundableItemById.get(item.id)?.refundedQuantity ?? 0,
-            unitPriceCents: item.unit_sales_price_cents,
-            productId: item.product_id,
+            unitPriceCents: item.unitSalesPriceCents,
+            productId: item.productId,
             productName: item.name,
-            productImageUrl: item.product?.images[0]?.image.storage_key
-              ? context.storage.getPublicUrl(item.product.images[0].image.storage_key)
+            productImageUrl: item.product?.images[0]?.image.storageKey
+              ? context.storage.getPublicUrl(item.product.images[0].image.storageKey)
               : undefined,
-            vendorId: item.vendor_id,
-            vendorName: item.vendor_name,
+            vendorId: item.vendorId,
+            vendorName: item.vendorName,
           })),
           pricing,
           refundSummary,
@@ -396,20 +396,20 @@ export const ordersRoutes = {
       const [refund] = await context.db
         .insert(refundTable)
         .values({
-          order_id: id,
+          orderId: id,
           status: "PENDING",
-          total_amount_cents: totalAmountCents,
+          totalAmountCents,
           reason,
-          internal_notes: internalNotes,
+          internalNotes,
         })
         .returning({ id: refundTable.id });
       await context.db.insert(refundItemTable).values(
         items.map((item) => ({
-          refund_id: refund.id,
-          order_item_id: item.orderItemId,
+          refundId: refund.id,
+          orderItemId: item.orderItemId,
           quantity: item.quantity,
-          restock_quantity: item.restockQuantity,
-          amount_cents: item.amountCents,
+          restockQuantity: item.restockQuantity,
+          amountCents: item.amountCents,
         })),
       );
 

@@ -39,12 +39,12 @@ const getOrderStockAdjustments = async ({
   transaction: Db;
 }) =>
   transaction.query.orderItem.findMany({
-    where: { order_id: orderId },
+    where: { orderId },
     columns: {
       id: true,
       sku: true,
       quantity: true,
-      product_id: true,
+      productId: true,
     },
   });
 
@@ -157,13 +157,13 @@ const recoverPaidOrderAfterPendingCancellation = async ({
     .update(orderTable)
     .set({
       status: "PAID",
-      payment_id: paymentId,
-      paid_at: new Date(),
+      paymentId,
+      paidAt: new Date(),
     })
     .where(eq(orderTable.id, orderId))
     .returning({
-      order_details: orderTable.order_details,
-      applied_promo_code: orderTable.applied_promo_code,
+      orderDetails: orderTable.orderDetails,
+      appliedPromoCode: orderTable.appliedPromoCode,
     });
   const orderItems = await getOrderStockAdjustments({ orderId, transaction });
 
@@ -183,16 +183,16 @@ const recoverPaidOrderAfterPendingCancellation = async ({
 
     await transaction
       .update(orderItemTable)
-      .set({ uncommitted_quantity: uncommittedQuantity })
+      .set({ uncommittedQuantity })
       .where(eq(orderItemTable.id, orderItem.id));
   }
 
   await incrementPromoCodeUsage({
-    promoCode: recoveredOrder.applied_promo_code,
+    promoCode: recoveredOrder.appliedPromoCode,
     transaction,
   });
   await enqueueProductStockInvalidationJobs({
-    productIds: orderItems.flatMap((item) => (item.product_id == null ? [] : [item.product_id])),
+    productIds: orderItems.flatMap((item) => (item.productId == null ? [] : [item.productId])),
     enqueueJob,
   });
   await enqueueOrderPaidJobs({
@@ -222,8 +222,8 @@ const recoverPaidOrderAfterPendingCancellation = async ({
   return {
     previousStatus,
     updated: true,
-    orderDetails: recoveredOrder.order_details,
-    appliedPromoCode: recoveredOrder.applied_promo_code,
+    orderDetails: recoveredOrder.orderDetails,
+    appliedPromoCode: recoveredOrder.appliedPromoCode,
   };
 };
 
@@ -240,7 +240,7 @@ const incrementPromoCodeUsage = async ({
 
   await transaction
     .update(promotionCodeTable)
-    .set({ times_used: sql`${promotionCodeTable.times_used} + 1` })
+    .set({ timesUsed: sql`${promotionCodeTable.timesUsed} + 1` })
     .where(eq(promotionCodeTable.code, promoCode));
 };
 
@@ -293,7 +293,7 @@ const expirePendingOrder = async ({ orderId, paymentId, provider }: PaymentRecon
       transaction: tx,
     });
     await enqueueProductStockInvalidationJobs({
-      productIds: orderItems.flatMap((item) => (item.product_id == null ? [] : [item.product_id])),
+      productIds: orderItems.flatMap((item) => (item.productId == null ? [] : [item.productId])),
       enqueueJob,
     });
 
@@ -365,7 +365,7 @@ export const reconcileOrder = async ({
       return null;
     }
 
-    await tx.update(orderTable).set({ paid_at: new Date() }).where(eq(orderTable.id, orderId));
+    await tx.update(orderTable).set({ paidAt: new Date() }).where(eq(orderTable.id, orderId));
 
     const orderItems = await getOrderStockAdjustments({
       orderId,
@@ -409,9 +409,9 @@ export const reconcileRefund = async ({
   return await db.transaction(async (tx) => {
     const enqueueJob: EnqueueJob = (job) => jobQueue.enqueue(tx, job);
     const refundMatches = [
-      ...(paymentId ? [{ provider_refund_id: paymentId }] : []),
+      ...(paymentId ? [{ providerRefundId: paymentId }] : []),
       ...(refundId ? [{ id: refundId }] : []),
-      ...(refundKey ? [{ idempotency_key: refundKey }] : []),
+      ...(refundKey ? [{ idempotencyKey: refundKey }] : []),
     ];
     // An empty OR throws in Drizzle; with nothing to match, there is no refund.
     const refund =
@@ -422,8 +422,8 @@ export const reconcileRefund = async ({
             columns: {
               id: true,
               status: true,
-              total_amount_cents: true,
-              provider_refund_id: true,
+              totalAmountCents: true,
+              providerRefundId: true,
             },
           });
 
@@ -438,7 +438,7 @@ export const reconcileRefund = async ({
       return null;
     }
 
-    const refundAmountCents = refund.total_amount_cents;
+    const refundAmountCents = refund.totalAmountCents;
     if (refundAmountCents !== amountCents) {
       logger.error("Refund callback amount does not match stored refund", {
         refundId: refund.id,
@@ -455,8 +455,8 @@ export const reconcileRefund = async ({
         .update(refundTable)
         .set({
           status: "FAILED",
-          ...(paymentId ? { provider_refund_id: paymentId } : {}),
-          failure_reason: "Payment provider refund callback reported failure",
+          ...(paymentId ? { providerRefundId: paymentId } : {}),
+          failureReason: "Payment provider refund callback reported failure",
         })
         .where(unreconciledRefund(refund.id));
       return refund;
@@ -466,7 +466,7 @@ export const reconcileRefund = async ({
       .update(refundTable)
       .set({
         status: "SUCCEEDED",
-        ...(paymentId ? { provider_refund_id: paymentId } : {}),
+        ...(paymentId ? { providerRefundId: paymentId } : {}),
       })
       .where(unreconciledRefund(refund.id))
       .returning({ id: refundTable.id });

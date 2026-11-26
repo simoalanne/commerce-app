@@ -102,7 +102,7 @@ export const orderReviewsRoutes = {
           id: true,
         },
         with: {
-          order_items: {
+          orderItems: {
             columns: {},
             with: {
               product: {
@@ -126,16 +126,16 @@ export const orderReviewsRoutes = {
             columns: {
               id: true,
               kind: true,
-              product_id: true,
-              vendor_id: true,
-              show_reviewer_name: true,
+              productId: true,
+              vendorId: true,
+              showReviewerName: true,
               rating: true,
               comment: true,
             },
             with: {
               images: {
                 columns: {
-                  storage_key: true,
+                  storageKey: true,
                 },
               },
             },
@@ -147,7 +147,7 @@ export const orderReviewsRoutes = {
 
       const products = [
         ...new Map(
-          order.order_items.flatMap((item) =>
+          order.orderItems.flatMap((item) =>
             item.product ? [[item.product.id, item.product] as const] : [],
           ),
         ).values(),
@@ -164,17 +164,17 @@ export const orderReviewsRoutes = {
           : {
               rating: storeReviewRow.rating,
               comment: storeReviewRow.comment,
-              showReviewerName: storeReviewRow.show_reviewer_name,
-              imageUrl: storeReviewRow.images?.[0]?.storage_key
-                ? context.storage.getPublicUrl(storeReviewRow.images[0].storage_key)
+              showReviewerName: storeReviewRow.showReviewerName,
+              imageUrl: storeReviewRow.images?.[0]?.storageKey
+                ? context.storage.getPublicUrl(storeReviewRow.images[0].storageKey)
                 : null,
-              objectKey: storeReviewRow.images?.[0]?.storage_key ?? null,
+              objectKey: storeReviewRow.images?.[0]?.storageKey ?? null,
             },
       };
 
       const productReviews = products.map((product) => {
         const reviewRow = order.reviews.find(
-          (review) => review.kind === "PRODUCT" && review.product_id === product.id,
+          (review) => review.kind === "PRODUCT" && review.productId === product.id,
         );
 
         return {
@@ -188,18 +188,18 @@ export const orderReviewsRoutes = {
             : {
                 rating: reviewRow.rating,
                 comment: reviewRow.comment,
-                showReviewerName: reviewRow.show_reviewer_name,
-                imageUrl: reviewRow.images?.[0]?.storage_key
-                  ? context.storage.getPublicUrl(reviewRow.images[0].storage_key)
+                showReviewerName: reviewRow.showReviewerName,
+                imageUrl: reviewRow.images?.[0]?.storageKey
+                  ? context.storage.getPublicUrl(reviewRow.images[0].storageKey)
                   : null,
-                objectKey: reviewRow.images?.[0]?.storage_key ?? null,
+                objectKey: reviewRow.images?.[0]?.storageKey ?? null,
               },
         };
       });
 
       const vendorReviews = [...vendorsById.values()].map((vendor) => {
         const reviewRow = order.reviews.find(
-          (review) => review.kind === "VENDOR" && review.vendor_id === vendor.id,
+          (review) => review.kind === "VENDOR" && review.vendorId === vendor.id,
         );
 
         return {
@@ -211,11 +211,11 @@ export const orderReviewsRoutes = {
             : {
                 rating: reviewRow.rating,
                 comment: reviewRow.comment,
-                showReviewerName: reviewRow.show_reviewer_name,
-                imageUrl: reviewRow.images?.[0]?.storage_key
-                  ? context.storage.getPublicUrl(reviewRow.images?.[0]?.storage_key)
+                showReviewerName: reviewRow.showReviewerName,
+                imageUrl: reviewRow.images?.[0]?.storageKey
+                  ? context.storage.getPublicUrl(reviewRow.images?.[0]?.storageKey)
                   : null,
-                objectKey: reviewRow.images?.[0]?.storage_key ?? null,
+                objectKey: reviewRow.images?.[0]?.storageKey ?? null,
               },
         };
       });
@@ -291,10 +291,10 @@ export const orderReviewsRoutes = {
         },
         columns: {
           id: true,
-          order_details: true,
+          orderDetails: true,
         },
         with: {
-          order_items: {
+          orderItems: {
             columns: {},
             with: {
               product: {
@@ -315,8 +315,8 @@ export const orderReviewsRoutes = {
             columns: {
               id: true,
               kind: true,
-              product_id: true,
-              vendor_id: true,
+              productId: true,
+              vendorId: true,
             },
           },
         },
@@ -325,7 +325,7 @@ export const orderReviewsRoutes = {
 
       const products = [
         ...new Map(
-          order.order_items.flatMap((item) =>
+          order.orderItems.flatMap((item) =>
             item.product ? [[item.product.id, item.product] as const] : [],
           ),
         ).values(),
@@ -359,14 +359,14 @@ export const orderReviewsRoutes = {
         if (review.kind === "PRODUCT") {
           return order.reviews.some(
             (existingReview) =>
-              existingReview.kind === "PRODUCT" && existingReview.product_id === review.productId,
+              existingReview.kind === "PRODUCT" && existingReview.productId === review.productId,
           );
         }
 
         if (review.kind === "VENDOR") {
           return order.reviews.some(
             (existingReview) =>
-              existingReview.kind === "VENDOR" && existingReview.vendor_id === review.vendorId,
+              existingReview.kind === "VENDOR" && existingReview.vendorId === review.vendorId,
           );
         }
 
@@ -380,27 +380,27 @@ export const orderReviewsRoutes = {
         });
       }
 
-      const reviewerName = order.order_details.customer.name;
+      const reviewerName = order.orderDetails.customer.name;
       const reviewInvalidationTargets = reviews.map((review) => {
         if (review.kind === "PRODUCT")
           return {
             kind: review.kind,
-            product_id: review.productId,
-            vendor_id: null,
+            productId: review.productId,
+            vendorId: null,
           };
 
         if (review.kind === "VENDOR") {
           return {
             kind: review.kind,
-            product_id: null,
-            vendor_id: review.vendorId,
+            productId: null,
+            vendorId: review.vendorId,
           };
         }
 
         return {
           kind: review.kind,
-          product_id: null,
-          vendor_id: null,
+          productId: null,
+          vendorId: null,
         };
       });
 
@@ -408,20 +408,20 @@ export const orderReviewsRoutes = {
         const [createdReview] = await context.db
           .insert(reviewTable)
           .values({
-            order_id: orderId,
+            orderId,
             kind: review.kind,
-            reviewer_name: reviewerName,
-            product_id: review.kind === "PRODUCT" ? review.productId : undefined,
-            vendor_id: review.kind === "VENDOR" ? review.vendorId : undefined,
+            reviewerName,
+            productId: review.kind === "PRODUCT" ? review.productId : undefined,
+            vendorId: review.kind === "VENDOR" ? review.vendorId : undefined,
             rating: review.review.rating,
             comment: review.review.comment,
-            show_reviewer_name: review.review.showReviewerName,
+            showReviewerName: review.review.showReviewerName,
           })
           .returning({ id: reviewTable.id });
         if (review.review.objectKey) {
           await context.db
             .insert(imageTable)
-            .values({ storage_key: review.review.objectKey, review_id: createdReview.id });
+            .values({ storageKey: review.review.objectKey, reviewId: createdReview.id });
         }
       }
 

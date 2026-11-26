@@ -20,14 +20,14 @@ export const customersRoutes = {
         with: {
           user: {
             columns: {
-              clerk_id: true,
+              clerkId: true,
             },
           },
           orders: {
             columns: {
-              charged_total_cents: true,
-              order_details: true,
-              created_at: true,
+              chargedTotalCents: true,
+              orderDetails: true,
+              createdAt: true,
             },
             where: {
               status: {
@@ -35,7 +35,7 @@ export const customersRoutes = {
               },
             },
             orderBy: {
-              created_at: "desc",
+              createdAt: "desc",
             },
           },
         },
@@ -45,27 +45,27 @@ export const customersRoutes = {
         return toResponse([], context.locale);
       }
 
-      const clerkIds = customers.map((customer) => customer.user.clerk_id);
+      const clerkIds = customers.map((customer) => customer.user.clerkId);
       const authUsers = await context.auth.getUsersByIds(clerkIds);
       const clerkUserById = new Map(authUsers.map((user) => [user.id, user] as const));
 
       return toResponse(
         customers
           .filter((customer) => {
-            const exists = clerkUserById.has(customer.user.clerk_id);
+            const exists = clerkUserById.has(customer.user.clerkId);
             if (!exists) {
               logger.warn(
-                `Customer with id ${customer.id} has clerk_id ${customer.user.clerk_id} which does not exist in Clerk. This customer will be skipped.`,
+                `Customer with id ${customer.id} has clerk_id ${customer.user.clerkId} which does not exist in Clerk. This customer will be skipped.`,
               );
             }
             return exists;
           })
           .map((customer) => {
             const latestOrder = customer.orders[0];
-            const clerkUser = clerkUserById.get(customer.user.clerk_id)!;
-            const latest_order_city = latestOrder?.order_details.delivery.city ?? null;
+            const clerkUser = clerkUserById.get(customer.user.clerkId)!;
+            const latest_order_city = latestOrder?.orderDetails.delivery.city ?? null;
             const lifetime_value_cents = customer.orders.reduce(
-              (sum, order) => sum + order.charged_total_cents,
+              (sum, order) => sum + order.chargedTotalCents,
               0,
             );
 

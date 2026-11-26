@@ -41,7 +41,7 @@ afterEach(async () => {
   }
 
   if (createdUserIds.size > 0) {
-    await db.delete(userTable).where(inArray(userTable.clerk_id, [...createdUserIds]));
+    await db.delete(userTable).where(inArray(userTable.clerkId, [...createdUserIds]));
     createdUserIds.clear();
   }
 });
@@ -66,26 +66,26 @@ const createReconciliationScenario = async ({
   createdVendorIds.add(vendor.id);
 
   const customer = await createCustomerAccount();
-  createdUserIds.add(customer.user_id);
+  createdUserIds.add(customer.userId);
 
   const product = await createProduct({
-    category_id: category.id,
-    vendor_id: vendor.id,
-    current_stock: currentStock,
-    reserved_stock: reservedStock,
-    cost_price_cents: 990,
-    sales_price_cents: 990,
+    categoryId: category.id,
+    vendorId: vendor.id,
+    currentStock,
+    reservedStock,
+    costPriceCents: 990,
+    salesPriceCents: 990,
   });
   createdProductSkus.add(product.sku);
 
   const order = await createOrder({
-    customer_id: customer.id,
-    items_subtotal_cents: 1980,
-    charged_total_cents: 1980,
+    customerId: customer.id,
+    itemsSubtotalCents: 1980,
+    chargedTotalCents: 1980,
     status: orderStatus,
-    payment_id: null,
-    payment_provider: provider,
-    order_details: {
+    paymentId: null,
+    paymentProvider: provider,
+    orderDetails: {
       customer: {
         name: "Webhook Customer",
         email: "customer@example.com",
@@ -97,16 +97,16 @@ const createReconciliationScenario = async ({
         instructions: {},
       },
     },
-    order_items: [
+    orderItems: [
       {
         sku: product.sku,
         name: product.name.en ?? "",
         quantity,
-        unit_cost_price_cents: product.cost_price_cents,
-        unit_sales_price_cents: 990,
-        product_id: product.id,
-        vendor_id: vendor.id,
-        vendor_name: vendor.name,
+        unitCostPriceCents: product.costPriceCents,
+        unitSalesPriceCents: 990,
+        productId: product.id,
+        vendorId: vendor.id,
+        vendorName: vendor.name,
       },
     ],
   });
@@ -143,7 +143,7 @@ describe("payment reconciliation integration", () => {
     expect(second).toBe(null);
     assertOrderStatus(updatedOrder, "PAID");
     assertStock(updatedProduct, 8);
-    expect(updatedProduct?.reserved_stock).toBe(0);
+    expect(updatedProduct?.reservedStock).toBe(0);
   });
 
   it("recovers a late-paid order after expiry when stock is still available", async () => {
@@ -170,9 +170,9 @@ describe("payment reconciliation integration", () => {
 
     expect(result, "Expected late payment to recover the order").toBeTruthy();
     assertOrderStatus(updatedOrder, "PAID");
-    expect(updatedOrder?.payment_id).toBe("pt_paid_1");
+    expect(updatedOrder?.paymentId).toBe("pt_paid_1");
     assertStock(updatedProduct, 8);
-    expect(updatedProduct?.reserved_stock).toBe(0);
+    expect(updatedProduct?.reservedStock).toBe(0);
   });
 
   it("marks a pending Paytrail order as expired and releases stock on cancel callback", async () => {
@@ -203,9 +203,9 @@ describe("payment reconciliation integration", () => {
     expect(first, "Expected cancel reconciliation to expire the order").toBeTruthy();
     expect(second).toBe(null);
     assertOrderStatus(updatedOrder, "EXPIRED");
-    expect(updatedOrder?.payment_id).toBe("pt_canceled_1");
+    expect(updatedOrder?.paymentId).toBe("pt_canceled_1");
     assertStock(updatedProduct, 10);
-    expect(updatedProduct?.reserved_stock).toBe(0);
+    expect(updatedProduct?.reservedStock).toBe(0);
   });
 
   it("recovers a late-paid order and records uncommitted quantity when stock is short", async () => {
@@ -231,16 +231,16 @@ describe("payment reconciliation integration", () => {
       where: { sku: product.sku },
     });
     const updatedOrderItem = await db.query.orderItem.findFirst({
-      where: { order_id: order.id },
+      where: { orderId: order.id },
     });
     if (!updatedOrderItem) throw new Error("updatedOrderItem not found");
 
     expect(result, "Expected late payment to recover the order").toBeTruthy();
     assertOrderStatus(updatedOrder, "PAID");
-    expect(updatedOrder?.payment_id).toBe("pt_paid_2");
+    expect(updatedOrder?.paymentId).toBe("pt_paid_2");
     assertStock(updatedProduct, 0);
-    expect(updatedProduct?.reserved_stock).toBe(0);
-    expect(updatedOrderItem.uncommitted_quantity).toBe(1);
+    expect(updatedProduct?.reservedStock).toBe(0);
+    expect(updatedOrderItem.uncommittedQuantity).toBe(1);
   });
 
   it("returns null when the order does not exist", async () => {

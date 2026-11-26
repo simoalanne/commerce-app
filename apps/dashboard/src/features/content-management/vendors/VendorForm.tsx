@@ -38,8 +38,8 @@ const VendorFormContent = ({ entityData, onSuccess }: VendorFormProps) => {
     name: "",
     slogan: "",
     story: "",
-    storefront_visibility: "INACTIVE",
-    is_featured: false,
+    storefrontVisibility: "INACTIVE",
+    isFeatured: false,
     tags: [],
     images: [],
   };

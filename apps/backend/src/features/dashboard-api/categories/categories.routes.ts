@@ -30,8 +30,8 @@ const categoryColumns = {
   id: true,
   name: true,
   slug: true,
-  markup_percent: true,
-  image_id: true,
+  markupPercent: true,
+  imageId: true,
 } as const;
 
 // NOTE: this intentionally avoids precise invalidation rules. Before we have
@@ -64,7 +64,7 @@ export const categoriesRoutes = {
     .get("/categories/product-markup-defaults")
     .handler(async ({ context }) => {
       const categories = await context.db.query.category.findMany({
-        columns: { id: true, markup_percent: true },
+        columns: { id: true, markupPercent: true },
       });
 
       return toResponse(
@@ -72,7 +72,7 @@ export const categoriesRoutes = {
           defaultMarkupPercent: DEFAULT_PRODUCT_MARKUP_PERCENT,
           categories: categories.map((category) => ({
             id: category.id,
-            markupPercent: category.markup_percent,
+            markupPercent: category.markupPercent,
           })),
         },
         context.locale,
@@ -109,8 +109,8 @@ export const categoriesRoutes = {
         .values({
           name: toLocalizedString(body.name, context.locale),
           slug: toLocalizedSlug(body.name, context.locale),
-          markup_percent: body.markup_percent,
-          image_id: body.image_id,
+          markupPercent: body.markupPercent,
+          imageId: body.imageId,
         })
         .returning({ id: categoryTable.id });
       const category = await findCategoryForAudit(context.db, id);
@@ -138,7 +138,7 @@ export const categoriesRoutes = {
     .handler(async ({ params, body, context }) => {
       const existingCategory = await findCategoryForAudit(context.db, params.id);
       const affectedProducts = await context.db.query.product.findMany({
-        where: { category_id: params.id },
+        where: { categoryId: params.id },
         columns: { id: true },
       });
       const affectedProductIds = affectedProducts.map((product) => product.id);
@@ -148,8 +148,8 @@ export const categoriesRoutes = {
         .set({
           name: mergeLocalizedString(existingCategory.name, body.name, context.locale),
           slug: mergeLocalizedSlug(existingCategory.slug, body.name, context.locale),
-          markup_percent: body.markup_percent,
-          image_id: body.image_id,
+          markupPercent: body.markupPercent,
+          imageId: body.imageId,
         })
         .where(eq(categoryTable.id, params.id));
       const updated = await findCategoryForAudit(context.db, params.id);
@@ -182,7 +182,7 @@ export const categoriesRoutes = {
     .handler(async ({ params, context }) => {
       const deleted = await findCategoryForAudit(context.db, params.id);
       const products = await context.db.query.product.findMany({
-        where: { category_id: params.id },
+        where: { categoryId: params.id },
         columns: { id: true },
       });
       const productIds = products.map((product) => product.id);

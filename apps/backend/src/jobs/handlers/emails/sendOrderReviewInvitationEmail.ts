@@ -48,9 +48,9 @@ export async function sendOrderReviewInvitationEmail({
     columns: {
       id: true,
       status: true,
-      claim_token: true,
-      preferred_locale: true,
-      order_details: true,
+      claimToken: true,
+      preferredLocale: true,
+      orderDetails: true,
     },
   });
   if (!order) throw new Error(`Order ${orderId} not found`);
@@ -64,14 +64,14 @@ export async function sendOrderReviewInvitationEmail({
     return;
   }
 
-  const orderDetails = order.order_details;
-  const locale = order.preferred_locale ?? "en";
+  const orderDetails = order.orderDetails;
+  const locale = order.preferredLocale ?? "en";
   const recipientName = orderDetails.customer.name;
   const reviewUrl = buildReviewOrderUrl({
     baseUrl: getOnlineStoreUrl(envConfig, "/"),
     locale,
     orderId,
-    claimToken: order.claim_token,
+    claimToken: order.claimToken,
   });
   const email = await renderOrderReviewInvitationEmail({
     orderId,

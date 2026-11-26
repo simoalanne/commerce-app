@@ -30,16 +30,16 @@ export const adminsRoutes = {
       }
 
       const user = await context.db.query.user.findFirst({
-        where: { clerk_id: actualClerkId },
-        with: { admin_account: true },
+        where: { clerkId: actualClerkId },
+        with: { adminAccount: true },
       });
 
       if (!user) throw new UserNotFound();
-      if (user.admin_account) throw new AlreadyAdmin();
+      if (user.adminAccount) throw new AlreadyAdmin();
 
       const [adminAccount] = await context.db
         .insert(adminAccountTable)
-        .values({ user_id: actualClerkId })
+        .values({ userId: actualClerkId })
         .returning();
 
       await logAdminAction(context.db, {
@@ -50,7 +50,7 @@ export const adminsRoutes = {
         details: {
           operation: "admins.grantAdmin",
           adminAccountId: adminAccount.id,
-          targetUserId: user.clerk_id,
+          targetUserId: user.clerkId,
           targetClerkId: actualClerkId,
           input: body.clerkId,
         },

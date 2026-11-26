@@ -29,16 +29,16 @@ const idParams = z.object({ id: z.coerce.number<number>().int().positive() });
 
 const mapProduct = <
   T extends {
-    category_id: number | null;
-    images: Array<{ image_id: number }>;
-    tags: Array<{ tag_id: number }>;
+    categoryId: number | null;
+    images: Array<{ imageId: number }>;
+    tags: Array<{ tagId: number }>;
   },
 >(
   product: T,
 ) => ({
   ...product,
-  images: product.images.map((image) => image.image_id),
-  tags: product.tags.map((tag) => tag.tag_id),
+  images: product.images.map((image) => image.imageId),
+  tags: product.tags.map((tag) => tag.tagId),
 });
 
 const buildProductInvalidationTags = (productId: number) => [
@@ -58,8 +58,8 @@ const buildProductInvalidationTags = (productId: number) => [
 ];
 
 const productLinksWith = {
-  images: { columns: { image_id: true }, orderBy: { image_id: "asc" } },
-  tags: { columns: { tag_id: true }, orderBy: { tag_id: "asc" } },
+  images: { columns: { imageId: true }, orderBy: { imageId: "asc" } },
+  tags: { columns: { tagId: true }, orderBy: { tagId: "asc" } },
 } as const;
 
 const findProductForAudit = async (db: Db, id: number) => {
@@ -80,17 +80,13 @@ const replaceProductLinks = async (
   productId: number,
   { images, tags }: { images: number[]; tags: number[] },
 ) => {
-  await db.delete(productImageTable).where(eq(productImageTable.product_id, productId));
-  await db.delete(productTagTable).where(eq(productTagTable.product_id, productId));
+  await db.delete(productImageTable).where(eq(productImageTable.productId, productId));
+  await db.delete(productTagTable).where(eq(productTagTable.productId, productId));
   if (images.length > 0) {
-    await db
-      .insert(productImageTable)
-      .values(images.map((imageId) => ({ product_id: productId, image_id: imageId })));
+    await db.insert(productImageTable).values(images.map((imageId) => ({ productId, imageId })));
   }
   if (tags.length > 0) {
-    await db
-      .insert(productTagTable)
-      .values(tags.map((tagId) => ({ product_id: productId, tag_id: tagId })));
+    await db.insert(productTagTable).values(tags.map((tagId) => ({ productId, tagId })));
   }
 };
 
@@ -118,7 +114,7 @@ export const productsRoutes = {
     .post("/products")
     .body(ProductFormSchema)
     .handler(async ({ body, context }) => {
-      const { category_id, vendor_id, images, tags, ...data } = body;
+      const { categoryId, vendorId, images, tags, ...data } = body;
 
       const [{ id }] = await context.db
         .insert(productTable)
@@ -127,9 +123,9 @@ export const productsRoutes = {
           name: toLocalizedString(data.name, context.locale),
           slug: toLocalizedSlug(data.name, context.locale),
           headline: toLocalizedString(data.headline, context.locale),
-          full_description: toLocalizedString(data.full_description, context.locale),
-          category_id,
-          vendor_id,
+          fullDescription: toLocalizedString(data.fullDescription, context.locale),
+          categoryId,
+          vendorId,
         })
         .returning({ id: productTable.id });
       await replaceProductLinks(context.db, id, { images, tags });
@@ -161,7 +157,7 @@ export const productsRoutes = {
     .body(ProductFormSchema)
     .handler(async ({ params, body, context }) => {
       const { id } = params;
-      const { category_id, images, tags, ...data } = body;
+      const { categoryId, images, tags, ...data } = body;
       const existingProduct = await findProductForAudit(context.db, id);
 
       await context.db
@@ -169,20 +165,20 @@ export const productsRoutes = {
         .set({
           name: mergeLocalizedString(existingProduct.name, data.name, context.locale),
           slug: mergeLocalizedSlug(existingProduct.slug, data.name, context.locale),
-          weight_grams: data.weight_grams,
+          weightGrams: data.weightGrams,
           headline: mergeLocalizedString(existingProduct.headline, data.headline, context.locale),
-          full_description: mergeLocalizedString(
-            existingProduct.full_description,
-            data.full_description,
+          fullDescription: mergeLocalizedString(
+            existingProduct.fullDescription,
+            data.fullDescription,
             context.locale,
           ),
-          cost_price_cents: data.cost_price_cents,
-          sales_price_cents: data.sales_price_cents,
-          current_stock: data.current_stock,
-          storefront_visibility: data.storefront_visibility,
-          is_featured: data.is_featured,
-          category_id: category_id ?? null,
-          purchase_limit_per_order: data.purchase_limit_per_order,
+          costPriceCents: data.costPriceCents,
+          salesPriceCents: data.salesPriceCents,
+          currentStock: data.currentStock,
+          storefrontVisibility: data.storefrontVisibility,
+          isFeatured: data.isFeatured,
+          categoryId: categoryId ?? null,
+          purchaseLimitPerOrder: data.purchaseLimitPerOrder,
         })
         .where(eq(productTable.id, id));
       await replaceProductLinks(context.db, id, { images, tags });

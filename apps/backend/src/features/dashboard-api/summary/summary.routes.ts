@@ -117,7 +117,7 @@ const queryOrderSummaryRows = async (
   ).rows;
 
 const queryActiveProductCountRows = async (db: Db) =>
-  await db.$count(productTable, eq(productTable.storefront_visibility, "ACTIVE"));
+  await db.$count(productTable, eq(productTable.storefrontVisibility, "ACTIVE"));
 
 const queryCustomerCountRows = async (db: Db) => await db.$count(customerAccountTable);
 

@@ -24,7 +24,7 @@ export function StorefrontFields<TFormValues extends FieldValues>({
   return (
     <FieldGroup className="gap-4">
       <Controller
-        name={"storefront_visibility" as Path<TFormValues>}
+        name={"storefrontVisibility" as Path<TFormValues>}
         control={control}
         render={({ field }) => (
           <Field>
@@ -46,7 +46,7 @@ export function StorefrontFields<TFormValues extends FieldValues>({
       />
 
       <Controller
-        name={"is_featured" as Path<TFormValues>}
+        name={"isFeatured" as Path<TFormValues>}
         control={control}
         render={({ field }) => (
           <Field orientation="horizontal">
@@ -68,26 +68,26 @@ export function StorefrontFields<TFormValues extends FieldValues>({
 // doesn't have storefront fields, which is a not a likely scenario and not worth the extra complexity of generics.
 export const storefrontTableColumns = [
   {
-    accessorKey: "storefront_visibility",
+    accessorKey: "storefrontVisibility",
     header: "Storefront Visibility",
     cell: ({ row }: any) => (
       <Badge
         variant="outline"
         className={
-          row.original.storefront_visibility === "ACTIVE"
+          row.original.storefrontVisibility === "ACTIVE"
             ? "border-green-600 text-green-700"
             : "px-1.5 text-muted-foreground"
         }
       >
-        {row.original.storefront_visibility}
+        {row.original.storefrontVisibility}
       </Badge>
     ),
   },
   {
-    accessorKey: "is_featured",
+    accessorKey: "isFeatured",
     header: "Featured",
     cell: ({ row }: any) =>
-      row.original.is_featured ? (
+      row.original.isFeatured ? (
         <Badge variant="outline" className="border-amber-500 text-amber-700">
           Featured
         </Badge>

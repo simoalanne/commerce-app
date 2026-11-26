@@ -23,9 +23,9 @@ const vendorTxRoute = dashboardTxRoute.meta({ access: "ADMIN" });
 
 const idParams = z.object({ id: z.coerce.number<number>().int().positive() });
 
-const mapVendor = <T extends { images: Array<{ image_id: number }> }>(vendor: T) => ({
+const mapVendor = <T extends { images: Array<{ imageId: number }> }>(vendor: T) => ({
   ...vendor,
-  images: vendor.images.map((image) => image.image_id),
+  images: vendor.images.map((image) => image.imageId),
 });
 
 const buildVendorInvalidationTags = (vendorId: number, productIds: number[] = []) => [
@@ -45,7 +45,7 @@ const buildVendorInvalidationTags = (vendorId: number, productIds: number[] = []
 const findVendorForAudit = async (db: Db, id: number) => {
   const vendor = await db.query.vendor.findFirst({
     where: { id },
-    with: { images: { columns: { image_id: true }, orderBy: { image_id: "asc" } } },
+    with: { images: { columns: { imageId: true }, orderBy: { imageId: "asc" } } },
   });
   if (!vendor) throw new RouteError("NOT_FOUND", { status: 404 });
   return vendor;
@@ -56,15 +56,13 @@ const findVendorProductIds = async (db: Db, vendorId: number) =>
     await db
       .select({ id: productTable.id })
       .from(productTable)
-      .where(eq(productTable.vendor_id, vendorId))
+      .where(eq(productTable.vendorId, vendorId))
   ).map((product) => product.id);
 
 const replaceVendorImages = async (db: Db, vendorId: number, imageIds: number[]) => {
-  await db.delete(vendorImageTable).where(eq(vendorImageTable.vendor_id, vendorId));
+  await db.delete(vendorImageTable).where(eq(vendorImageTable.vendorId, vendorId));
   if (imageIds.length > 0) {
-    await db
-      .insert(vendorImageTable)
-      .values(imageIds.map((imageId) => ({ vendor_id: vendorId, image_id: imageId })));
+    await db.insert(vendorImageTable).values(imageIds.map((imageId) => ({ vendorId, imageId })));
   }
 };
 
@@ -74,7 +72,7 @@ export const vendorsRoutes = {
       with: {
         images: {
           columns: {
-            image_id: true,
+            imageId: true,
           },
         },
       },
@@ -92,7 +90,7 @@ export const vendorsRoutes = {
         with: {
           images: {
             columns: {
-              image_id: true,
+              imageId: true,
             },
           },
         },
@@ -152,8 +150,8 @@ export const vendorsRoutes = {
         .set({
           slug: slugify(data.name),
           name: data.name,
-          storefront_visibility: data.storefront_visibility,
-          is_featured: data.is_featured,
+          storefrontVisibility: data.storefrontVisibility,
+          isFeatured: data.isFeatured,
           slogan: mergeLocalizedString(existingVendor.slogan, data.slogan, context.locale),
           story: mergeLocalizedString(existingVendor.story, data.story, context.locale),
           tags: mergeLocalizedString(existingVendor.tags, data.tags, context.locale),

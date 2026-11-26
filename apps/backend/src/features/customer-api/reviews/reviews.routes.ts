@@ -24,25 +24,25 @@ export const reviewsRoutes = {
         .where(and(eq(reviewTable.status, where.status), eq(reviewTable.kind, where.kind))),
       context.db.query.review.findMany({
         where,
-        orderBy: { created_at: "desc", id: "desc" },
+        orderBy: { createdAt: "desc", id: "desc" },
         limit: LANDING_REVIEWS_FETCH_WINDOW,
         with: {
           images: {
             columns: {
-              storage_key: true,
+              storageKey: true,
             },
           },
           product: {
             columns: {
               name: true,
               slug: true,
-              storefront_visibility: true,
+              storefrontVisibility: true,
             },
             with: {
               images: {
                 limit: 1,
                 columns: {},
-                with: { image: { columns: { storage_key: true } } },
+                with: { image: { columns: { storageKey: true } } },
               },
             },
           },
@@ -53,13 +53,13 @@ export const reviewsRoutes = {
     const seenCustomerIds = new Set<number>();
     const publicReviews = reviews
       .filter((review) => {
-        if (review.customer_id == null) {
+        if (review.customerId == null) {
           return true;
         }
-        if (seenCustomerIds.has(review.customer_id)) {
+        if (seenCustomerIds.has(review.customerId)) {
           return false;
         }
-        seenCustomerIds.add(review.customer_id);
+        seenCustomerIds.add(review.customerId);
         return true;
       })
       .slice(0, LANDING_REVIEWS_LIMIT)
@@ -73,17 +73,17 @@ export const reviewsRoutes = {
           id: review.id,
           rating: review.rating,
           comment: review.comment ?? null,
-          imageUrl: review.images?.[0]?.storage_key
-            ? context.storage.getPublicUrl(review.images[0].storage_key)
+          imageUrl: review.images?.[0]?.storageKey
+            ? context.storage.getPublicUrl(review.images[0].storageKey)
             : null,
-          customerName: getReviewerDisplayName(review.reviewer_name, review.show_reviewer_name),
+          customerName: getReviewerDisplayName(review.reviewerName, review.showReviewerName),
           productName: review.product.name,
           productSlug: review.product.slug,
-          isProductActive: review.product.storefront_visibility === "ACTIVE",
-          productImageUrl: review.product.images[0]?.image.storage_key
-            ? context.storage.getPublicUrl(review.product.images[0].image.storage_key)
+          isProductActive: review.product.storefrontVisibility === "ACTIVE",
+          productImageUrl: review.product.images[0]?.image.storageKey
+            ? context.storage.getPublicUrl(review.product.images[0].image.storageKey)
             : null,
-          createdAt: review.created_at,
+          createdAt: review.createdAt,
         };
       });
 
@@ -116,9 +116,9 @@ export const reviewsRoutes = {
           where: {
             kind: "PRODUCT",
             status: "APPROVED",
-            product_id: params.productId,
+            productId: params.productId,
           },
-          orderBy: { created_at: "desc", id: "desc" },
+          orderBy: { createdAt: "desc", id: "desc" },
         }),
       ]);
 
@@ -127,14 +127,14 @@ export const reviewsRoutes = {
           summary,
           items: reviews.map((review) => ({
             id: review.id,
-            productId: review.product_id ?? params.productId,
+            productId: review.productId ?? params.productId,
             rating: review.rating,
             comment: review.comment ?? null,
-            createdAt: review.created_at,
-            updatedAt: review.updated_at,
+            createdAt: review.createdAt,
+            updatedAt: review.updatedAt,
             reviewer: {
-              isAnonymous: !review.show_reviewer_name,
-              displayName: getReviewerDisplayName(review.reviewer_name, review.show_reviewer_name),
+              isAnonymous: !review.showReviewerName,
+              displayName: getReviewerDisplayName(review.reviewerName, review.showReviewerName),
             },
           })),
         },

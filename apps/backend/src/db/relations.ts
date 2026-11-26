@@ -63,179 +63,179 @@ const tables = {
 
 export const relations = defineRelations(tables, (r) => ({
   user: {
-    customer_account: r.one.customerAccount({
-      from: r.user.clerk_id,
-      to: r.customerAccount.user_id,
+    customerAccount: r.one.customerAccount({
+      from: r.user.clerkId,
+      to: r.customerAccount.userId,
     }),
-    admin_account: r.one.adminAccount({
-      from: r.user.clerk_id,
-      to: r.adminAccount.user_id,
+    adminAccount: r.one.adminAccount({
+      from: r.user.clerkId,
+      to: r.adminAccount.userId,
     }),
   },
   customerAccount: {
     user: r.one.user({
-      from: r.customerAccount.user_id,
-      to: r.user.clerk_id,
+      from: r.customerAccount.userId,
+      to: r.user.clerkId,
       optional: false,
     }),
     addresses: r.many.customerAddress({
       from: r.customerAccount.id,
-      to: r.customerAddress.customer_id,
+      to: r.customerAddress.customerId,
     }),
-    orders: r.many.order({ from: r.customerAccount.id, to: r.order.customer_id }),
-    reviews: r.many.review({ from: r.customerAccount.id, to: r.review.customer_id }),
+    orders: r.many.order({ from: r.customerAccount.id, to: r.order.customerId }),
+    reviews: r.many.review({ from: r.customerAccount.id, to: r.review.customerId }),
     customerFavoriteProducts: r.many.customerFavoriteProduct({
       from: r.customerAccount.id,
-      to: r.customerFavoriteProduct.customer_account_id,
+      to: r.customerFavoriteProduct.customerAccountId,
     }),
     customerFavoriteVendors: r.many.customerFavoriteVendor({
       from: r.customerAccount.id,
-      to: r.customerFavoriteVendor.customer_account_id,
+      to: r.customerFavoriteVendor.customerAccountId,
     }),
     customerSavedCartItems: r.many.customerSavedCartItem({
       from: r.customerAccount.id,
-      to: r.customerSavedCartItem.customer_account_id,
+      to: r.customerSavedCartItem.customerAccountId,
     }),
   },
   customerFavoriteProduct: {
-    customer_account: r.one.customerAccount({
-      from: r.customerFavoriteProduct.customer_account_id,
+    customerAccount: r.one.customerAccount({
+      from: r.customerFavoriteProduct.customerAccountId,
       to: r.customerAccount.id,
       optional: false,
     }),
     product: r.one.product({
-      from: r.customerFavoriteProduct.product_id,
+      from: r.customerFavoriteProduct.productId,
       to: r.product.id,
       optional: false,
     }),
   },
   customerFavoriteVendor: {
-    customer_account: r.one.customerAccount({
-      from: r.customerFavoriteVendor.customer_account_id,
+    customerAccount: r.one.customerAccount({
+      from: r.customerFavoriteVendor.customerAccountId,
       to: r.customerAccount.id,
       optional: false,
     }),
     vendor: r.one.vendor({
-      from: r.customerFavoriteVendor.vendor_id,
+      from: r.customerFavoriteVendor.vendorId,
       to: r.vendor.id,
       optional: false,
     }),
   },
   customerSavedCartItem: {
-    customer_account: r.one.customerAccount({
-      from: r.customerSavedCartItem.customer_account_id,
+    customerAccount: r.one.customerAccount({
+      from: r.customerSavedCartItem.customerAccountId,
       to: r.customerAccount.id,
       optional: false,
     }),
     product: r.one.product({
-      from: r.customerSavedCartItem.product_id,
+      from: r.customerSavedCartItem.productId,
       to: r.product.id,
       optional: false,
     }),
   },
   adminAccount: {
-    user: r.one.user({ from: r.adminAccount.user_id, to: r.user.clerk_id, optional: false }),
+    user: r.one.user({ from: r.adminAccount.userId, to: r.user.clerkId, optional: false }),
     adminActionLogs: r.many.adminActionLog({
       from: r.adminAccount.id,
-      to: r.adminActionLog.admin_account_id,
+      to: r.adminActionLog.adminAccountId,
     }),
   },
   order: {
-    customer: r.one.customerAccount({ from: r.order.customer_id, to: r.customerAccount.id }),
-    reviews: r.many.review({ from: r.order.id, to: r.review.order_id }),
-    order_items: r.many.orderItem({ from: r.order.id, to: r.orderItem.order_id }),
-    refunds: r.many.refund({ from: r.order.id, to: r.refund.order_id }),
+    customer: r.one.customerAccount({ from: r.order.customerId, to: r.customerAccount.id }),
+    reviews: r.many.review({ from: r.order.id, to: r.review.orderId }),
+    orderItems: r.many.orderItem({ from: r.order.id, to: r.orderItem.orderId }),
+    refunds: r.many.refund({ from: r.order.id, to: r.refund.orderId }),
   },
   orderItem: {
-    product: r.one.product({ from: r.orderItem.product_id, to: r.product.id }),
-    vendor: r.one.vendor({ from: r.orderItem.vendor_id, to: r.vendor.id }),
-    order: r.one.order({ from: r.orderItem.order_id, to: r.order.id, optional: false }),
-    refundItems: r.many.refundItem({ from: r.orderItem.id, to: r.refundItem.order_item_id }),
+    product: r.one.product({ from: r.orderItem.productId, to: r.product.id }),
+    vendor: r.one.vendor({ from: r.orderItem.vendorId, to: r.vendor.id }),
+    order: r.one.order({ from: r.orderItem.orderId, to: r.order.id, optional: false }),
+    refundItems: r.many.refundItem({ from: r.orderItem.id, to: r.refundItem.orderItemId }),
   },
   refund: {
-    order: r.one.order({ from: r.refund.order_id, to: r.order.id, optional: false }),
-    refund_items: r.many.refundItem({ from: r.refund.id, to: r.refundItem.refund_id }),
+    order: r.one.order({ from: r.refund.orderId, to: r.order.id, optional: false }),
+    refundItems: r.many.refundItem({ from: r.refund.id, to: r.refundItem.refundId }),
   },
   refundItem: {
-    refund: r.one.refund({ from: r.refundItem.refund_id, to: r.refund.id, optional: false }),
-    order_item: r.one.orderItem({
-      from: r.refundItem.order_item_id,
+    refund: r.one.refund({ from: r.refundItem.refundId, to: r.refund.id, optional: false }),
+    orderItem: r.one.orderItem({
+      from: r.refundItem.orderItemId,
       to: r.orderItem.id,
       optional: false,
     }),
   },
   customerAddress: {
     customer: r.one.customerAccount({
-      from: r.customerAddress.customer_id,
+      from: r.customerAddress.customerId,
       to: r.customerAccount.id,
       optional: false,
     }),
   },
   category: {
-    image: r.one.image({ from: r.category.image_id, to: r.image.id, optional: false }),
-    products: r.many.product({ from: r.category.id, to: r.product.category_id }),
+    image: r.one.image({ from: r.category.imageId, to: r.image.id, optional: false }),
+    products: r.many.product({ from: r.category.id, to: r.product.categoryId }),
   },
   product: {
-    tags: r.many.productTag({ from: r.product.id, to: r.productTag.product_id }),
-    images: r.many.productImage({ from: r.product.id, to: r.productImage.product_id }),
-    category: r.one.category({ from: r.product.category_id, to: r.category.id }),
-    vendor: r.one.vendor({ from: r.product.vendor_id, to: r.vendor.id, optional: false }),
-    reviews: r.many.review({ from: r.product.id, to: r.review.product_id }),
-    order_items: r.many.orderItem({ from: r.product.id, to: r.orderItem.product_id }),
+    tags: r.many.productTag({ from: r.product.id, to: r.productTag.productId }),
+    images: r.many.productImage({ from: r.product.id, to: r.productImage.productId }),
+    category: r.one.category({ from: r.product.categoryId, to: r.category.id }),
+    vendor: r.one.vendor({ from: r.product.vendorId, to: r.vendor.id, optional: false }),
+    reviews: r.many.review({ from: r.product.id, to: r.review.productId }),
+    orderItems: r.many.orderItem({ from: r.product.id, to: r.orderItem.productId }),
     customerFavoriteProducts: r.many.customerFavoriteProduct({
       from: r.product.id,
-      to: r.customerFavoriteProduct.product_id,
+      to: r.customerFavoriteProduct.productId,
     }),
     customerSavedCartItems: r.many.customerSavedCartItem({
       from: r.product.id,
-      to: r.customerSavedCartItem.product_id,
+      to: r.customerSavedCartItem.productId,
     }),
   },
   vendor: {
-    images: r.many.vendorImage({ from: r.vendor.id, to: r.vendorImage.vendor_id }),
-    products: r.many.product({ from: r.vendor.id, to: r.product.vendor_id }),
-    reviews: r.many.review({ from: r.vendor.id, to: r.review.vendor_id }),
-    order_items: r.many.orderItem({ from: r.vendor.id, to: r.orderItem.vendor_id }),
+    images: r.many.vendorImage({ from: r.vendor.id, to: r.vendorImage.vendorId }),
+    products: r.many.product({ from: r.vendor.id, to: r.product.vendorId }),
+    reviews: r.many.review({ from: r.vendor.id, to: r.review.vendorId }),
+    orderItems: r.many.orderItem({ from: r.vendor.id, to: r.orderItem.vendorId }),
     customerFavoriteVendors: r.many.customerFavoriteVendor({
       from: r.vendor.id,
-      to: r.customerFavoriteVendor.vendor_id,
+      to: r.customerFavoriteVendor.vendorId,
     }),
   },
   image: {
-    products: r.many.productImage({ from: r.image.id, to: r.productImage.image_id }),
-    categories: r.many.category({ from: r.image.id, to: r.category.image_id }),
-    vendors: r.many.vendorImage({ from: r.image.id, to: r.vendorImage.image_id }),
-    review: r.one.review({ from: r.image.review_id, to: r.review.id }),
+    products: r.many.productImage({ from: r.image.id, to: r.productImage.imageId }),
+    categories: r.many.category({ from: r.image.id, to: r.category.imageId }),
+    vendors: r.many.vendorImage({ from: r.image.id, to: r.vendorImage.imageId }),
+    review: r.one.review({ from: r.image.reviewId, to: r.review.id }),
   },
   productImage: {
     product: r.one.product({
-      from: r.productImage.product_id,
+      from: r.productImage.productId,
       to: r.product.id,
       optional: false,
     }),
-    image: r.one.image({ from: r.productImage.image_id, to: r.image.id, optional: false }),
+    image: r.one.image({ from: r.productImage.imageId, to: r.image.id, optional: false }),
   },
   tag: {
-    products: r.many.productTag({ from: r.tag.id, to: r.productTag.tag_id }),
+    products: r.many.productTag({ from: r.tag.id, to: r.productTag.tagId }),
   },
   productTag: {
-    product: r.one.product({ from: r.productTag.product_id, to: r.product.id, optional: false }),
-    tag: r.one.tag({ from: r.productTag.tag_id, to: r.tag.id, optional: false }),
+    product: r.one.product({ from: r.productTag.productId, to: r.product.id, optional: false }),
+    tag: r.one.tag({ from: r.productTag.tagId, to: r.tag.id, optional: false }),
   },
   vendorImage: {
-    vendor: r.one.vendor({ from: r.vendorImage.vendor_id, to: r.vendor.id, optional: false }),
-    image: r.one.image({ from: r.vendorImage.image_id, to: r.image.id, optional: false }),
+    vendor: r.one.vendor({ from: r.vendorImage.vendorId, to: r.vendor.id, optional: false }),
+    image: r.one.image({ from: r.vendorImage.imageId, to: r.image.id, optional: false }),
   },
   review: {
-    customer: r.one.customerAccount({ from: r.review.customer_id, to: r.customerAccount.id }),
-    order: r.one.order({ from: r.review.order_id, to: r.order.id }),
-    vendor: r.one.vendor({ from: r.review.vendor_id, to: r.vendor.id }),
-    product: r.one.product({ from: r.review.product_id, to: r.product.id }),
-    images: r.many.image({ from: r.review.id, to: r.image.review_id }),
+    customer: r.one.customerAccount({ from: r.review.customerId, to: r.customerAccount.id }),
+    order: r.one.order({ from: r.review.orderId, to: r.order.id }),
+    vendor: r.one.vendor({ from: r.review.vendorId, to: r.vendor.id }),
+    product: r.one.product({ from: r.review.productId, to: r.product.id }),
+    images: r.many.image({ from: r.review.id, to: r.image.reviewId }),
   },
   adminActionLog: {
-    admin_account: r.one.adminAccount({
-      from: r.adminActionLog.admin_account_id,
+    adminAccount: r.one.adminAccount({
+      from: r.adminActionLog.adminAccountId,
       to: r.adminAccount.id,
     }),
   },

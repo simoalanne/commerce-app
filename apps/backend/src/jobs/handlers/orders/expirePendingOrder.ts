@@ -27,11 +27,11 @@ export async function expirePendingOrder(
     }
 
     const orderItems = await tx.query.orderItem.findMany({
-      where: { order_id: orderId },
+      where: { orderId },
       columns: {
         sku: true,
         quantity: true,
-        product_id: true,
+        productId: true,
       },
     });
 
@@ -40,7 +40,7 @@ export async function expirePendingOrder(
       transaction: tx,
     });
     await enqueueProductStockInvalidationJobs({
-      productIds: orderItems.flatMap((item) => (item.product_id == null ? [] : [item.product_id])),
+      productIds: orderItems.flatMap((item) => (item.productId == null ? [] : [item.productId])),
       enqueueJob: (job) => jobQueue.enqueue(tx, job),
     });
 

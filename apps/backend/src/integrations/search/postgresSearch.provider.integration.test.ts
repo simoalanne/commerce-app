@@ -24,7 +24,7 @@ afterEach(async () => {
   if (createdProductIds.size > 0) {
     await db
       .delete(productSearchDocumentTable)
-      .where(inArray(productSearchDocumentTable.product_id, [...createdProductIds]));
+      .where(inArray(productSearchDocumentTable.productId, [...createdProductIds]));
     await db.delete(productTable).where(inArray(productTable.id, [...createdProductIds]));
     createdProductIds.clear();
   }
@@ -79,8 +79,8 @@ const createSearchStoryFixture = async () => {
   createdVendorIds.add(meatVendor.id);
 
   const basil = await createProduct({
-    category_id: herbsCategory.id,
-    vendor_id: herbVendor.id,
+    categoryId: herbsCategory.id,
+    vendorId: herbVendor.id,
     name: {
       en: "Basil (30g)",
     },
@@ -89,8 +89,8 @@ const createSearchStoryFixture = async () => {
     },
   });
   const coriander = await createProduct({
-    category_id: herbsCategory.id,
-    vendor_id: herbVendor.id,
+    categoryId: herbsCategory.id,
+    vendorId: herbVendor.id,
     name: {
       en: "Coriander (30g)",
     },
@@ -99,8 +99,8 @@ const createSearchStoryFixture = async () => {
     },
   });
   const mincedMeat = await createProduct({
-    category_id: meatCategory.id,
-    vendor_id: meatVendor.id,
+    categoryId: meatCategory.id,
+    vendorId: meatVendor.id,
     name: {
       en: "Lamb minced meat 500g",
     },
@@ -135,10 +135,10 @@ const search = async (q: string) =>
 const listIndexedProductIds = async (productId: number) =>
   (
     await db.query.productSearchDocument.findMany({
-      where: { product_id: productId },
-      columns: { product_id: true },
+      where: { productId },
+      columns: { productId: true },
     })
-  ).map((document) => document.product_id);
+  ).map((document) => document.productId);
 
 describe("PostgresSearchProvider", () => {
   it("indexes visible products through invalidation", async () => {
@@ -158,8 +158,8 @@ describe("PostgresSearchProvider", () => {
     });
     createdVendorIds.add(vendor.id);
     const product = await createProduct({
-      category_id: category.id,
-      vendor_id: vendor.id,
+      categoryId: category.id,
+      vendorId: vendor.id,
       name: {
         en: "Index carrot",
       },
@@ -197,8 +197,8 @@ describe("PostgresSearchProvider", () => {
     });
     createdVendorIds.add(vendor.id);
     const product = await createProduct({
-      category_id: category.id,
-      vendor_id: vendor.id,
+      categoryId: category.id,
+      vendorId: vendor.id,
       name: {
         en: "Cleanup carrot",
       },
@@ -211,7 +211,7 @@ describe("PostgresSearchProvider", () => {
 
     await db
       .update(productTable)
-      .set({ storefront_visibility: "INACTIVE" })
+      .set({ storefrontVisibility: "INACTIVE" })
       .where(eq(productTable.id, product.id));
     await postgresSearchProvider.invalidateIndex({ productIds: [product.id] });
 

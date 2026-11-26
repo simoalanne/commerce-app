@@ -6,14 +6,14 @@ export const IMAGE_PLACEHOLDER_URL = "https://placehold.co";
 // carry the image.
 export const ALL_LINKED_IMAGES_SELECT = {
   columns: {},
-  with: { image: { columns: { storage_key: true } } },
+  with: { image: { columns: { storageKey: true } } },
 } as const;
 
 export const FIRST_LINKED_IMAGE_SELECT = { ...ALL_LINKED_IMAGES_SELECT, limit: 1 } as const;
 
 export type ImageLinkWithUrl = {
   image: {
-    storage_key: string;
+    storageKey: string;
   };
 };
 
@@ -23,11 +23,11 @@ export const getFirstLinkedImageUrl = (
   storage: PublicUrlStorage,
   links: ImageLinkWithUrl[] | null | undefined,
 ) =>
-  links?.[0]?.image.storage_key
-    ? storage.getPublicUrl(links[0].image.storage_key)
+  links?.[0]?.image.storageKey
+    ? storage.getPublicUrl(links[0].image.storageKey)
     : IMAGE_PLACEHOLDER_URL;
 
 export const getLinkedImageUrls = (
   storage: PublicUrlStorage,
   links: ImageLinkWithUrl[] | null | undefined,
-) => (links ?? []).map((link) => storage.getPublicUrl(link.image.storage_key));
+) => (links ?? []).map((link) => storage.getPublicUrl(link.image.storageKey));

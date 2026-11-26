@@ -27,24 +27,24 @@ export const buildOrderRefundedPayload = async (
   const refund = await db.query.refund.findFirst({
     where: { id: refundId },
     columns: {
-      total_amount_cents: true,
+      totalAmountCents: true,
     },
     with: {
       order: {
         columns: {
           id: true,
-          preferred_locale: true,
-          order_details: true,
+          preferredLocale: true,
+          orderDetails: true,
         },
       },
-      refund_items: {
+      refundItems: {
         orderBy: { id: "asc" },
         columns: {
           quantity: true,
-          amount_cents: true,
+          amountCents: true,
         },
         with: {
-          order_item: {
+          orderItem: {
             with: {
               product: {
                 columns: {
@@ -61,25 +61,25 @@ export const buildOrderRefundedPayload = async (
   if (!refund) throw new Error(`Refund ${refundId} not found`);
 
   const order = refund.order;
-  const orderDetails = order.order_details;
-  const locale = order.preferred_locale ?? "en";
+  const orderDetails = order.orderDetails;
+  const locale = order.preferredLocale ?? "en";
   const recipientName = orderDetails.customer.name;
 
-  const items = refund.refund_items.flatMap((refundItem) => {
+  const items = refund.refundItems.flatMap((refundItem) => {
     if (refundItem.quantity == null) return [];
 
-    const orderedItem = refundItem.order_item;
+    const orderedItem = refundItem.orderItem;
     return {
       sku: orderedItem.sku,
       name:
         (getLocalizedValue(orderedItem.product?.name, locale) as string | undefined) ??
         orderedItem.name ??
         orderedItem.sku,
-      vendorName: orderedItem.vendor_name ?? null,
+      vendorName: orderedItem.vendorName ?? null,
       imageUrl: getFirstLinkedImageUrl(ObjectStorage, orderedItem.product?.images),
       quantity: refundItem.quantity,
-      unitPriceCents: orderedItem.unit_sales_price_cents,
-      lineTotalCents: refundItem.amount_cents,
+      unitPriceCents: orderedItem.unitSalesPriceCents,
+      lineTotalCents: refundItem.amountCents,
     };
   });
 
@@ -90,6 +90,6 @@ export const buildOrderRefundedPayload = async (
     recipientName,
     recipientFirstName: recipientName.split(/\s+/)[0] ?? recipientName,
     items,
-    totalCents: refund.total_amount_cents,
+    totalCents: refund.totalAmountCents,
   };
 };

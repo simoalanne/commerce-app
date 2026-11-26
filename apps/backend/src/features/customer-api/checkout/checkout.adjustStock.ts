@@ -11,7 +11,7 @@ type StockAdjustment = {
 };
 
 type ProductStockAdjustment = {
-  product_id: number | null;
+  productId: number | null;
   quantity: number | null;
 };
 
@@ -96,8 +96,8 @@ export const releaseReservedStock = async ({ items, transaction }: StockAdjustme
 
 export const restockProductStock = async ({ items, transaction }: ProductStockAdjustmentParams) => {
   const restockItems = items.filter(
-    (item): item is { product_id: number; quantity: number } =>
-      item.product_id != null && item.quantity != null && item.quantity > 0,
+    (item): item is { productId: number; quantity: number } =>
+      item.productId != null && item.quantity != null && item.quantity > 0,
   );
   if (!restockItems.length) return;
 
@@ -106,7 +106,7 @@ export const restockProductStock = async ({ items, transaction }: ProductStockAd
 		SET current_stock = p.current_stock + s.quantity
 		FROM (
 			VALUES ${sql.join(
-        restockItems.map((item) => sql`(${item.product_id}::int, ${item.quantity}::int)`),
+        restockItems.map((item) => sql`(${item.productId}::int, ${item.quantity}::int)`),
         sql`, `,
       )}
 		) AS s(product_id, quantity)

@@ -62,18 +62,18 @@ const getTranslation = (locale: string) =>
 type InvoiceTotalRow = readonly [label: string, taxableAmount: number, totalAmount: number];
 
 const renderOrderInvoicePdf = async (config: EnvConfig, order: RelevantOrder, locale: string) => {
-  if (!order.payment_id) {
+  if (!order.paymentId) {
     throw new Error(`Cannot generate receipt for order ${order.id} without payment_id`);
   }
-  if (!order.paid_at) {
+  if (!order.paidAt) {
     throw new Error(`Cannot generate receipt for order ${order.id} without paid_at`);
   }
 
   const t = getTranslation(locale);
-  const vatRate = order.vat_rate;
-  const taxableAmount = order.charged_total_cents - order.included_vat_cents;
+  const vatRate = order.vatRate;
+  const taxableAmount = order.chargedTotalCents - order.includedVatCents;
   const lineRows = order.orderItems.map((item) => {
-    const unitPrice = item.unit_sales_price_cents;
+    const unitPrice = item.unitSalesPriceCents;
     const lineInclVat = unitPrice * item.quantity;
     const unitExclVat = amountExcludingVat(unitPrice, vatRate);
     const lineExclVat = amountExcludingVat(lineInclVat, vatRate);
@@ -98,13 +98,13 @@ const renderOrderInvoicePdf = async (config: EnvConfig, order: RelevantOrder, lo
   const totalRows = [
     [
       t.itemsSubtotal,
-      amountExcludingVat(order.items_subtotal_cents, vatRate),
-      order.items_subtotal_cents,
+      amountExcludingVat(order.itemsSubtotalCents, vatRate),
+      order.itemsSubtotalCents,
     ],
     [
       t.itemsDiscount,
-      amountExcludingVat(-order.items_discount_cents, vatRate),
-      -order.items_discount_cents,
+      amountExcludingVat(-order.itemsDiscountCents, vatRate),
+      -order.itemsDiscountCents,
     ],
   ] as const satisfies readonly InvoiceTotalRow[];
 
@@ -137,14 +137,14 @@ const renderOrderInvoicePdf = async (config: EnvConfig, order: RelevantOrder, lo
             width: "*",
             stack: buildTextLines([
               labelledLine(t.orderNumber, String(order.id)),
-              labelledLine(t.orderDate, formatDateTime(order.paid_at)),
+              labelledLine(t.orderDate, formatDateTime(order.paidAt)),
             ]),
           },
           {
             width: "*",
             stack: buildTextLines([
-              labelledLine(t.paymentProvider, order.payment_provider),
-              labelledLine(t.paymentId, order.payment_id),
+              labelledLine(t.paymentProvider, order.paymentProvider),
+              labelledLine(t.paymentId, order.paymentId),
             ]),
           },
         ],
@@ -198,12 +198,12 @@ const renderOrderInvoicePdf = async (config: EnvConfig, order: RelevantOrder, lo
                 bold: true,
               },
               {
-                text: formatMoney(order.charged_total_cents),
+                text: formatMoney(order.chargedTotalCents),
                 alignment: "right",
                 bold: true,
               },
             ],
-            ["", t.includedVat, rightCell(formatMoney(order.included_vat_cents))],
+            ["", t.includedVat, rightCell(formatMoney(order.includedVatCents))],
           ],
         },
         layout: "lightHorizontalLines",
@@ -244,5 +244,5 @@ export const generateOrderInvoicePdf = async (
     ...(input.access === "customer" ? { customerId: input.customerId } : {}),
   });
 
-  return renderOrderInvoicePdf(config, order, input.locale ?? order.preferred_locale);
+  return renderOrderInvoicePdf(config, order, input.locale ?? order.preferredLocale);
 };

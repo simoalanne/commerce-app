@@ -22,24 +22,24 @@ const contactSubmissionColumns = {
   message: true,
   locale: true,
   status: true,
-  created_at: true,
-  updated_at: true,
+  createdAt: true,
+  updatedAt: true,
 } as const;
 
 export const contactSubmissionsRoutes = {
   getAll: contactSubmissionRoute.get("/contact-submissions").handler(async ({ context }) => {
     const submissions = await context.db.query.contactSubmission.findMany({
       orderBy: {
-        created_at: "desc",
+        createdAt: "desc",
       },
       columns: contactSubmissionColumns,
     });
 
     return toResponse(
-      submissions.map(({ created_at, updated_at, ...rest }) => ({
+      submissions.map(({ createdAt, updatedAt, ...rest }) => ({
         ...rest,
-        createdAt: created_at,
-        updatedAt: updated_at,
+        createdAt,
+        updatedAt,
       })),
       context.locale,
     );
@@ -54,13 +54,13 @@ export const contactSubmissionsRoutes = {
         columns: contactSubmissionColumns,
       });
       if (!submission) throw new RouteError("NOT_FOUND", { status: 404 });
-      const { created_at, updated_at, ...rest } = submission;
+      const { createdAt, updatedAt, ...rest } = submission;
 
       return toResponse(
         {
           ...rest,
-          createdAt: created_at,
-          updatedAt: updated_at,
+          createdAt,
+          updatedAt,
         },
         context.locale,
       );

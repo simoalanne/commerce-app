@@ -87,12 +87,12 @@ export const buildOrderItemsFromProducts = (
     sku: p.sku,
     productId: p.id,
     productName: resolveLocalizedSnapshotName(p.name, locale),
-    vendorId: p.vendor_id,
+    vendorId: p.vendorId,
     vendorName: p.vendor.name,
     quantity: cart[p.sku].quantity,
-    unitPriceCents: p.sales_price_cents,
-    unitCostPriceCents: p.cost_price_cents,
-    weightGrams: p.weight_grams,
+    unitPriceCents: p.salesPriceCents,
+    unitCostPriceCents: p.costPriceCents,
+    weightGrams: p.weightGrams,
   }));
 };
 
@@ -105,18 +105,18 @@ export const validateCartPurchaseLimits = (
 ) => {
   const exceededLimits = products.flatMap((product) => {
     const cartItem = cart[product.sku];
-    if (!cartItem || product.purchase_limit_per_order <= 0) {
+    if (!cartItem || product.purchaseLimitPerOrder <= 0) {
       return [];
     }
 
-    if (cartItem.quantity <= product.purchase_limit_per_order) {
+    if (cartItem.quantity <= product.purchaseLimitPerOrder) {
       return [];
     }
 
     return [
       {
         sku: product.sku,
-        purchaseLimit: product.purchase_limit_per_order,
+        purchaseLimit: product.purchaseLimitPerOrder,
       },
     ];
   });
@@ -136,7 +136,7 @@ export const validateCartUnitPrices = (
       return [];
     }
 
-    const currentUnitPriceCents = product.sales_price_cents;
+    const currentUnitPriceCents = product.salesPriceCents;
     if (cartItem.unitPriceCents === currentUnitPriceCents) {
       return [];
     }

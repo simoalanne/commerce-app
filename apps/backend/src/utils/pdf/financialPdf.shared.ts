@@ -73,7 +73,7 @@ export const buildSellerCustomerSection = ({
     vatId: string;
   };
 }): Content => {
-  const seller = order.invoice_details.seller;
+  const seller = order.invoiceDetails.seller;
   const contact = getCompanyContactInformation(config);
   const vatId = `FI${seller.businessId.replaceAll("-", "")}`;
 
@@ -98,10 +98,10 @@ export const buildSellerCustomerSection = ({
         stack: [
           { text: labels.customer, style: "sectionTitle" },
           ...buildTextLines([
-            order.order_details.customer.name,
-            order.order_details.customer.email,
-            order.order_details.customer.phone,
-            order.order_details.delivery.addressLabel,
+            order.orderDetails.customer.name,
+            order.orderDetails.customer.email,
+            order.orderDetails.customer.phone,
+            order.orderDetails.delivery.addressLabel,
           ]),
         ],
       },

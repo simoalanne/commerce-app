@@ -7,7 +7,7 @@ export const categoriesRoutes = {
     const categories = await context.db.query.category.findMany({
       columns: { id: true, name: true, slug: true },
       with: {
-        image: { columns: { storage_key: true } },
+        image: { columns: { storageKey: true } },
         products: { where: activeStorefrontProductWhere(), columns: { id: true } },
       },
     });
@@ -18,7 +18,7 @@ export const categoriesRoutes = {
           id: category.id,
           name: category.name,
           slug: category.slug,
-          imageUrl: context.storage.getPublicUrl(category.image.storage_key),
+          imageUrl: context.storage.getPublicUrl(category.image.storageKey),
           productCount: category.products.length,
         }))
         .filter((category) => category.productCount > 0),

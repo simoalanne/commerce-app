@@ -72,15 +72,15 @@ const createOrderReviewScenario = async ({
   createdVendorIds.add(vendorTwo.id);
 
   const productOne = await createProduct({
-    vendor_id: vendorOne.id,
+    vendorId: vendorOne.id,
     categoryIds: [category.id],
   });
   const productTwo = await createProduct({
-    vendor_id: vendorOne.id,
+    vendorId: vendorOne.id,
     categoryIds: [category.id],
   });
   const productThree = await createProduct({
-    vendor_id: vendorTwo.id,
+    vendorId: vendorTwo.id,
     categoryIds: [category.id],
   });
   createdProductSkus.add(productOne.sku);
@@ -91,9 +91,9 @@ const createOrderReviewScenario = async ({
   const order = await createOrder(
     {
       status,
-      customer_id: null,
-      claim_token: claimToken,
-      order_details: {
+      customerId: null,
+      claimToken,
+      orderDetails: {
         customer: {
           name: "Review Guest",
           email: "review@example.com",
@@ -105,36 +105,36 @@ const createOrderReviewScenario = async ({
           instructions: {},
         },
       },
-      order_items: [
+      orderItems: [
         {
           sku: productOne.sku,
           name: productOne.name.en ?? "",
           quantity: 1,
-          unit_cost_price_cents: productOne.cost_price_cents,
-          unit_sales_price_cents: 990,
-          product_id: productOne.id,
-          vendor_id: vendorOne.id,
-          vendor_name: vendorOne.name,
+          unitCostPriceCents: productOne.costPriceCents,
+          unitSalesPriceCents: 990,
+          productId: productOne.id,
+          vendorId: vendorOne.id,
+          vendorName: vendorOne.name,
         },
         {
           sku: productTwo.sku,
           name: productTwo.name.en ?? "",
           quantity: 2,
-          unit_cost_price_cents: productTwo.cost_price_cents,
-          unit_sales_price_cents: 550,
-          product_id: productTwo.id,
-          vendor_id: vendorOne.id,
-          vendor_name: vendorOne.name,
+          unitCostPriceCents: productTwo.costPriceCents,
+          unitSalesPriceCents: 550,
+          productId: productTwo.id,
+          vendorId: vendorOne.id,
+          vendorName: vendorOne.name,
         },
         {
           sku: productThree.sku,
           name: productThree.name.en ?? "",
           quantity: 1,
-          unit_cost_price_cents: productThree.cost_price_cents,
-          unit_sales_price_cents: 1250,
-          product_id: productThree.id,
-          vendor_id: vendorTwo.id,
-          vendor_name: vendorTwo.name,
+          unitCostPriceCents: productThree.costPriceCents,
+          unitSalesPriceCents: 1250,
+          productId: productThree.id,
+          vendorId: vendorTwo.id,
+          vendorName: vendorTwo.name,
         },
       ],
     },
@@ -171,18 +171,18 @@ describe("customerApi.orderReviews integration", () => {
       .values([
         {
           kind: "PRODUCT",
-          order_id: scenario.order.id,
-          product_id: scenario.productOne.id,
-          reviewer_name: "Review Guest",
-          show_reviewer_name: false,
+          orderId: scenario.order.id,
+          productId: scenario.productOne.id,
+          reviewerName: "Review Guest",
+          showReviewerName: false,
           rating: 5,
           comment: "Great apples",
         },
         {
           kind: "STORE_EXPERIENCE",
-          order_id: scenario.order.id,
-          reviewer_name: "Review Guest",
-          show_reviewer_name: false,
+          orderId: scenario.order.id,
+          reviewerName: "Review Guest",
+          showReviewerName: false,
           rating: 4,
           comment: "Smooth delivery",
         },
@@ -288,19 +288,19 @@ describe("customerApi.orderReviews integration", () => {
     });
 
     const storedReviews = await db.query.review.findMany({
-      where: { order_id: scenario.order.id },
-      orderBy: { product_id: "asc", id: "asc" },
+      where: { orderId: scenario.order.id },
+      orderBy: { productId: "asc", id: "asc" },
     });
 
     expect(storedReviews.length).toBe(4);
-    expect(storedReviews.every((review) => review.reviewer_name === "Review Guest")).toBe(true);
+    expect(storedReviews.every((review) => review.reviewerName === "Review Guest")).toBe(true);
     const storedReviewSummaries = storedReviews
       .map((review) => ({
         kind: review.kind,
-        productId: review.product_id,
+        productId: review.productId,
         rating: review.rating,
         comment: review.comment,
-        showReviewerName: review.show_reviewer_name,
+        showReviewerName: review.showReviewerName,
       }))
       .sort(
         (left, right) =>
@@ -341,7 +341,7 @@ describe("customerApi.orderReviews integration", () => {
   it("rejects non-reviewable targets for the order", async () => {
     const scenario = await createOrderReviewScenario();
     const unrelatedProduct = await createProduct({
-      vendor_id: scenario.vendorOne.id,
+      vendorId: scenario.vendorOne.id,
       categoryIds: [...createdCategoryIds].slice(0, 1),
     });
     createdProductSkus.add(unrelatedProduct.sku);

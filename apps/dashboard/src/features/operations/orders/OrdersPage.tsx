@@ -76,9 +76,9 @@ export default function OrdersPage() {
   const getCustomerLabel = (contact: OrderTableRow["contact"]) => contact.name;
 
   const getCustomerLink = (order: OrderTableRow) =>
-    order.customer_id
+    order.customerId
       ? `/customers?${new URLSearchParams({
-          customerId: String(order.customer_id),
+          customerId: String(order.customerId),
           customerName: getCustomerLabel(order.contact),
         }).toString()}`
       : null;
@@ -191,7 +191,7 @@ export default function OrdersPage() {
         dialogContentClassName="sm:max-w-5xl xl:max-w-6xl"
         actions={{ create: false, edit: false, delete: false }}
         transformData={(orders) =>
-          customerIdParam ? orders.filter((order) => order.customer_id === customerIdParam) : orders
+          customerIdParam ? orders.filter((order) => order.customerId === customerIdParam) : orders
         }
       />
       <RefundOrderDialog

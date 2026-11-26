@@ -40,7 +40,7 @@ export default function ProductsPage() {
         },
       ]}
       transformData={(products) =>
-        vendorIdParam ? products.filter((product) => product.vendor_id === vendorIdParam) : products
+        vendorIdParam ? products.filter((product) => product.vendorId === vendorIdParam) : products
       }
       columns={() => [
         {
@@ -49,7 +49,7 @@ export default function ProductsPage() {
           cell: ({ row }) => <div className="font-medium">#{row.original.id}</div>,
         },
         {
-          accessorKey: "vendor_id",
+          accessorKey: "vendorId",
           header: "Vendor ID",
         },
         {
@@ -66,20 +66,18 @@ export default function ProductsPage() {
         {
           accessorKey: "sales_price",
           header: "Sales Price",
-          cell: ({ row }) => formatCents(row.original.sales_price_cents),
+          cell: ({ row }) => formatCents(row.original.salesPriceCents),
         },
         {
-          accessorKey: "current_stock",
+          accessorKey: "currentStock",
           header: "Stock",
-          cell: ({ row }) => row.original.current_stock,
+          cell: ({ row }) => row.original.currentStock,
         },
         {
-          accessorKey: "purchase_limit_per_order",
+          accessorKey: "purchaseLimitPerOrder",
           header: "Limit",
           cell: ({ row }) =>
-            row.original.purchase_limit_per_order > 0
-              ? row.original.purchase_limit_per_order
-              : "None",
+            row.original.purchaseLimitPerOrder > 0 ? row.original.purchaseLimitPerOrder : "None",
         },
         ...storefrontTableColumns,
         {
