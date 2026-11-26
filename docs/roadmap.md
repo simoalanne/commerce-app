@@ -17,7 +17,7 @@ The project is a general commerce core: catalog, cart, checkout, orders, refunds
 5. **Payment provider registry.**
 6. **Integer cents**, on Prisma, so the Drizzle port only translates queries.
 7. **Transactional route builders**, on Prisma: `customerTxRoute` / `dashboardTxRoute` replace `runAppTransaction` in handlers.
-8. **Drizzle**, with pg-boss. Done: conventions and the translation guide are in `database.md`, the queue in `job-queue.md`.
+8. **Drizzle**, with pg-boss. Done: see `database.md` and `job-queue.md`.
 
 Deferred, not scheduled: Clerk → Better Auth, the TanStack Start store, the search documents review.
 
@@ -25,7 +25,7 @@ The sections below are input for these steps.
 
 ## Decisions
 
-- **Money:** integer cents (minor units), done on Prisma before the port. Columns and API fields carry a `_cents` / `Cents` suffix; percentages (`vat_rate`, `markup_percent`) are not money.
+- **Money:** integer cents (minor units). Columns and API fields carry a `_cents` / `Cents` suffix; percentages (`vatRate`, `markupPercent`) are not money.
 - **Localized content:** stays in JSON columns, resolved by `toResponse`. Query-level localization may replace that later, not now.
 - **Job queue:** pg-boss.
 - **Test runner:** Vitest with its default setup.
@@ -33,29 +33,7 @@ The sections below are input for these steps.
 
 ## Tooling Refactors
 
-Each is its own commit series on `main`. The job queue and `runAppTransaction` changes from the abstraction review belong with the Drizzle port, since they touch the same call sites.
-
-### Prisma → Drizzle (done)
-
-Ported on Drizzle `1.0.0-rc.6` and pg-boss 12, with what was learned recorded in `database.md`: relational `where` throws on `undefined` instead of ignoring it, `uuid(7)` defaults moved to Postgres 18's `uuidv7()`, `numeric` reads as `number`, and drizzle-kit does not manage the `pg_trgm` extension search needs. The plan as written before the port:
-
-Target Drizzle 1.0 (currently `1.0.0-rc`). Its relational queries (`where`, `with`, `columns`) are close to Prisma's `where`, `include` and `select`, which makes most reads translate directly.
-
-Footprint: 27 models, about 140 query calls, 20 raw SQL queries, 34 `runAppTransaction` calls in 23 files.
-
-**Groundwork, serial, before any delegation:**
-
-- The Drizzle schema and relations, written from `schema.prisma` (or `drizzle-kit pull` from a pushed database).
-- Re-add the behavior Prisma implements in its client: `@updatedAt` fields (`.$onUpdate(() => new Date())`), client-side `cuid()`/`uuid()` defaults (`$defaultFn`), and Prisma's implicit many-to-many join tables if any exist.
-- Replace the JSON types generator with `.$type<T>()`.
-- Helpers: a not-found "or throw" replacing `findUniqueOrThrow`, and unique-violation mapping (Postgres `23505`) replacing the Prisma error codes in `isNotFoundError`/`tryDeleteEntity`.
-- A conversion guide covering: `undefined` in `where` (Prisma ignores an undefined filter; check whether Drizzle's relational queries do the same), `_count`, case-insensitive filters (`ilike`), upserts (`onConflictDoUpdate` with an explicit target), and nested writes (explicit inserts in a transaction).
-
-**Port:** feature folder by feature folder, following the conversion guide, verified by `pnpm typecheck`.
-
-**Verification:** typecheck, then the integration tests against the test database. Types only prove query shapes; the integration tests cover the semantic differences.
-
-Workflow stays the same: `drizzle-kit push` replaces `prisma db push`.
+Each is its own commit series on `main`.
 
 ### Scripts and tests on Bun and Vitest
 

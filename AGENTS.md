@@ -55,7 +55,7 @@ Do not hand-write parallel types or ad hoc fetch wrappers unless there is a stro
 
 ## Database Workflow
 
-- Drizzle 1.0 with node-postgres. Schema in `apps/backend/src/db/schema.ts`, relations in `src/db/relations.ts`. Query conventions and the Prisma-to-Drizzle translation are in `docs/database.md`; read it before writing queries.
+- Drizzle 1.0 with node-postgres. Schema in `apps/backend/src/db/schema.ts`, relations in `src/db/relations.ts`. Conventions and the Drizzle traps are in `docs/database.md`; read it before writing queries.
 - The trap TypeScript does not catch: in relational queries, an `undefined` filter value (or `where: undefined`) throws at runtime, and `null` is not `IS NULL`.
 - There are no migrations. Schema changes are applied with `drizzle-kit push` (`pnpm --filter backend db:push`; `test:db:init` for the test database); the user will run this when needed.
 
