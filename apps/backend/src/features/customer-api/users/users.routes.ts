@@ -2,7 +2,6 @@ import { customerRoute } from "#src/routing/base.ts";
 
 import { accountRoutes } from "./account.routes.ts";
 import { addressesRoutes } from "./addresses.routes.ts";
-import { buildCustomerDataExport } from "./exportData.ts";
 
 export const userRoutes = {
   account: accountRoutes,
@@ -11,13 +10,28 @@ export const userRoutes = {
     .meta({ access: "AUTHENTICATED" })
     .get("/user/export-data")
     .handler(async ({ context }) => {
-      const identity = await context.auth.getUserById(context.authContext.clerkId);
-      const exportData = await buildCustomerDataExport(context, context.authContext.customerId, {
-        email: identity.email,
-        firstName: identity.firstName,
-        lastName: identity.lastName,
+      const { email, firstName, lastName } = await context.auth.getUserById(
+        context.authContext.clerkId,
+      );
+      const account = await context.db.query.customerAccount.findFirst({
+        where: { id: context.authContext.customerId },
+        columns: {},
+        with: {
+          customerSavedCartItems: true,
+          customerFavoriteProducts: true,
+          customerFavoriteVendors: true,
+          addresses: true,
+          orders: {
+            // Cost prices and the claim token are not the customer's data.
+            columns: { claimToken: false },
+            with: {
+              orderItems: { columns: { unitCostPriceCents: false } },
+              reviews: { with: { images: true } },
+            },
+          },
+        },
       });
 
-      return exportData;
+      return { email, firstName, lastName, ...account };
     }),
 };
