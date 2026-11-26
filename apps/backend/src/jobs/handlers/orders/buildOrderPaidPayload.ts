@@ -1,3 +1,5 @@
+import type { ShippingAddress } from "@acme/shared/schemas/shippingAddress";
+
 import envConfig from "#src/config.ts";
 import { db } from "#src/db/client.ts";
 import { ObjectStorage } from "#src/integrations/object-storage/objectStorage.provider.ts";
@@ -13,7 +15,7 @@ export type OrderPaidPayload = {
   recipientPhone?: string | null;
   recipientName: string;
   recipientFirstName: string;
-  formattedAddress: string;
+  shippingAddress: ShippingAddress;
   items: {
     sku: string;
     name: string;
@@ -105,7 +107,7 @@ export const buildOrderPaidPayload = async (orderId: number): Promise<OrderPaidP
     recipientPhone,
     recipientName,
     recipientFirstName: recipientName.split(/\s+/)[0] ?? recipientName,
-    formattedAddress: orderDetails.delivery.addressLabel.replaceAll(", ", "\n"),
+    shippingAddress: orderDetails.shippingAddress,
     items: order.orderItems.map((item) => {
       return {
         sku: item.sku,

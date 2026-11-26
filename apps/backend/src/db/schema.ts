@@ -24,7 +24,6 @@ import {
 } from "drizzle-orm/pg-core";
 
 import type {
-  CustomerAddressDeliveryDetails,
   LocalizedString,
   LocalizedStringArray,
   OrderDetails,
@@ -277,11 +276,11 @@ export const customerAddressTable = snakeCase.table(
     customerId: integer()
       .notNull()
       .references(() => customerAccountTable.id, { onDelete: "cascade" }),
-    street: text().notNull(),
-    streetNumber: text(),
+    line1: text().notNull(),
+    line2: text(),
     postalCode: text().notNull(),
     city: text().notNull(),
-    deliveryDetails: jsonb().$type<CustomerAddressDeliveryDetails>().notNull(),
+    country: text().notNull(),
   },
   (t) => [index().on(t.customerId)],
 );

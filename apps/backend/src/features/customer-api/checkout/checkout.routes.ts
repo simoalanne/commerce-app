@@ -1,5 +1,5 @@
 import { calculateOrderPricing } from "@acme/shared";
-import { DeliveryInstructionsSchema } from "@acme/shared/schemas";
+import { ShippingAddressSchema } from "@acme/shared/schemas/shippingAddress";
 import { isValidPhoneNumber } from "@acme/shared/utils/addressValidation";
 import { RouteError } from "@rest-rpc/server";
 import { isAfter, isBefore } from "date-fns";
@@ -47,25 +47,12 @@ import {
   releaseCheckoutCreatePaymentRateLimit,
 } from "./checkout.rateLimit.ts";
 import {
-  buildOrderDetails,
   buildOrderItemsFromProducts,
   calculateOrderTotal,
   fetchPurchasableProducts,
   validateCartPurchaseLimits,
   validateCartUnitPrices,
 } from "./checkout.utils.ts";
-
-const DeliveryAddressSchema = z.object({
-  street: z.string().trim().min(1).max(255),
-  city: z.string().trim().min(1).max(255),
-  postalCode: z.string().trim().min(1).max(32),
-  addressType: z.string().trim().max(255).nullable(),
-  streetNumber: z.string().trim().max(64).nullable(),
-  entrance: z.string().trim().max(64).nullable(),
-  floor: z.string().trim().max(64).nullable(),
-  apartment: z.string().trim().max(64).nullable(),
-  deliveryInstructions: DeliveryInstructionsSchema,
-});
 
 const OrderRecipientSchema = z.object({
   email: z.email(),
@@ -90,7 +77,7 @@ export const CheckoutCartSchema = z
 
 const baseCreatepaymentBodySchema = z.object({
   cart: CheckoutCartSchema,
-  deliveryAddress: DeliveryAddressSchema,
+  shippingAddress: ShippingAddressSchema,
   recipient: OrderRecipientSchema,
   promoCode: z.string().trim().toUpperCase().min(1).max(1024).optional(),
   continueAsGuest: z.boolean().optional(),
@@ -117,7 +104,7 @@ type CheckoutContext = AppContext & {
 
 const createPaymentInternal = async (
   context: CheckoutContext,
-  { cart, deliveryAddress, recipient, provider, promoCode, continueAsGuest }: CreatePaymentBody,
+  { cart, shippingAddress, recipient, provider, promoCode, continueAsGuest }: CreatePaymentBody,
 ) => {
   const { authContext, db, config, payments } = context;
   const paymentProvider = payments[provider];
@@ -159,10 +146,14 @@ const createPaymentInternal = async (
     discountValue: validatedPromoCode?.discountValue,
   });
 
-  const orderDetails: OrderDetails = buildOrderDetails({
-    deliveryAddress,
-    recipient,
-  });
+  const orderDetails: OrderDetails = {
+    customer: {
+      name: `${recipient.firstName} ${recipient.lastName}`,
+      email: recipient.email.trim().toLowerCase(),
+      phone: recipient.phone,
+    },
+    shippingAddress,
+  };
 
   const order = await db.transaction(async (tx) => {
     await reserveStockOrThrow({

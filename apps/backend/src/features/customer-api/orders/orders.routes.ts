@@ -45,10 +45,7 @@ function buildOrderDetail(storage: ObjectStorageProvider, order: RelevantOrder) 
     hasSubmittedReview: order.hasSubmittedReview,
     orderDetails: {
       items,
-      delivery: {
-        addressLabel: details.delivery.addressLabel,
-        instructions: details.delivery.instructions,
-      },
+      shippingAddress: details.shippingAddress,
     },
   };
 }

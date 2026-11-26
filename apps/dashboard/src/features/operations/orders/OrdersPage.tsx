@@ -1,4 +1,5 @@
 import { downloadBlob, getContentDispositionFilename } from "@acme/shared";
+import { formatShippingAddressLines } from "@acme/shared/schemas/shippingAddress";
 import type { InferClientResponse } from "@rest-rpc/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -92,12 +93,12 @@ export default function OrdersPage() {
     },
     {
       // where
-      id: "deliveryAddress",
-      accessorFn: (row) => row.delivery.addressLabel,
-      header: "Delivery Address",
-      cell: ({ row }) => (
+      id: "shippingAddress",
+      accessorFn: (row) => formatShippingAddressLines(row.shippingAddress).join(", "),
+      header: "Shipping Address",
+      cell: ({ getValue }) => (
         <div className="flex max-w-xs flex-col">
-          <span className="truncate">{row.original.delivery.addressLabel}</span>
+          <span className="truncate">{getValue<string>()}</span>
         </div>
       ),
     },
@@ -184,7 +185,7 @@ export default function OrdersPage() {
             />
           );
         }}
-        searchableColumnIds={["deliveryAddress", "contact", "id"]}
+        searchableColumnIds={["shippingAddress", "contact", "id"]}
         initialSorting={[{ id: "id", desc: true }]}
         rowClickOpensDialog
         rowDialogTitle="Order Details"

@@ -146,10 +146,12 @@ export const createOrder = async (
           email: "customer@example.com",
           phone: "+1555401112222",
         },
-        delivery: {
-          addressLabel: "Test Street, 10001 Springfield",
+        shippingAddress: {
+          line1: "Test Street",
+          line2: null,
+          postalCode: "10001",
           city: "Springfield",
-          instructions: {},
+          country: "US",
         },
       },
       // Tests that read invoice details set them.

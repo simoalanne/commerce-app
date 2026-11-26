@@ -1,3 +1,4 @@
+import { formatShippingAddressLines } from "@acme/shared/schemas/shippingAddress";
 import type { Content, TableCell } from "pdfmake";
 import pdfMake from "pdfmake";
 // @ts-expect-error no types available, no point declaring for this usage
@@ -101,7 +102,7 @@ export const buildSellerCustomerSection = ({
             order.orderDetails.customer.name,
             order.orderDetails.customer.email,
             order.orderDetails.customer.phone,
-            order.orderDetails.delivery.addressLabel,
+            ...formatShippingAddressLines(order.orderDetails.shippingAddress),
           ]),
         ],
       },

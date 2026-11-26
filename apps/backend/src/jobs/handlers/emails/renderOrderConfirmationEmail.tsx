@@ -1,3 +1,7 @@
+import {
+  formatShippingAddressLines,
+  type ShippingAddress,
+} from "@acme/shared/schemas/shippingAddress";
 import { render } from "@react-email/components";
 
 import {
@@ -17,7 +21,7 @@ type OrderConfirmationEmailPayload = {
   recipientEmail: string;
   recipientName: string;
   recipientFirstName: string;
-  formattedAddress: string;
+  shippingAddress: ShippingAddress;
   items: {
     name: string;
     vendorName: string | null;
@@ -77,7 +81,7 @@ export async function renderOrderConfirmationEmail(
   });
   const addressLines = [
     payload.recipientName,
-    ...payload.formattedAddress.split("\n").filter(Boolean),
+    ...formatShippingAddressLines(payload.shippingAddress),
   ];
   const shopUrl = new URL(`/${locale}`, payload.viewOrderUrl).toString();
 

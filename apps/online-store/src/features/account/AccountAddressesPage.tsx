@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { AddressForm, type AddressFormValue } from "@/components/address-form";
+import { createInitialAddress } from "@/components/address-form/createInitialAddress";
 import { AsyncBoundary } from "@/components/async-boundary";
 import { Modal } from "@/components/Modal";
 import { SavedAddress } from "@/components/SavedAddress";
@@ -14,36 +15,7 @@ import type { CustomerAddress } from "@/types/api";
 
 import styles from "./AccountAddressesPage.module.css";
 
-const emptyAddress: AddressFormValue = {
-  street: "",
-  postalCode: "",
-  city: "",
-  addressType: null,
-  streetNumber: null,
-  entrance: null,
-  floor: null,
-  apartment: null,
-  deliveryInstructions: {},
-};
-
-function createFormAddress(address?: CustomerAddress | null): AddressFormValue {
-  if (!address) {
-    return emptyAddress;
-  }
-
-  return {
-    street: address.street,
-    postalCode: address.postalCode,
-    city: address.city,
-    addressType: address.addressType,
-    streetNumber: address.streetNumber,
-    entrance: address.entrance,
-    floor: address.floor,
-    apartment: address.apartment,
-    deliveryInstructions: address.deliveryInstructions,
-    id: address.id,
-  };
-}
+const emptyAddress: AddressFormValue = createInitialAddress();
 
 export default function AccountAddressesPage() {
   return (
@@ -61,11 +33,11 @@ function AccountAddressesPageContent() {
   const [editingAddress, setEditingAddress] = useState<CustomerAddress | null>(null);
   const [draft, setDraft] = useState<AddressFormValue>(emptyAddress);
   const [fieldErrors, setFieldErrors] = useState<{
-    street: string | null;
+    line1: string | null;
     postalCode: string | null;
     city: string | null;
   }>({
-    street: null,
+    line1: null,
     postalCode: null,
     city: null,
   });
@@ -92,7 +64,7 @@ function AccountAddressesPageContent() {
     setEditingAddress(null);
     setDraft(emptyAddress);
     setFieldErrors({
-      street: null,
+      line1: null,
       postalCode: null,
       city: null,
     });
@@ -102,9 +74,9 @@ function AccountAddressesPageContent() {
 
   const openEditModal = (address: CustomerAddress) => {
     setEditingAddress(address);
-    setDraft(createFormAddress(address));
+    setDraft(address);
     setFieldErrors({
-      street: null,
+      line1: null,
       postalCode: null,
       city: null,
     });
@@ -114,19 +86,19 @@ function AccountAddressesPageContent() {
 
   useEffect(() => {
     setFieldErrors((current) => ({
-      street: current.street && draft.street.trim() ? null : current.street,
+      line1: current.line1 && draft.line1.trim() ? null : current.line1,
       postalCode:
         current.postalCode && isValidPostalCode(draft.postalCode.trim())
           ? null
           : current.postalCode,
       city: current.city && draft.city.trim() ? null : current.city,
     }));
-  }, [draft.city, draft.postalCode, draft.street]);
+  }, [draft.city, draft.postalCode, draft.line1]);
 
   const handleDelete = (address: CustomerAddress) => {
     const confirmed = window.confirm(
       t("delete.confirmation", {
-        address: `${address.street}, ${address.postalCode} ${address.city}`,
+        address: `${address.line1}, ${address.postalCode} ${address.city}`,
       }),
     );
 
@@ -149,7 +121,7 @@ function AccountAddressesPageContent() {
 
   const handleSubmit = async () => {
     const nextFieldErrors = {
-      street: draft.street.trim()
+      line1: draft.line1.trim()
         ? null
         : t("validation.requiredField", {
             field: t("fields.address"),
@@ -171,19 +143,7 @@ function AccountAddressesPageContent() {
       return;
     }
 
-    const nextAddress = {
-      street: draft.street.trim(),
-      postalCode: draft.postalCode.trim(),
-      city: draft.city.trim(),
-      addressType: null,
-      streetNumber: null,
-      entrance: null,
-      floor: null,
-      apartment: draft.apartment?.trim() || null,
-      deliveryInstructions: {
-        freeForm: draft.deliveryInstructions.freeForm?.trim() || undefined,
-      },
-    };
+    const nextAddress = { ...draft, line2: draft.line2?.trim() || null };
 
     try {
       if (editingAddress) {
@@ -235,7 +195,7 @@ function AccountAddressesPageContent() {
               <SavedAddress
                 key={address.id}
                 variant="actions"
-                address={address.street}
+                address={address.line1}
                 postalCode={address.postalCode}
                 city={address.city}
                 onEdit={() => openEditModal(address)}

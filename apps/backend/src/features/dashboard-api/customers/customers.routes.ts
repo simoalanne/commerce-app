@@ -25,7 +25,7 @@ export const customersRoutes = {
             sql<number>`coalesce(${sum(orderTable.chargedTotalCents)}, 0)`.mapWith(Number),
           latestOrderCity: sql<
             string | null
-          >`(array_agg(${orderTable.orderDetails}->'delivery'->>'city' ORDER BY ${orderTable.createdAt} DESC))[1]`,
+          >`(array_agg(${orderTable.orderDetails}->'shippingAddress'->>'city' ORDER BY ${orderTable.createdAt} DESC))[1]`,
         })
         .from(customerAccountTable)
         .leftJoin(

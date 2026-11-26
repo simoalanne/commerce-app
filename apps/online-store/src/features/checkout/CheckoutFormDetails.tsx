@@ -37,7 +37,7 @@ const fieldErrorTargetIds = {
   phone: "checkout-phone",
   firstName: "checkout-first-name",
   lastName: "checkout-last-name",
-  street: "address-form-address",
+  line1: "address-form-address",
   postalCode: "address-form-postal-code",
   city: "address-form-city",
   paymentProvider: paymentMethodFieldId,
@@ -50,7 +50,7 @@ const emptyFieldErrors: CheckoutFieldErrors = {
   phone: null,
   firstName: null,
   lastName: null,
-  street: null,
+  line1: null,
   postalCode: null,
   city: null,
   paymentProvider: null,
@@ -95,7 +95,7 @@ export default function CheckoutFormDetails({
   const { queryUtils } = useApiClient();
   const cart = buildCartItemsFromCheckoutItems(cartItems);
   const [addressDraft, setAddressDraft] = useState<AddressFormValue>(() =>
-    createInitialAddress(formState.deliveryAddress),
+    createInitialAddress(formState.shippingAddress),
   );
   const [fieldErrors, setFieldErrors] = useState<CheckoutFieldErrors>(emptyFieldErrors);
   const createPayment = useMutation(queryUtils.checkout.createPayment.mutationOptions());
@@ -114,8 +114,8 @@ export default function CheckoutFormDetails({
   };
 
   useEffect(() => {
-    setAddressDraft(createInitialAddress(formState.deliveryAddress));
-  }, [formState.deliveryAddress]);
+    setAddressDraft(createInitialAddress(formState.shippingAddress));
+  }, [formState.shippingAddress]);
 
   useEffect(() => {
     setFieldErrors((current) => ({
@@ -124,7 +124,7 @@ export default function CheckoutFormDetails({
       phone: current.phone && isValidPhoneNumber(formState.phone) ? null : current.phone,
       firstName: current.firstName && formState.firstName.trim() ? null : current.firstName,
       lastName: current.lastName && formState.lastName.trim() ? null : current.lastName,
-      street: current.street && addressDraft.street.trim() ? null : current.street,
+      line1: current.line1 && addressDraft.line1.trim() ? null : current.line1,
       postalCode: current.postalCode && addressDraft.postalCode.trim() ? null : current.postalCode,
       city: current.city && addressDraft.city.trim() ? null : current.city,
       paymentProvider:
@@ -133,7 +133,7 @@ export default function CheckoutFormDetails({
   }, [
     addressDraft.city,
     addressDraft.postalCode,
-    addressDraft.street,
+    addressDraft.line1,
     formState.email,
     formState.firstName,
     formState.lastName,
@@ -143,14 +143,10 @@ export default function CheckoutFormDetails({
 
   const normalizeAddress = (address: AddressFormValue): AddressFormValue => ({
     ...address,
-    street: address.street.trim(),
+    line1: address.line1.trim(),
+    line2: address.line2?.trim() || null,
     postalCode: address.postalCode.trim(),
     city: address.city.trim(),
-    apartment: address.apartment?.trim() || null,
-    deliveryInstructions: {
-      ...address.deliveryInstructions,
-      freeForm: address.deliveryInstructions.freeForm?.trim() || undefined,
-    },
   });
 
   const getPhoneValidationError = (phone: string) => {
@@ -182,36 +178,20 @@ export default function CheckoutFormDetails({
     }));
   };
 
-  const buildSavedAddressLine = (savedAddress: CustomerAddress) =>
-    [savedAddress.street, savedAddress.streetNumber].filter(Boolean).join(" ");
-
   const addressMatchesSavedAddress = (address: AddressFormValue, savedAddress: CustomerAddress) => {
     const normalizedAddress = normalizeAddress(address);
 
     return (
-      normalizedAddress.street === buildSavedAddressLine(savedAddress).trim() &&
-      normalizedAddress.postalCode === savedAddress.postalCode.trim() &&
-      normalizedAddress.city === savedAddress.city.trim() &&
-      (normalizedAddress.apartment ?? "") === (savedAddress.apartment ?? "") &&
-      (normalizedAddress.deliveryInstructions.freeForm ?? "") ===
-        (savedAddress.deliveryInstructions.freeForm ?? "")
+      normalizedAddress.line1 === savedAddress.line1 &&
+      normalizedAddress.line2 === savedAddress.line2 &&
+      normalizedAddress.postalCode === savedAddress.postalCode &&
+      normalizedAddress.city === savedAddress.city &&
+      normalizedAddress.country === savedAddress.country
     );
   };
 
-  const applySavedAddress = (savedAddress: CustomerAddress) => {
-    const nextAddress = createInitialAddress({
-      street: buildSavedAddressLine(savedAddress),
-      city: savedAddress.city,
-      postalCode: savedAddress.postalCode,
-      addressType: null,
-      streetNumber: null,
-      entrance: null,
-      floor: null,
-      apartment: savedAddress.apartment,
-      deliveryInstructions: {
-        freeForm: savedAddress.deliveryInstructions.freeForm,
-      },
-    });
+  const applySavedAddress = ({ line1, line2, postalCode, city, country }: CustomerAddress) => {
+    const nextAddress = { line1, line2, postalCode, city, country };
 
     setAddressDraft(nextAddress);
     validatePostalCode(nextAddress.postalCode.trim());
@@ -252,7 +232,7 @@ export default function CheckoutFormDetails({
     const phone = formState.phone.trim();
     const firstName = formState.firstName.trim();
     const lastName = formState.lastName.trim();
-    const deliveryAddress = normalizeAddress(addressDraft);
+    const shippingAddress = normalizeAddress(addressDraft);
     const requiredFieldError = (fieldLabel: string) =>
       t("form.errors.requiredField", { fieldLabel });
     const nextFieldErrors = {
@@ -260,11 +240,11 @@ export default function CheckoutFormDetails({
       phone: getPhoneValidationError(phone),
       firstName: firstName ? null : requiredFieldError(t("form.contact.firstName")),
       lastName: lastName ? null : requiredFieldError(t("form.contact.lastName")),
-      street: deliveryAddress.street ? null : requiredFieldError(tAddressForm("address")),
-      postalCode: deliveryAddress.postalCode
+      line1: shippingAddress.line1 ? null : requiredFieldError(tAddressForm("address")),
+      postalCode: shippingAddress.postalCode
         ? fieldErrors.postalCode
         : requiredFieldError(tAddressForm("postalCode")),
-      city: deliveryAddress.city ? null : requiredFieldError(tAddressForm("city")),
+      city: shippingAddress.city ? null : requiredFieldError(tAddressForm("city")),
       paymentProvider: formState.paymentProvider
         ? null
         : requiredFieldError(t("form.payment.title")),
@@ -290,7 +270,7 @@ export default function CheckoutFormDetails({
       phone,
       firstName,
       lastName,
-      deliveryAddress,
+      shippingAddress,
     }));
 
     const nextFormState = {
@@ -299,12 +279,12 @@ export default function CheckoutFormDetails({
       phone,
       firstName,
       lastName,
-      deliveryAddress,
+      shippingAddress,
     };
     const paymentRequest = {
       provider: paymentProvider,
       cart,
-      deliveryAddress,
+      shippingAddress,
       recipient: {
         email,
         phone,
@@ -416,7 +396,7 @@ export default function CheckoutFormDetails({
               {savedAddresses.map((savedAddress) => (
                 <SavedAddress
                   key={savedAddress.id}
-                  address={buildSavedAddressLine(savedAddress)}
+                  address={savedAddress.line1}
                   postalCode={savedAddress.postalCode}
                   city={savedAddress.city}
                   selected={addressMatchesSavedAddress(addressDraft, savedAddress)}
@@ -431,7 +411,7 @@ export default function CheckoutFormDetails({
           setAddress={setAddressDraft}
           onPostalCodeValidate={validatePostalCode}
           errors={{
-            street: fieldErrors.street,
+            line1: fieldErrors.line1,
             postalCode: fieldErrors.postalCode,
             city: fieldErrors.city,
           }}

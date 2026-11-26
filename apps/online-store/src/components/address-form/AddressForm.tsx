@@ -17,7 +17,7 @@ type AddressFormProps = {
   setAddress: Dispatch<SetStateAction<AddressFormValue>>;
   onPostalCodeValidate?: (postalCode: string) => void;
   errors?: {
-    street?: string | null;
+    line1?: string | null;
     postalCode?: string | null;
     city?: string | null;
   };
@@ -37,18 +37,18 @@ export function AddressForm({
         <div className={styles.fieldGridFull}>
           <TextField
             id="address-form-address"
-            name="street-address"
+            name="address-line1"
             label={t("address")}
-            value={address.street}
-            validationState={errors?.street ? "error" : "default"}
-            helperText={errors?.street ?? undefined}
+            value={address.line1}
+            validationState={errors?.line1 ? "error" : "default"}
+            helperText={errors?.line1 ?? undefined}
             onChange={(event) =>
               setAddress((current) => ({
                 ...current,
-                street: event.target.value,
+                line1: event.target.value,
               }))
             }
-            autoComplete="street-address"
+            autoComplete="address-line1"
           />
         </div>
         <div className={styles.fieldGridFull}>
@@ -57,11 +57,11 @@ export function AddressForm({
             name="address-line2"
             label={t("apartment")}
             isOptional
-            value={address.apartment ?? ""}
+            value={address.line2 ?? ""}
             onChange={(event) =>
               setAddress((current) => ({
                 ...current,
-                apartment: event.target.value,
+                line2: event.target.value,
               }))
             }
             autoComplete="address-line2"
@@ -98,26 +98,6 @@ export function AddressForm({
           }
           autoComplete="address-level2"
         />
-        <div className={styles.fieldGridFull}>
-          <TextField
-            id="address-form-delivery-instructions"
-            label={t("deliveryInstructions")}
-            aria-label={t("deliveryInstructions")}
-            isOptional
-            value={address.deliveryInstructions.freeForm ?? ""}
-            onChange={(event) =>
-              setAddress((current) => ({
-                ...current,
-                deliveryInstructions: {
-                  ...current.deliveryInstructions,
-                  freeForm: event.target.value,
-                },
-              }))
-            }
-            multiline
-            rows={4}
-          />
-        </div>
       </div>
     </div>
   );

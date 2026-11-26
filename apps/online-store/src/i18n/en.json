@@ -274,8 +274,6 @@
       "errors": {
         "requiredField": "{fieldLabel} is required.",
         "emailRequired": "Email is required.",
-        "deliveryAddressRequired": "Select a delivery address before continuing.",
-        "deliverySlotRequired": "Choose a delivery slot before continuing.",
         "invalidPromoCode": "The promo code is no longer valid for this order.",
         "paymentPreparationFailed": "Failed to create the order",
         "tooManyRequests": "You're trying a bit too quickly. Please wait a moment and try again."
@@ -311,7 +309,6 @@
     "apartment": "Apartment, suite, etc.",
     "postalCode": "Postal code",
     "city": "City",
-    "deliveryInstructions": "Delivery instructions",
     "optional": "Optional"
   },
   "landingPage": {
@@ -883,9 +880,6 @@
     "vendor": "Vendor",
     "status": "Status",
     "deliveryAddress": "Delivery address",
-    "deliveryInstructions": "Delivery instructions",
-    "access": "Access: {access}",
-    "doorCode": "Door code: {code}",
     "reviewOrder": "Review order",
     "downloadInvoice": "Download invoice",
     "downloadRefundReceipt": "Download refund receipt {number}",

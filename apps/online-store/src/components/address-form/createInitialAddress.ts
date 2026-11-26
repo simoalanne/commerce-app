@@ -1,28 +1,14 @@
 import type { AddressDraft } from "@/types/api";
 
+// The store ships within Finland until the address form has a country field.
 const emptyAddress: AddressDraft = {
-  street: "",
-  city: "",
+  line1: "",
+  line2: null,
   postalCode: "",
-  addressType: null,
-  streetNumber: null,
-  entrance: null,
-  floor: null,
-  apartment: null,
-  deliveryInstructions: {},
+  city: "",
+  country: "FI",
 };
 
 export function createInitialAddress(initialAddress?: AddressDraft | null): AddressDraft {
-  if (!initialAddress) {
-    return emptyAddress;
-  }
-
-  return {
-    ...emptyAddress,
-    ...initialAddress,
-    deliveryInstructions: {
-      ...emptyAddress.deliveryInstructions,
-      ...initialAddress.deliveryInstructions,
-    },
-  };
+  return { ...emptyAddress, ...initialAddress };
 }

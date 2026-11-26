@@ -1,3 +1,7 @@
+import {
+  formatShippingAddressLines,
+  type ShippingAddress,
+} from "@acme/shared/schemas/shippingAddress";
 import { render } from "@react-email/components";
 
 import {
@@ -19,7 +23,7 @@ export type NewOrderNotificationEmailPayload = {
     email: string;
     phone: string | null;
   };
-  formattedAddress: string;
+  shippingAddress: ShippingAddress;
   items: {
     name: string;
     vendorName: string | null;
@@ -72,7 +76,7 @@ export async function renderNewOrderNotificationEmail(
 ): Promise<NewOrderNotificationEmailContent> {
   const subject = formatLine(copy.subject, { orderId: payload.orderId });
   const placedAt = dateTimeFormatter.format(new Date(payload.placedAt));
-  const addressLines = payload.formattedAddress.split("\n").filter(Boolean);
+  const addressLines = formatShippingAddressLines(payload.shippingAddress);
   const items = payload.items.map((item) => ({
     name: item.name,
     initials: getInitials(item.name),

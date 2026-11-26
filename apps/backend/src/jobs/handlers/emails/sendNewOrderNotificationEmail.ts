@@ -41,7 +41,7 @@ export async function sendNewOrderNotificationEmail({
       email: order.recipientEmail,
       phone: null,
     },
-    formattedAddress: order.formattedAddress,
+    shippingAddress: order.shippingAddress,
     items: order.items,
     subtotalCents: order.subtotalCents,
     totalCents: order.totalCents,

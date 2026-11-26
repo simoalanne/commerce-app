@@ -175,10 +175,7 @@ export const ordersRoutes = {
             email: orderDetails.customer.email,
             phone: orderDetails.customer.phone,
           },
-          delivery: {
-            addressLabel: orderDetails.delivery.addressLabel,
-            instructions: orderDetails.delivery.instructions,
-          },
+          shippingAddress: orderDetails.shippingAddress,
           refundSummary: buildOrderRefundSummary(order),
           refundReceipts: order.refundReceipts,
         };
@@ -216,10 +213,7 @@ export const ordersRoutes = {
           email: orderDetails.customer.email,
           phone: orderDetails.customer.phone,
         },
-        delivery: {
-          addressLabel: orderDetails.delivery.addressLabel,
-          instructions: orderDetails.delivery.instructions,
-        },
+        shippingAddress: orderDetails.shippingAddress,
         items: order.orderItems.map((item) => ({
           id: item.id,
           sku: item.sku,

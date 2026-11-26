@@ -1,7 +1,7 @@
 import type z from "zod";
 
 import type { Db } from "#src/db/client.ts";
-import type { DeliveryInstructions, LocalizedString, OrderDetails } from "#src/db/json.ts";
+import type { LocalizedString } from "#src/db/json.ts";
 import type { productTable } from "#src/db/schema.ts";
 import { activeStorefrontProductWhere } from "#src/domain/storefrontVisibility.ts";
 import type { SupportedLocale } from "#src/locales.ts";
@@ -9,60 +9,9 @@ import type { SupportedLocale } from "#src/locales.ts";
 import { PriceMismatch, ProductsNotPurchasable, PurchaseLimitExceeded } from "./checkout.errors.ts";
 import type { CheckoutCartSchema } from "./checkout.routes.ts";
 
-export type DeliveryAddressInput = {
-  street: string;
-  city: string;
-  postalCode: string;
-  streetNumber: string | null;
-  entrance: string | null;
-  floor: string | null;
-  apartment: string | null;
-  deliveryInstructions: DeliveryInstructions;
-};
-
-export type RecipientInput = {
-  email: string;
-  phone: string;
-  firstName: string;
-  lastName: string;
-};
-
 type Product = typeof productTable.$inferSelect;
 
 type PurchasableProduct = Awaited<ReturnType<typeof fetchPurchasableProducts>>[number];
-
-const formatAddressLabel = (address: DeliveryAddressInput) => {
-  const streetLine = [address.street, address.streetNumber].filter(Boolean).join(" ").trim();
-  const detailLine = [
-    address.entrance ? `Entrance ${address.entrance}` : "",
-    address.floor ? `Floor ${address.floor}` : "",
-    address.apartment ? `Apartment ${address.apartment}` : "",
-  ]
-    .filter(Boolean)
-    .join(", ");
-  const cityLine = [address.postalCode, address.city].filter(Boolean).join(" ");
-
-  return [streetLine, detailLine, cityLine].filter(Boolean).join(", ");
-};
-
-export const buildOrderDetails = ({
-  deliveryAddress,
-  recipient,
-}: {
-  deliveryAddress: DeliveryAddressInput;
-  recipient: RecipientInput;
-}): OrderDetails => ({
-  customer: {
-    name: `${recipient.firstName} ${recipient.lastName}`,
-    email: recipient.email.trim().toLowerCase(),
-    phone: recipient.phone,
-  },
-  delivery: {
-    addressLabel: formatAddressLabel(deliveryAddress),
-    city: deliveryAddress.city,
-    instructions: deliveryAddress.deliveryInstructions,
-  },
-});
 
 export const fetchPurchasableProducts = (db: Db, skus: string[]) =>
   db.query.product.findMany({

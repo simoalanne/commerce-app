@@ -1,6 +1,7 @@
 "use client";
 
 import { downloadBlob, getContentDispositionFilename } from "@acme/shared";
+import { formatShippingAddressLines } from "@acme/shared/schemas/shippingAddress";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { use, useState } from "react";
@@ -102,7 +103,6 @@ function AccountOrderDetailsContent({ orderId }: AccountOrderDetailsContentProps
   const data = orderResponse.body;
 
   const { orderDetails } = data;
-  const instructions = orderDetails.delivery.instructions;
   const { pricing } = data;
 
   const handleReviewOrder = async () => {
@@ -259,27 +259,12 @@ function AccountOrderDetailsContent({ orderId }: AccountOrderDetailsContentProps
           <section className={styles.infoCard}>
             <h3 className={styles.sectionTitle}>{t("deliveryAddress")}</h3>
             <div className={styles.addressBlock}>
-              <p className={styles.infoValue}>{orderDetails.delivery.addressLabel}</p>
+              {formatShippingAddressLines(orderDetails.shippingAddress).map((line) => (
+                <p key={line} className={styles.infoValue}>
+                  {line}
+                </p>
+              ))}
             </div>
-
-            {instructions && (instructions.freeForm || instructions.apartmentEntrance) ? (
-              <div className={styles.infoGroup}>
-                <p className={styles.infoLabel}>{t("deliveryInstructions")}</p>
-                {instructions.apartmentEntrance ? (
-                  <p className={styles.addressLine}>
-                    {t("access", { access: instructions.apartmentEntrance })}
-                  </p>
-                ) : null}
-                {instructions.doorCode ? (
-                  <p className={styles.addressLine}>
-                    {t("doorCode", { code: instructions.doorCode })}
-                  </p>
-                ) : null}
-                {instructions.freeForm ? (
-                  <p className={styles.addressLine}>{instructions.freeForm}</p>
-                ) : null}
-              </div>
-            ) : null}
           </section>
 
           <section className={styles.infoCard}>

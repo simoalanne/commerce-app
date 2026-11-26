@@ -93,9 +93,9 @@ const finalizeLocalAccountDeletion = async (
             'customer',
             COALESCE(${orderTable.orderDetails}->'customer', '{}'::jsonb)
               || jsonb_build_object('name', 'Deleted customer', 'email', 'deleted@acme.invalid'),
-            'delivery',
-            COALESCE(${orderTable.orderDetails}->'delivery', '{}'::jsonb)
-              || jsonb_build_object('addressLabel', 'Deleted address', 'city', 'Deleted', 'instructions', NULL)
+            'shippingAddress',
+            COALESCE(${orderTable.orderDetails}->'shippingAddress', '{}'::jsonb)
+              || jsonb_build_object('line1', 'Deleted address', 'line2', NULL, 'postalCode', '', 'city', 'Deleted')
           )`,
       })
       .where(eq(orderTable.customerId, customerId));

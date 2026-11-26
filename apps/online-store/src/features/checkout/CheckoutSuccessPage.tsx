@@ -1,3 +1,4 @@
+import { formatShippingAddressLines } from "@acme/shared/schemas/shippingAddress";
 import { RouteError, safe } from "@rest-rpc/core";
 import { ArrowRight, CheckCircle2, Clock3, MapPinHouse, ReceiptText } from "lucide-react";
 import { cookies } from "next/headers";
@@ -224,9 +225,13 @@ export default async function CheckoutSuccessPage({
             <section className={styles.infoCard}>
               <MapPinHouse size={24} strokeWidth={2} className={styles.infoIcon} />
               <h2 className={styles.infoTitle}>{t("deliveryAddress")}</h2>
-              <p className={styles.infoBody}>
-                {successState.orderDetails.orderDetails.delivery.addressLabel}
-              </p>
+              {formatShippingAddressLines(
+                successState.orderDetails.orderDetails.shippingAddress,
+              ).map((line) => (
+                <p key={line} className={styles.infoBody}>
+                  {line}
+                </p>
+              ))}
             </section>
           </div>
         </div>

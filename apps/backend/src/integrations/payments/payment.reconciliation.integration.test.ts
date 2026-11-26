@@ -98,10 +98,12 @@ const createReconciliationScenario = async ({
         email: "customer@example.com",
         phone: "+1555401112224",
       },
-      delivery: {
-        addressLabel: "1 Webhook Street, 10001 Springfield",
+      shippingAddress: {
+        line1: "1 Webhook Street",
+        line2: null,
+        postalCode: "10001",
         city: "Springfield",
-        instructions: {},
+        country: "US",
       },
     },
   });

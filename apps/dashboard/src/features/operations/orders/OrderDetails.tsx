@@ -1,3 +1,4 @@
+import { formatShippingAddressLines } from "@acme/shared/schemas/shippingAddress";
 import type { InferClientResponse } from "@rest-rpc/core";
 
 import { Badge } from "@/components/ui/badge";
@@ -103,25 +104,14 @@ export default function OrderDetails({ entityData: order }: OrderDetailsProps) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Delivery</CardTitle>
-            <CardDescription>Address and access notes</CardDescription>
+            <CardTitle>Shipping address</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <div>
-              <div className="font-medium break-words">{order.delivery.addressLabel}</div>
-            </div>
-            <details className="group rounded-lg border p-3">
-              <summary className="cursor-pointer list-none text-sm font-medium">
-                <span className="group-open:hidden">Show delivery details</span>
-                <span className="hidden group-open:inline">Hide delivery details</span>
-              </summary>
-              <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
-                <DetailField
-                  label="Instructions"
-                  value={formatDeliveryInstructions(order.delivery.instructions)}
-                />
+          <CardContent className="text-sm">
+            {formatShippingAddressLines(order.shippingAddress).map((line) => (
+              <div key={line} className="break-words">
+                {line}
               </div>
-            </details>
+            ))}
           </CardContent>
         </Card>
       </div>
@@ -358,20 +348,4 @@ function PricingRow({
       </span>
     </div>
   );
-}
-
-function formatDeliveryInstructions(
-  instructions: OrderDetail["delivery"]["instructions"] | undefined,
-) {
-  if (!instructions) {
-    return "None";
-  }
-
-  const values = [
-    instructions.freeForm,
-    instructions.apartmentEntrance,
-    instructions.doorCode ? `Door code: ${instructions.doorCode}` : null,
-  ].filter(Boolean);
-
-  return values.length ? values.join(" | ") : "None";
 }

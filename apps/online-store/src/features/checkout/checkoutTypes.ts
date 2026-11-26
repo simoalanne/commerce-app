@@ -22,7 +22,7 @@ export type CheckoutFormState = {
   phone: string;
   firstName: string;
   lastName: string;
-  deliveryAddress: AddressFormValue | null;
+  shippingAddress: AddressFormValue | null;
   paymentProvider: CheckoutPaymentProvider | null;
 };
 
@@ -39,7 +39,7 @@ export const initialCheckoutFormState: CheckoutFormState = {
   phone: "",
   firstName: "",
   lastName: "",
-  deliveryAddress: null,
+  shippingAddress: null,
   paymentProvider: null,
 };
 
@@ -97,7 +97,7 @@ export function reviveCheckoutRecoveryDraft(rawDraft: string): RevivedCheckoutRe
         phone: typeof parsedFormState?.phone === "string" ? parsedFormState.phone : "",
         firstName: typeof parsedFormState?.firstName === "string" ? parsedFormState.firstName : "",
         lastName: typeof parsedFormState?.lastName === "string" ? parsedFormState.lastName : "",
-        deliveryAddress: parsedFormState?.deliveryAddress ?? null,
+        shippingAddress: parsedFormState?.shippingAddress ?? null,
         paymentProvider:
           parsedFormState?.paymentProvider === "PAYTRAIL" ||
           parsedFormState?.paymentProvider === "STRIPE" ||
