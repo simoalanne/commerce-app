@@ -207,28 +207,6 @@ export default async function CheckoutSuccessPage({
                   <span>-{formatPrice(pricing.itemsDiscountAmount)}</span>
                 </div>
               ) : null}
-              <div className={styles.totalRow}>
-                <span>{t("shipping")}</span>
-                <span>{formatPrice(pricing.deliveryFee)}</span>
-              </div>
-              {pricing.deliveryDiscountAmount !== null ? (
-                <div className={styles.totalRow}>
-                  <span>{t("deliveryDiscount")}</span>
-                  <span>-{formatPrice(pricing.deliveryDiscountAmount)}</span>
-                </div>
-              ) : null}
-              {pricing.tipAmount !== null ? (
-                <div className={styles.totalRow}>
-                  <span>
-                    {pricing.tipPercentage !== null
-                      ? t("tipWithPercentage", {
-                          percentage: pricing.tipPercentage,
-                        })
-                      : t("tip")}
-                  </span>
-                  <span>{formatPrice(pricing.tipAmount)}</span>
-                </div>
-              ) : null}
               <div className={styles.totalRowStrong}>
                 <span>{t("total")}</span>
                 <span>{formatPrice(pricing.chargedTotal)}</span>

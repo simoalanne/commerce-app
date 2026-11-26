@@ -13,7 +13,6 @@ import { InsufficientStock, PriceMismatch, ProductsNotPurchasable } from "./chec
 import {
   buildOrderItemsFromProducts,
   calculateOrderTotal,
-  calculateTipAmount,
   validateCartUnitPrices,
 } from "./checkout.utils.ts";
 
@@ -264,187 +263,56 @@ describe("checkout.utils", () => {
     });
   });
 
-  describe("calculateTipAmount", () => {
-    it("returns zero when no tip percentage is provided", () => {
-      assert.strictEqual(calculateTipAmount(25, undefined), 0);
-      assert.strictEqual(calculateTipAmount(25, 0), 0);
-    });
-
-    it("rounds tip amount through cents", () => {
-      assert.strictEqual(calculateTipAmount(19.99, 10), 2);
-    });
-  });
-
   describe("calculateOrderPricing", () => {
     it("returns unchanged pricing when no promo code is applied", () => {
-      assert.deepStrictEqual(
-        calculateOrderPricing({
-          itemsSubtotal: 25,
-          deliveryFee: 6.9,
-          tipPercentage: 0,
-        }),
-        {
-          itemsSubtotal: 25,
-          itemsDiscountAmount: null,
-          discountedItemsSubtotal: null,
-          deliveryFee: 6.9,
-          deliveryDiscountAmount: null,
-          discountedDeliveryFee: null,
-          tipPercentage: null,
-          tipAmount: null,
-          chargedTotal: 31.9,
-          vatRate: 20,
-          includedVatAmount: 5.32,
-        },
-      );
+      assert.deepStrictEqual(calculateOrderPricing({ itemsSubtotal: 25 }), {
+        itemsSubtotal: 25,
+        itemsDiscountAmount: null,
+        discountedItemsSubtotal: null,
+        chargedTotal: 25,
+        vatRate: 20,
+        includedVatAmount: 4.17,
+      });
     });
 
-    it("applies percent discounts to items only", () => {
+    it("applies percent discounts", () => {
       assert.deepStrictEqual(
-        calculateOrderPricing({
-          itemsSubtotal: 20,
-          deliveryFee: 5,
-          tipPercentage: 0,
-          discountType: "ITEMS_PERCENT",
-          discountValue: 25,
-        }),
+        calculateOrderPricing({ itemsSubtotal: 20, discountType: "PERCENT", discountValue: 25 }),
         {
           itemsSubtotal: 20,
           itemsDiscountAmount: 5,
           discountedItemsSubtotal: 15,
-          deliveryFee: 5,
-          deliveryDiscountAmount: null,
-          discountedDeliveryFee: null,
-          tipPercentage: null,
-          tipAmount: null,
-          chargedTotal: 20,
+          chargedTotal: 15,
           vatRate: 20,
-          includedVatAmount: 3.33,
+          includedVatAmount: 2.5,
         },
       );
     });
 
-    it("caps fixed item discounts at the items subtotal", () => {
+    it("caps fixed discounts at the items subtotal", () => {
       assert.deepStrictEqual(
-        calculateOrderPricing({
-          itemsSubtotal: 7,
-          deliveryFee: 3,
-          tipPercentage: 0,
-          discountType: "ITEMS_FIXED",
-          discountValue: 20,
-        }),
+        calculateOrderPricing({ itemsSubtotal: 7, discountType: "FIXED", discountValue: 20 }),
         {
           itemsSubtotal: 7,
           itemsDiscountAmount: 7,
           discountedItemsSubtotal: 0,
-          deliveryFee: 3,
-          deliveryDiscountAmount: null,
-          discountedDeliveryFee: null,
-          tipPercentage: null,
-          tipAmount: null,
-          chargedTotal: 3,
+          chargedTotal: 0,
           vatRate: 20,
-          includedVatAmount: 0.5,
-        },
-      );
-    });
-
-    it("applies percent discounts to delivery only", () => {
-      assert.deepStrictEqual(
-        calculateOrderPricing({
-          itemsSubtotal: 12,
-          deliveryFee: 8,
-          tipPercentage: 0,
-          discountType: "DELIVERY_PERCENT",
-          discountValue: 50,
-        }),
-        {
-          itemsSubtotal: 12,
-          itemsDiscountAmount: null,
-          discountedItemsSubtotal: null,
-          deliveryFee: 8,
-          deliveryDiscountAmount: 4,
-          discountedDeliveryFee: 4,
-          tipPercentage: null,
-          tipAmount: null,
-          chargedTotal: 16,
-          vatRate: 20,
-          includedVatAmount: 2.67,
-        },
-      );
-    });
-
-    it("caps fixed delivery discounts at the delivery fee", () => {
-      assert.deepStrictEqual(
-        calculateOrderPricing({
-          itemsSubtotal: 10,
-          deliveryFee: 2.5,
-          tipPercentage: 0,
-          discountType: "DELIVERY_FIXED",
-          discountValue: 9,
-        }),
-        {
-          itemsSubtotal: 10,
-          itemsDiscountAmount: null,
-          discountedItemsSubtotal: null,
-          deliveryFee: 2.5,
-          deliveryDiscountAmount: 2.5,
-          discountedDeliveryFee: 0,
-          tipPercentage: null,
-          tipAmount: null,
-          chargedTotal: 10,
-          vatRate: 20,
-          includedVatAmount: 1.67,
+          includedVatAmount: 0,
         },
       );
     });
 
     it("rounds percent-based discounts through cents", () => {
       assert.deepStrictEqual(
-        calculateOrderPricing({
-          itemsSubtotal: 19.99,
-          deliveryFee: 4.99,
-          tipPercentage: 0,
-          discountType: "ITEMS_PERCENT",
-          discountValue: 10,
-        }),
+        calculateOrderPricing({ itemsSubtotal: 19.99, discountType: "PERCENT", discountValue: 10 }),
         {
           itemsSubtotal: 19.99,
           itemsDiscountAmount: 2,
           discountedItemsSubtotal: 17.99,
-          deliveryFee: 4.99,
-          deliveryDiscountAmount: null,
-          discountedDeliveryFee: null,
-          tipPercentage: null,
-          tipAmount: null,
-          chargedTotal: 22.98,
+          chargedTotal: 17.99,
           vatRate: 20,
-          includedVatAmount: 3.83,
-        },
-      );
-    });
-
-    it("calculates tip from discounted items subtotal", () => {
-      assert.deepStrictEqual(
-        calculateOrderPricing({
-          itemsSubtotal: 20,
-          deliveryFee: 5,
-          tipPercentage: 10,
-          discountType: "ITEMS_PERCENT",
-          discountValue: 25,
-        }),
-        {
-          itemsSubtotal: 20,
-          itemsDiscountAmount: 5,
-          discountedItemsSubtotal: 15,
-          deliveryFee: 5,
-          deliveryDiscountAmount: null,
-          discountedDeliveryFee: null,
-          tipPercentage: 10,
-          tipAmount: 1.5,
-          chargedTotal: 21.5,
-          vatRate: 20,
-          includedVatAmount: 3.33,
+          includedVatAmount: 3,
         },
       );
     });

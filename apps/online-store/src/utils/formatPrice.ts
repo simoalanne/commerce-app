@@ -6,7 +6,3 @@ const priceFormatter = new Intl.NumberFormat("en", {
 export function formatPrice(value: number) {
   return priceFormatter.format(value);
 }
-
-export function formatPricePerKg(value: number) {
-  return `${formatPrice(value)}/kg`;
-}

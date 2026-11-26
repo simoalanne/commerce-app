@@ -43,8 +43,6 @@ const refundReceiptSelect = {
   order_id: true,
   provider_refund_id: true,
   total_amount: true,
-  delivery_fee: true,
-  tip_amount: true,
   reason: true,
   created_at: true,
   refund_items: {
@@ -83,8 +81,6 @@ const translations = {
     vatRate: "VAT %",
     refundedAmount: "Refunded amount",
     includedVat: "Included VAT",
-    deliveryFeeRefund: "Delivery fee refund",
-    tipRefund: "Tip refund",
     totalRefunded: "Total refunded",
     reason: "Reason",
   },
@@ -122,7 +118,7 @@ const renderRefundReceiptPdf = async ({
   const t = getTranslation(locale);
   const vatRate = order.vat_rate;
   const receiptNumber = `RR-${refund.id}`;
-  const itemLines: RefundReceiptLineRow[] = refund.refund_items.map((refundItem) => {
+  const lineRows: RefundReceiptLineRow[] = refund.refund_items.map((refundItem) => {
     const amount = roundToCents(refundItem.amount.toNumber());
 
     return {
@@ -133,33 +129,6 @@ const renderRefundReceiptPdf = async ({
       includedVat: includedVatFor(amount, vatRate),
     };
   });
-  const deliveryFee = refund.delivery_fee?.toNumber() ?? 0;
-  const tipAmount = refund.tip_amount?.toNumber() ?? 0;
-  const lineRows = [
-    ...itemLines,
-    ...(deliveryFee > 0
-      ? [
-          {
-            description: t.deliveryFeeRefund,
-            quantity: "",
-            vatRate,
-            amount: roundToCents(deliveryFee),
-            includedVat: includedVatFor(deliveryFee, vatRate),
-          },
-        ]
-      : []),
-    ...(tipAmount > 0
-      ? [
-          {
-            description: t.tipRefund,
-            quantity: "",
-            vatRate: 0,
-            amount: roundToCents(tipAmount),
-            includedVat: 0,
-          },
-        ]
-      : []),
-  ];
   const totalAmount = roundToCents(refund.total_amount.toNumber());
   const includedVatAmount = roundToCents(
     lineRows.reduce((total, row) => total + row.includedVat, 0),

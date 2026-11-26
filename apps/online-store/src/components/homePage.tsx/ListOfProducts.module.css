@@ -133,11 +133,6 @@
   gap: 2px;
 }
 
-.price,
-.pricePerKg {
-  margin: 0;
-}
-
 .price {
   margin: 0;
   color: var(--brand);
@@ -151,11 +146,6 @@
 
 .cardMinimal .price {
   font-size: var(--font-size-md);
-}
-
-.pricePerKg {
-  color: var(--brand);
-  font-size: 0.85rem;
 }
 
 .actionsRow {

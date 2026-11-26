@@ -121,13 +121,6 @@ const buildOrderRefundability = (order: RelevantOrder) => {
     }
   }
 
-  const refundedDeliveryFeeCents = sumCents(
-    succeededRefunds.map((refund) => refund.delivery_fee?.toNumber() ?? 0),
-  );
-  const refundedTipAmountCents = sumCents(
-    succeededRefunds.map((refund) => refund.tip_amount?.toNumber() ?? 0),
-  );
-
   const items = order.orderItems.map((item) => {
     const originalAmountCents = toCents(item.unit_sales_price * item.quantity);
     const refundedAmountCents = refundedAmountCentsByOrderItemId.get(item.id) ?? 0;
@@ -144,19 +137,9 @@ const buildOrderRefundability = (order: RelevantOrder) => {
     };
   });
 
-  const deliveryFee = buildAmountSummary({
-    originalAmountCents: toCents(order.delivery_fee),
-    refundedAmountCents: refundedDeliveryFeeCents,
-  });
-  const tip = buildAmountSummary({
-    originalAmountCents: toCents(order.tip_amount),
-    refundedAmountCents: refundedTipAmountCents,
-  });
-
-  const hasRefundableTarget =
-    deliveryFee.refundableAmountCents > 0 ||
-    tip.refundableAmountCents > 0 ||
-    items.some((item) => item.refundableQuantity > 0 && item.refundableAmountCents > 0);
+  const hasRefundableTarget = items.some(
+    (item) => item.refundableQuantity > 0 && item.refundableAmountCents > 0,
+  );
 
   const blockedReason:
     | "REFUND_ALREADY_PENDING"
@@ -183,8 +166,6 @@ const buildOrderRefundability = (order: RelevantOrder) => {
           createdAt: pendingRefund.created_at,
         }
       : undefined,
-    deliveryFee,
-    tip,
     items,
   };
 };
@@ -344,21 +325,11 @@ export const ordersRoutes = {
       z.object({
         reason: z.string().trim().min(1).max(500),
         internalNotes: z.string().trim().min(1).max(1000).optional(),
-        deliveryFee: z
-          .object({
-            amountCents: z.number().int().positive(),
-          })
-          .optional(),
-        tip: z
-          .object({
-            amountCents: z.number().int().positive(),
-          })
-          .optional(),
         items: z.array(OrderItemRefundSchema),
       }),
     )
     .handler(async ({ params, body, context }) => {
-      const { reason, internalNotes, deliveryFee, tip, items } = body;
+      const { reason, internalNotes, items } = body;
       const id = params.id;
 
       Sentry.getCurrentScope().setContext("order", { orderId: id });
@@ -420,27 +391,7 @@ export const ordersRoutes = {
           }
         }
 
-        if (
-          deliveryFee &&
-          deliveryFee.amountCents > refundability.deliveryFee.refundableAmountCents
-        ) {
-          throw new RouteError("BAD_REQUEST", {
-            status: 400,
-            message: "INVALID_REFUND_AMOUNT",
-          });
-        }
-
-        if (tip && tip.amountCents > refundability.tip.refundableAmountCents) {
-          throw new RouteError("BAD_REQUEST", {
-            status: 400,
-            message: "INVALID_REFUND_AMOUNT",
-          });
-        }
-
-        const totalAmountCents =
-          items.reduce((total, item) => total + item.amountCents, 0) +
-          (deliveryFee?.amountCents ?? 0) +
-          (tip?.amountCents ?? 0);
+        const totalAmountCents = items.reduce((total, item) => total + item.amountCents, 0);
 
         if (totalAmountCents <= 0) {
           throw new RouteError("BAD_REQUEST", {
@@ -456,8 +407,6 @@ export const ordersRoutes = {
             total_amount: fromCents(totalAmountCents),
             reason,
             internal_notes: internalNotes,
-            delivery_fee: deliveryFee ? fromCents(deliveryFee.amountCents) : undefined,
-            tip_amount: tip ? fromCents(tip.amountCents) : undefined,
             refund_items: {
               create: items.map((item) => ({
                 order_item_id: item.orderItemId,
@@ -482,8 +431,6 @@ export const ordersRoutes = {
             reason,
             internalNotes,
             totalAmountCents,
-            deliveryFee,
-            tip,
             items,
           },
         });

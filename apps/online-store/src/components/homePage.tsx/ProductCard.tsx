@@ -10,7 +10,7 @@ import { getProductMaxOrderQuantity } from "@/features/checkout/cartState";
 import { useCart } from "@/hooks/useCart";
 import { Link } from "@/i18n/navigation";
 import type { ProductSummary } from "@/types/api";
-import { formatPrice, formatPricePerKg } from "@/utils/formatPrice";
+import { formatPrice } from "@/utils/formatPrice";
 import { readableTextColor } from "@/utils/tagColor";
 
 import AddToCartBtn from "../productPage/AddToCartBtn";
@@ -127,9 +127,6 @@ export default function ProductCard({
           <div className={styles.productMetaRow}>
             <div className={styles.priceBlock}>
               <p className={styles.price}>{formatPrice(product.price)}</p>
-              {product.pricePerKg && (
-                <p className={styles.pricePerKg}>{formatPricePerKg(product.pricePerKg)}</p>
-              )}
             </div>
           </div>
         </div>

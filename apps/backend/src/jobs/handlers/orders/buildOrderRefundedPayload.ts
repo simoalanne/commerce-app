@@ -12,8 +12,6 @@ export type OrderRefundedPayload = {
   recipientName: string;
   recipientFirstName: string;
   total: number;
-  deliveryFee: number | null;
-  tipAmount: number | null;
   items: {
     sku: string;
     name: string;
@@ -34,8 +32,6 @@ export const buildOrderRefundedPayload = async (
     where: { id: refundId },
     select: {
       total_amount: true,
-      delivery_fee: true,
-      tip_amount: true,
       order: {
         select: {
           id: true,
@@ -95,8 +91,6 @@ export const buildOrderRefundedPayload = async (
     recipientName,
     recipientFirstName: recipientName.split(/\s+/)[0] ?? recipientName,
     items,
-    deliveryFee: refund.delivery_fee ? roundToCents(refund.delivery_fee.toNumber()) : null,
-    tipAmount: refund.tip_amount ? roundToCents(refund.tip_amount.toNumber()) : null,
     total: refund.total_amount.toNumber(),
   };
 };

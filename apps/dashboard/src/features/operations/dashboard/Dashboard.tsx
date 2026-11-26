@@ -3,7 +3,6 @@ import { useState } from "react";
 
 import { AsyncBoundary } from "@/components/async-boundary";
 import { ChartAreaInteractive } from "@/components/chart-area-interactive";
-import { RevenueBySourceCard } from "@/components/RevenueBySourceCard";
 import { queryUtils } from "@/context/ApiClientContext";
 import { SectionCards } from "@/features/operations/dashboard/DasboardCards";
 
@@ -44,13 +43,12 @@ function DashboardSummary() {
         windowDays={summaryData.windowDays}
         localizationCoverage={summaryData.localizationCoverage}
       />
-      <div className="grid gap-4 px-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(18rem,0.8fr)] lg:px-6">
+      <div className="px-4 lg:px-6">
         <ChartAreaInteractive
           data={summaryData.chart.revenueByDay}
           windowDays={summaryData.windowDays}
           onWindowDaysChange={setSummaryDays}
         />
-        <RevenueBySourceCard revenueBySource={summaryData.chart.revenueBySource} />
       </div>
     </>
   );

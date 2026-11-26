@@ -11,7 +11,6 @@ import {
   getSummaryWindowBounds,
   type LocalizationCoverageRow,
   type OrderQueryRow,
-  type RevenueBySourceQueryRow,
 } from "./summary.utils.ts";
 
 const summaryRoute = dashboardRoute.meta({ access: "ADMIN" });
@@ -102,36 +101,6 @@ const queryOrderSummaryRows = async (
 		FROM filtered f
 	`);
 
-const queryRevenueBySourceRows = async (
-  db: Prisma.TransactionClient,
-  {
-    now,
-    currentStart,
-  }: {
-    now: Date;
-    currentStart: Date;
-  },
-) =>
-  await db.$queryRaw<RevenueBySourceQueryRow>(sqltag`
-		SELECT
-			COALESCE(NULLIF(BTRIM(f.utm_source), ''), 'direct') AS source,
-			COALESCE(SUM(
-				CASE
-					WHEN f.status IN (${join(PAID_REVENUE_STATUSES)})
-					THEN f.charged_total
-					ELSE 0
-				END
-			), 0)::numeric AS revenue,
-			COUNT(*) FILTER (
-				WHERE f.status IN (${join(PAID_REVENUE_STATUSES)})
-			)::int AS orders
-		FROM "Order" f
-		WHERE f.created_at >= ${currentStart}
-			AND f.created_at < ${now}
-		GROUP BY COALESCE(NULLIF(BTRIM(f.utm_source), ''), 'direct')
-		ORDER BY revenue DESC, orders DESC, source ASC
-	`);
-
 const queryActiveProductCountRows = async (db: Prisma.TransactionClient) =>
   await db.product.count({
     where: {
@@ -200,28 +169,22 @@ export const summaryRoutes = {
       const now = new Date();
       const { currentStart, previousStart } = getSummaryWindowBounds(now, days);
 
-      const [orderRows, revenueBySourceRows, activeProducts, customers, localizationRows] =
-        await Promise.all([
-          queryOrderSummaryRows(context.db, {
-            now,
-            currentStart,
-            previousStart,
-          }),
-          queryRevenueBySourceRows(context.db, {
-            now,
-            currentStart,
-          }),
-          queryActiveProductCountRows(context.db),
-          queryCustomerCountRows(context.db),
-          queryLocalizationCoverageRows(context.db),
-        ]);
+      const [orderRows, activeProducts, customers, localizationRows] = await Promise.all([
+        queryOrderSummaryRows(context.db, {
+          now,
+          currentStart,
+          previousStart,
+        }),
+        queryActiveProductCountRows(context.db),
+        queryCustomerCountRows(context.db),
+        queryLocalizationCoverageRows(context.db),
+      ]);
 
       return toResponse(
         buildSummaryResponse({
           now,
           days,
           orderRow: orderRows[0],
-          revenueBySource: revenueBySourceRows,
           activeProducts,
           customers,
           localizationRow: localizationRows[0],

@@ -187,7 +187,6 @@ export default async function ProductPage({ params }: RouteParams) {
                 initialPrice={product.price}
                 initialStock={product.availableStock}
                 initialPurchaseLimitPerOrder={product.purchaseLimitPerOrder}
-                initialPricePerKg={product.pricePerKg}
                 styles={styles}
               />
             </div>

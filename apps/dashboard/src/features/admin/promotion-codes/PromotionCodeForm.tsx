@@ -55,10 +55,8 @@ type PromotionCode = InferClientResponse<typeof queryUtils.promotionCodes.getByI
 type PromotionCodeFormProps = EntityDialogContentProps<PromotionCode>;
 
 const discountTypeLabels: Record<z.infer<typeof PromotionCodeDiscountTypeSchema>, string> = {
-  ITEMS_PERCENT: "Items %",
-  ITEMS_FIXED: "Items fixed",
-  DELIVERY_PERCENT: "Delivery %",
-  DELIVERY_FIXED: "Delivery fixed",
+  PERCENT: "Percent",
+  FIXED: "Fixed amount",
 };
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -243,7 +241,7 @@ export default function PromotionCodeForm({ entityData, onSuccess }: PromotionCo
     valid_from: null,
     valid_until: null,
     minimum_items_value: null,
-    discount_type: "ITEMS_PERCENT",
+    discount_type: "PERCENT",
     discount_value: 0,
     usage_limit: null,
     times_used: 0,

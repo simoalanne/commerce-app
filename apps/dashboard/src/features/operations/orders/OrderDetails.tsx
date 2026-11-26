@@ -298,30 +298,6 @@ export default function OrderDetails({ entityData: order }: OrderDetailsProps) {
                 />
               </>
             ) : null}
-            <PricingRow
-              label="Delivery fee"
-              value={currencyFormatter.format(order.pricing.deliveryFee)}
-            />
-            {order.pricing.deliveryDiscountAmount !== null ? (
-              <>
-                <PricingRow
-                  label="Delivery discount"
-                  value={`-${currencyFormatter.format(order.pricing.deliveryDiscountAmount)}`}
-                />
-                <PricingRow
-                  label="Discounted delivery"
-                  value={currencyFormatter.format(
-                    order.pricing.discountedDeliveryFee ?? order.pricing.deliveryFee,
-                  )}
-                />
-              </>
-            ) : null}
-            {order.pricing.tipAmount !== null ? (
-              <PricingRow
-                label={`Tip${order.pricing.tipPercentage !== null ? ` (${order.pricing.tipPercentage}%)` : ""}`}
-                value={currencyFormatter.format(order.pricing.tipAmount)}
-              />
-            ) : null}
             <Separator />
             <PricingRow label="Total" value={currencyFormatter.format(total)} emphasis />
             <PricingRow
@@ -336,18 +312,6 @@ export default function OrderDetails({ entityData: order }: OrderDetailsProps) {
                   value={`-${currencyFormatter.format(order.pricing.refundedAmount)}`}
                   emphasis
                 />
-                {order.pricing.refundedDeliveryFee ? (
-                  <PricingRow
-                    label="Refunded delivery fee"
-                    value={`-${currencyFormatter.format(order.pricing.refundedDeliveryFee)}`}
-                  />
-                ) : null}
-                {order.pricing.refundedTipAmount ? (
-                  <PricingRow
-                    label="Refunded tip"
-                    value={`-${currencyFormatter.format(order.pricing.refundedTipAmount)}`}
-                  />
-                ) : null}
               </>
             ) : null}
           </CardContent>

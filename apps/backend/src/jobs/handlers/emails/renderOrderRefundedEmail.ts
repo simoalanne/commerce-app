@@ -16,8 +16,6 @@ const translations = {
     brand: "Acme",
     detailsTitle: "Refund details",
     lineItem: "Qty {quantity} • {unitPrice} each",
-    deliveryFee: "Delivery fee",
-    tip: "Tip",
     totalLabel: "Refunded amount",
     productImageAlt: "Product image for {name}",
     helpText: "If you have any questions, reply to this email or contact us at {email}.",
@@ -42,46 +40,18 @@ export async function renderOrderRefundedEmail(
   });
   const totalFormatted = formatCurrency(payload.total, locale);
 
-  const refundLines = [
-    ...payload.items.map((item) => ({
-      name: item.name,
-      initials: getInitials(item.name),
-      imageUrl: item.imageUrl,
-      imageAlt: formatLine(t.productImageAlt, { name: item.name }),
-      lineItem: formatLine(t.lineItem, {
-        quantity: item.quantity,
-        unitPrice: formatCurrency(item.unitPrice, locale),
-      }),
-      vendor: item.vendorName,
-      total: formatCurrency(item.lineTotal, locale),
-    })),
-    ...(payload.deliveryFee
-      ? [
-          {
-            name: t.deliveryFee,
-            initials: "€",
-            imageUrl: "",
-            imageAlt: "",
-            lineItem: "",
-            vendor: null,
-            total: formatCurrency(payload.deliveryFee, locale),
-          },
-        ]
-      : []),
-    ...(payload.tipAmount
-      ? [
-          {
-            name: t.tip,
-            initials: "€",
-            imageUrl: "",
-            imageAlt: "",
-            lineItem: "",
-            vendor: null,
-            total: formatCurrency(payload.tipAmount, locale),
-          },
-        ]
-      : []),
-  ];
+  const refundLines = payload.items.map((item) => ({
+    name: item.name,
+    initials: getInitials(item.name),
+    imageUrl: item.imageUrl,
+    imageAlt: formatLine(t.productImageAlt, { name: item.name }),
+    lineItem: formatLine(t.lineItem, {
+      quantity: item.quantity,
+      unitPrice: formatCurrency(item.unitPrice, locale),
+    }),
+    vendor: item.vendorName,
+    total: formatCurrency(item.lineTotal, locale),
+  }));
 
   const itemLines = payload.items.flatMap((item) => {
     const lines = [
@@ -99,13 +69,7 @@ export async function renderOrderRefundedEmail(
 
     return lines;
   });
-  const feeLines = [
-    ...(payload.deliveryFee
-      ? [`- ${t.deliveryFee}: ${formatCurrency(payload.deliveryFee, locale)}`]
-      : []),
-    ...(payload.tipAmount ? [`- ${t.tip}: ${formatCurrency(payload.tipAmount, locale)}`] : []),
-  ];
-  const detailLines = [...itemLines, ...feeLines];
+  const detailLines = itemLines;
 
   const html = await renderMjmlTemplate("order-refund-confirmation.mjml", {
     subject,

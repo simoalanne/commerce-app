@@ -197,19 +197,10 @@
   gap: 2px;
 }
 
-.price,
-.pricePerKg {
-  margin: 0;
-}
-
 .price {
+  margin: 0;
   color: var(--brand);
   font-weight: 500;
-}
-
-.pricePerKg {
-  color: var(--brand);
-  font-size: 0.85rem;
 }
 
 @media (min-width: 560px) {

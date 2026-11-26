@@ -275,7 +275,6 @@ class PostgresSearchProvider implements SearchProvider {
         name: true,
         slug: true,
         sales_price: true,
-        weight_grams: true,
         current_stock: true,
         reserved_stock: true,
         is_featured: true,
@@ -337,11 +336,6 @@ class PostgresSearchProvider implements SearchProvider {
               slug: buildSearchText(locale, [product.slug]),
               imageUrl: getFirstLinkedImageUrl(ObjectStorage, product.images),
               price: product.sales_price.toNumber(),
-              pricePerKg: product.weight_grams
-                ? Number(
-                    (product.sales_price.toNumber() / (product.weight_grams / 1000)).toFixed(2),
-                  )
-                : null,
               outOfStock: product.current_stock - product.reserved_stock <= 0,
             },
             vendor: {

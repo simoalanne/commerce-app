@@ -20,8 +20,6 @@ export type NewOrderNotificationEmailPayload = {
     lineTotal: number;
   }[];
   subtotal: number;
-  deliveryFee: number;
-  tipAmount: number;
   total: number;
   dashboardOrderUrl: string;
 };
@@ -49,8 +47,6 @@ const copy = {
   itemsTitle: "Ordered items",
   lineItem: "Qty {quantity} • {unitPrice} each",
   subtotal: "Subtotal",
-  deliveryFee: "Delivery fee",
-  tip: "Tip",
   total: "Total",
   openDashboard: "Open dashboard",
   productImageAlt: "Product image for {name}",
@@ -116,10 +112,6 @@ export async function renderNewOrderNotificationEmail(
     totals: {
       subtotalLabel: copy.subtotal,
       subtotal: formatCurrency(payload.subtotal),
-      deliveryFeeLabel: copy.deliveryFee,
-      deliveryFee: formatCurrency(payload.deliveryFee),
-      tipLabel: copy.tip,
-      tip: payload.tipAmount ? formatCurrency(payload.tipAmount) : null,
       totalLabel: copy.total,
       total: formatCurrency(payload.total),
     },
@@ -163,8 +155,6 @@ export async function renderNewOrderNotificationEmail(
     ...itemLines,
     "",
     `${copy.subtotal}: ${formatCurrency(payload.subtotal)}`,
-    `${copy.deliveryFee}: ${formatCurrency(payload.deliveryFee)}`,
-    ...(payload.tipAmount ? [`${copy.tip}: ${formatCurrency(payload.tipAmount)}`] : []),
     `${copy.total}: ${formatCurrency(payload.total)}`,
     "",
     copy.openDashboard,

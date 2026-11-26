@@ -137,7 +137,7 @@ for (const [index, definition] of productDefinitions.entries()) {
 }
 
 await prismaClient.promotionCode.create({
-  data: { code: "WELCOME10", discount_type: "ITEMS_PERCENT", discount_value: 10 },
+  data: { code: "WELCOME10", discount_type: "PERCENT", discount_value: 10 },
 });
 
 const legalDocuments = {

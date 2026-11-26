@@ -59,9 +59,6 @@ const toProductSummary = (storage: ObjectStorageProvider, product: ProductWithRe
   tags: product.tags.map((productTag) => productTag.tag),
   imageUrl: getFirstLinkedImageUrl(storage, product.images),
   price: Number(product.sales_price),
-  pricePerKg: product.weight_grams
-    ? Number((Number(product.sales_price) / (product.weight_grams / 1000)).toFixed(2))
-    : undefined,
   availableStock: product.current_stock - product.reserved_stock,
   purchaseLimitPerOrder: product.purchase_limit_per_order,
   isOutOfStock: product.current_stock - product.reserved_stock <= 0,

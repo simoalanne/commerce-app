@@ -9,7 +9,6 @@ import { AddressForm, type AddressFormValue } from "@/components/address-form";
 import { createInitialAddress } from "@/components/address-form/createInitialAddress";
 import { AuthModal } from "@/components/auth/AuthModal";
 import Button from "@/components/Button";
-import { getStoredUtmTracking } from "@/components/layout/UtmTracker";
 import { Modal } from "@/components/Modal";
 import { SavedAddress } from "@/components/SavedAddress";
 import { useAuth, useUser } from "@/features/auth/clerk";
@@ -21,7 +20,6 @@ import { CheckoutContactSection } from "./CheckoutContactSection";
 import type { CheckoutPaymentAdjustmentError } from "./CheckoutPaymentAdjustmentModal";
 import { CheckoutPaymentMethodSection } from "./CheckoutPaymentMethodSection";
 import { CheckoutTermsAcceptance, type CheckoutTermsDocument } from "./CheckoutTermsAcceptance";
-import { CheckoutTipSection } from "./CheckoutTipSection";
 import type { PaymentOptions } from "./checkoutTypes";
 import type { CheckoutFormState, CheckoutPromoCodeState } from "./checkoutTypes";
 import FormSection from "./FormSection";
@@ -67,7 +65,6 @@ interface CheckoutFormDetailsProps {
   setSubmitError: (err: string | null) => void;
   invalidatePromoCode: () => void;
   paymentOptions: PaymentOptions;
-  effectiveItemsSubtotal: number;
   onAdjustmentRequired: (error: CheckoutPaymentAdjustmentError) => void;
   persistRecoveryDraft: (
     formState: CheckoutFormState,
@@ -86,7 +83,6 @@ export default function CheckoutFormDetails({
   setSubmitError,
   invalidatePromoCode,
   paymentOptions,
-  effectiveItemsSubtotal,
   onAdjustmentRequired,
   persistRecoveryDraft,
   promoCodeState,
@@ -315,10 +311,8 @@ export default function CheckoutFormDetails({
         firstName,
         lastName,
       },
-      tipPercentage: formState.tipPercentage || undefined,
       promoCode: appliedPromoCode ?? undefined,
       continueAsGuest,
-      ...getStoredUtmTracking(),
     };
     const authEmail = user?.primaryEmailAddress?.emailAddress ?? null;
 
@@ -457,16 +451,6 @@ export default function CheckoutFormDetails({
               paymentProvider: nextPaymentProvider,
             };
           })
-        }
-      />
-      <CheckoutTipSection
-        tipPercentage={formState.tipPercentage}
-        effectiveItemsSubtotal={effectiveItemsSubtotal}
-        onChange={(tipPercentage) =>
-          updateFormState((current) => ({
-            ...current,
-            tipPercentage,
-          }))
         }
       />
       {submitError ? <p className={styles.inlineError}>{submitError}</p> : null}

@@ -44,8 +44,6 @@ export async function sendNewOrderNotificationEmail({
     formattedAddress: order.formattedAddress,
     items: order.items,
     subtotal: order.subtotal,
-    deliveryFee: order.deliveryFee,
-    tipAmount: order.tipAmount,
     total: order.total,
     dashboardOrderUrl: getDashboardOrdersUrl(),
   });

@@ -2,7 +2,6 @@
 
 import { type ReactNode, Suspense } from "react";
 
-import { UtmTracker } from "@/components/layout/UtmTracker";
 import { CartProvider } from "@/hooks/useCart";
 import { ApiClientProvider } from "@/providers/ApiClientProvider";
 import { QueryProvider } from "@/providers/QueryProvider";
@@ -22,10 +21,7 @@ export function AppProviders({ children }: AppProvidersProps) {
           <Suspense fallback={null}>
             <PreferredLocaleSync />
           </Suspense>
-          <CartProvider>
-            {children}
-            <UtmTracker />
-          </CartProvider>
+          <CartProvider>{children}</CartProvider>
         </ApiClientProvider>
       </QueryProvider>
     </AuthProvider>

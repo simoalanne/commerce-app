@@ -9,20 +9,12 @@ import { formatPrice } from "@/utils/formatPrice";
 
 import { type CheckoutCartProductItem, getCheckoutSubtotal } from "./cartState";
 import { CheckoutPromoCodeSection } from "./CheckoutPromoCodeSection";
-import type {
-  CheckoutPromoCodeState,
-  DeliveryFeeEstimate,
-  ValidatedPromoCode,
-} from "./checkoutTypes";
+import type { CheckoutPromoCodeState, ValidatedPromoCode } from "./checkoutTypes";
 
 import styles from "./CheckoutOrderSummary.module.css";
 
 type CheckoutOrderSummaryProps = {
   cartItems: CheckoutCartProductItem[];
-  tipPercentage: number;
-  deliveryFee: DeliveryFeeEstimate | undefined;
-  deliveryFeeLoading: boolean;
-  deliveryFeeError: boolean;
   promoCodeState: CheckoutPromoCodeState;
   setPromoCodeState: (updater: (current: CheckoutPromoCodeState) => CheckoutPromoCodeState) => void;
   validatedPromoCode: ValidatedPromoCode | null;
@@ -32,10 +24,6 @@ type CheckoutOrderSummaryProps = {
 
 export function CheckoutOrderSummary({
   cartItems,
-  tipPercentage,
-  deliveryFee,
-  deliveryFeeLoading,
-  deliveryFeeError,
   promoCodeState,
   setPromoCodeState,
   validatedPromoCode,
@@ -44,21 +32,11 @@ export function CheckoutOrderSummary({
 }: CheckoutOrderSummaryProps) {
   const t = useTranslations("checkout");
   const subtotal = getCheckoutSubtotal(cartItems);
-  const deliveryFeeAmount = deliveryFee ? deliveryFee.deliveryFeeCents / 100 : 0;
   const pricingSnapshot = calculateOrderPricing({
     itemsSubtotal: subtotal,
-    deliveryFee: deliveryFeeAmount,
-    tipPercentage,
     discountType: validatedPromoCode?.discountType,
     discountValue: validatedPromoCode?.discountValue,
   });
-  const totalValue = deliveryFeeLoading
-    ? t("orderSummary.calculating")
-    : deliveryFeeError
-      ? t("orderSummary.error")
-      : deliveryFee != null
-        ? formatPrice(pricingSnapshot.chargedTotal)
-        : t("orderSummary.selectAddress");
 
   return (
     <aside className={styles.summaryCard}>
@@ -157,49 +135,9 @@ export function CheckoutOrderSummary({
                 </div>
               </>
             ) : null}
-            <div className={styles.summaryRow}>
-              <span>{t("orderSummary.delivery")}</span>
-              <span>
-                {deliveryFeeLoading
-                  ? t("orderSummary.calculating")
-                  : deliveryFeeError
-                    ? t("orderSummary.error")
-                    : deliveryFee != null
-                      ? formatPrice(deliveryFee.deliveryFeeCents / 100)
-                      : t("orderSummary.selectAddress")}
-              </span>
-            </div>
-            {pricingSnapshot.deliveryDiscountAmount !== null ? (
-              <>
-                <div className={styles.summaryRow}>
-                  <span>{t("orderSummary.deliveryDiscount")}</span>
-                  <span>-{formatPrice(pricingSnapshot.deliveryDiscountAmount)}</span>
-                </div>
-                <div className={styles.summaryRow}>
-                  <span>{t("orderSummary.discountedDelivery")}</span>
-                  <span>
-                    {formatPrice(
-                      pricingSnapshot.discountedDeliveryFee ?? pricingSnapshot.deliveryFee,
-                    )}
-                  </span>
-                </div>
-              </>
-            ) : null}
-            {pricingSnapshot.tipAmount !== null ? (
-              <div className={styles.summaryRow}>
-                <span>
-                  {pricingSnapshot.tipPercentage !== null
-                    ? t("orderSummary.tipWithPercentage", {
-                        percentage: pricingSnapshot.tipPercentage,
-                      })
-                    : t("orderSummary.tip")}
-                </span>
-                <span>{formatPrice(pricingSnapshot.tipAmount)}</span>
-              </div>
-            ) : null}
             <div className={styles.summaryRowTotal}>
               <span>{t("orderSummary.total")}</span>
-              <strong>{totalValue}</strong>
+              <strong>{formatPrice(pricingSnapshot.chargedTotal)}</strong>
             </div>
             <div className={styles.summaryRowTax}>
               <span>

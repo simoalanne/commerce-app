@@ -50,8 +50,6 @@ import {
   validateCartUnitPrices,
 } from "./checkout.utils.ts";
 
-const TipPercentageSchema = z.number().min(0).max(100);
-
 const DeliveryAddressSchema = z.object({
   street: z.string().trim().min(1).max(255),
   city: z.string().trim().min(1).max(255),
@@ -89,12 +87,8 @@ const baseCreatepaymentBodySchema = z.object({
   cart: CheckoutCartSchema,
   deliveryAddress: DeliveryAddressSchema,
   recipient: OrderRecipientSchema,
-  tipPercentage: TipPercentageSchema.optional(),
   promoCode: z.string().trim().min(1).max(1024).optional(),
   continueAsGuest: z.boolean().optional(),
-  utm_source: z.string().trim().min(1).max(255).optional(),
-  utm_medium: z.string().trim().min(1).max(255).optional(),
-  utm_campaign: z.string().trim().min(1).max(255).optional(),
 });
 
 const createPaymentBodySchema = z.discriminatedUnion("provider", [
@@ -118,18 +112,7 @@ type CheckoutContext = AppContext & {
 
 const createPaymentInternal = async (
   context: CheckoutContext,
-  {
-    cart,
-    deliveryAddress,
-    recipient,
-    tipPercentage,
-    provider,
-    promoCode,
-    continueAsGuest,
-    utm_source,
-    utm_medium,
-    utm_campaign,
-  }: CreatePaymentBody,
+  { cart, deliveryAddress, recipient, provider, promoCode, continueAsGuest }: CreatePaymentBody,
 ) => {
   const { authContext, db, config, payments } = context;
   const paymentProvider = payments[provider];
@@ -153,8 +136,6 @@ const createPaymentInternal = async (
   const orderItems = buildOrderItemsFromProducts(products, cart, context.locale);
   const itemsSubtotal = calculateOrderTotal(orderItems);
 
-  const deliveryFeeCalculation = estimateDeliveryFee(itemsSubtotal);
-
   const validatedPromoCode = !promoCode
     ? null
     : await getValidatedPromoCodeForPayment(db, {
@@ -169,8 +150,6 @@ const createPaymentInternal = async (
 
   const pricingSnapshot = calculateOrderPricing({
     itemsSubtotal,
-    deliveryFee: deliveryFeeCalculation.deliveryFeeCents / 100,
-    tipPercentage,
     discountType: validatedPromoCode?.discountType,
     discountValue: validatedPromoCode?.discountValue,
   });
@@ -191,10 +170,6 @@ const createPaymentInternal = async (
         has_been_linked_to_customer_account: customerId != null,
         items_subtotal: pricingSnapshot.itemsSubtotal,
         items_discount_amount: pricingSnapshot.itemsDiscountAmount ?? 0,
-        delivery_fee: pricingSnapshot.deliveryFee,
-        delivery_discount_amount: pricingSnapshot.deliveryDiscountAmount ?? 0,
-        tip_amount: pricingSnapshot.tipAmount ?? 0,
-        tip_percentage: pricingSnapshot.tipPercentage ?? 0,
         charged_total: pricingSnapshot.chargedTotal,
         vat_rate: pricingSnapshot.vatRate,
         included_vat_amount: pricingSnapshot.includedVatAmount,
@@ -202,9 +177,6 @@ const createPaymentInternal = async (
         order_details: orderDetails,
         invoice_details: getCompanyDetails(config),
         applied_promo_code: validatedPromoCode ? promoCode : null,
-        utm_source,
-        utm_medium,
-        utm_campaign,
         total_weight_grams: orderItems.reduce(
           (sum, item) => sum + item.weightGrams * item.quantity,
           0,
@@ -299,25 +271,6 @@ const createPaymentInternal = async (
     });
     throw error;
   }
-};
-
-// A flat fee, free above a subtotal threshold, until simulated shipping
-// replaces it.
-const deliveryPricing = {
-  baseFee: 6.9,
-  discountThreshold: 50,
-  discountPercentage: 100,
-};
-
-const estimateDeliveryFee = (itemsSubtotal: number) => {
-  const { baseFee, discountThreshold, discountPercentage } = deliveryPricing;
-  const qualifies = itemsSubtotal >= discountThreshold;
-
-  return {
-    deliveryFeeCents: Math.round(baseFee * (qualifies ? 1 - discountPercentage / 100 : 1) * 100),
-    appliedDiscountPercentage: qualifies ? discountPercentage : 0,
-    discountThreshold,
-  };
 };
 
 const getValidatedPromoCodeForPayment = async (
@@ -442,12 +395,6 @@ export const checkoutRoutes = {
       context.locale,
     ),
   ),
-  estimateDeliveryFee: customerRoute
-    .post("/checkout/estimate-delivery-fee")
-    .body(z.object({ itemsSubtotal: z.number().min(0) }))
-    .handler(async ({ body, context }) =>
-      toResponse(estimateDeliveryFee(body.itemsSubtotal), context.locale),
-    ),
   validatePromoCode: customerRoute
     .post("/checkout/validate-promo-code")
     .body(

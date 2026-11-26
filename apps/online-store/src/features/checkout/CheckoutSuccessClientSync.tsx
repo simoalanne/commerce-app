@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-import { clearStoredUtmTracking } from "@/components/layout/UtmTracker";
 import { useCart } from "@/hooks/useCart";
 import { useApiClient } from "@/providers/ApiClientProvider";
 
@@ -32,7 +31,6 @@ export default function CheckoutSuccessClientSync({
     clear();
     window.localStorage.removeItem(checkoutRecoveryDraftStorageKey);
     clearActivePaytrailPayment();
-    clearStoredUtmTracking();
   }, [clear, hasHydrated]);
 
   const { data: pollResponse } = useQuery(

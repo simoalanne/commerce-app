@@ -20,7 +20,6 @@ import {
 import { CheckoutCartItems } from "./CheckoutCartItems";
 import { CheckoutEmptySavedCartAction } from "./CheckoutEmptySavedCartAction";
 import { CheckoutSummary } from "./CheckoutSummary";
-import type { DeliveryFeeEstimate } from "./checkoutTypes";
 import type { CheckoutCartAdjustmentNotice } from "./getCheckoutServerState";
 
 import styles from "./CheckoutPage.module.css";
@@ -31,7 +30,6 @@ type CheckoutPageClientProps = {
   initialCartItems: CheckoutCartProductItem[];
   availableProducts: CheckoutCartProductItem["product"][];
   cartAdjustmentNotice: CheckoutCartAdjustmentNotice | null;
-  initialDeliveryFee: DeliveryFeeEstimate | undefined;
   emptyTitle: string;
   emptyContinueLabel: string;
 };
@@ -42,7 +40,6 @@ export function CheckoutPageClient({
   initialCartItems,
   availableProducts,
   cartAdjustmentNotice,
-  initialDeliveryFee,
   emptyTitle,
   emptyContinueLabel,
 }: CheckoutPageClientProps) {
@@ -78,9 +75,6 @@ export function CheckoutPageClient({
     hasHydrated && hasPersistedInitialCart ? items : initialCart,
   );
   const subtotal = getCheckoutSubtotal(cartItems);
-  const formattedDeliveryFeeStart = initialDeliveryFee
-    ? formatPrice(initialDeliveryFee.deliveryFeeCents / 100)
-    : null;
   const cartAdjustmentNoticeContent = cartAdjustmentNotice ? (
     <Collapsible
       title={t("adjustments.title")}
@@ -165,11 +159,7 @@ export function CheckoutPageClient({
             estimatedSubtotalLabel={t("summary.estimatedSubtotal")}
             note={t("summary.note")}
             continueLabel={t("summary.payAtCheckout")}
-            deliveryFeeStartsFromLabel={t("summary.deliveryFeeStartsFrom")}
-            subtotal={subtotal}
             formattedSubtotal={formatPrice(subtotal)}
-            formattedDeliveryFeeStart={formattedDeliveryFeeStart}
-            freeDeliveryThreshold={initialDeliveryFee?.discountThreshold ?? null}
             checkoutHref="/checkout"
           />
         </div>

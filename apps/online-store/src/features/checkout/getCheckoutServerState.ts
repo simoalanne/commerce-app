@@ -6,16 +6,14 @@ import {
   buildCheckoutCartItems,
   type CartItems,
   type CheckoutCartProductItem,
-  getCheckoutSubtotal,
   getProductMaxOrderQuantity,
 } from "./cartState";
-import type { DeliveryFeeEstimate, PaymentOptions } from "./checkoutTypes";
+import type { PaymentOptions } from "./checkoutTypes";
 import { readServerCartCookie } from "./readServerCartCookie";
 
 type GetCheckoutServerStateOptions = {
   locale: string;
   params?: DestructuredRouteParams;
-  includeInitialDeliveryFee?: boolean;
   includePaymentMethods?: boolean;
   adjustCartToAvailability?: boolean;
 };
@@ -40,13 +38,11 @@ type CheckoutServerState = {
   cartItems: CheckoutCartProductItem[];
   cartAdjustmentNotice: CheckoutCartAdjustmentNotice | null;
   products: ProductSummary[];
-  initialDeliveryFee?: DeliveryFeeEstimate;
   paymentOptions: PaymentOptions;
 };
 
 export async function getCheckoutServerState({
   locale,
-  includeInitialDeliveryFee = false,
   includePaymentMethods = false,
   adjustCartToAvailability = true,
   params,
@@ -120,14 +116,6 @@ export async function getCheckoutServerState({
           removedItemCount,
         }
       : null;
-  const initialDeliveryFee = includeInitialDeliveryFee
-    ? (
-        await client.checkout.estimateDeliveryFee({
-          body: { itemsSubtotal: getCheckoutSubtotal(cartItems) },
-        })
-      ).body
-    : undefined;
-
   return {
     locale,
     cartUpdatedAt: cartCookie?.updatedAt ?? null,
@@ -135,7 +123,6 @@ export async function getCheckoutServerState({
     cartItems,
     cartAdjustmentNotice,
     products,
-    initialDeliveryFee,
     paymentOptions,
   };
 }

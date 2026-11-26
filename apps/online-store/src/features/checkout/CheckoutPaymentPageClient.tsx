@@ -1,8 +1,6 @@
 "use client";
 
-import { calculateOrderPricing } from "@acme/shared";
 import { isDefinedError, safe } from "@rest-rpc/core";
-import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { match, P } from "ts-pattern";
@@ -25,7 +23,7 @@ import {
   CheckoutPaymentAdjustmentModal,
 } from "./CheckoutPaymentAdjustmentModal";
 import type { CheckoutTermsDocument } from "./CheckoutTermsAcceptance";
-import type { DeliveryFeeEstimate, PaymentOptions } from "./checkoutTypes";
+import type { PaymentOptions } from "./checkoutTypes";
 import {
   type CheckoutFormState,
   type CheckoutPromoCodeState,
@@ -45,7 +43,6 @@ type CheckoutPaymentPageClientProps = {
   initialIsPaymentCanceled: boolean;
   cartItems: CheckoutCartProductItem[];
   availableProducts: CheckoutCartProductItem["product"][];
-  initialDeliveryFee: DeliveryFeeEstimate | undefined;
   paymentOptions: PaymentOptions;
   termsDocument: CheckoutTermsDocument;
 };
@@ -56,7 +53,6 @@ export function CheckoutPaymentPageClient({
   initialIsPaymentCanceled,
   cartItems,
   availableProducts,
-  initialDeliveryFee,
   paymentOptions,
   termsDocument,
 }: CheckoutPaymentPageClientProps) {
@@ -80,26 +76,6 @@ export function CheckoutPaymentPageClient({
       ? buildCheckoutCartItems(availableProducts, items)
       : cartItems;
   const subtotal = getCheckoutSubtotal(displayedCartItems);
-  const pricingPreview = calculateOrderPricing({
-    itemsSubtotal: subtotal,
-    deliveryFee: 0,
-    discountType: promoCodeState.validatedPromoCode?.discountType,
-    discountValue: promoCodeState.validatedPromoCode?.discountValue,
-  });
-  const effectiveItemsSubtotal =
-    pricingPreview.discountedItemsSubtotal ?? pricingPreview.itemsSubtotal;
-  const {
-    data: deliveryFeeResponse,
-    isLoading: deliveryFeeLoading,
-    error: deliveryFeeError,
-  } = useQuery(
-    queryUtils.checkout.estimateDeliveryFee.queryOptions({
-      request: {
-        body: { itemsSubtotal: subtotal },
-      },
-    }),
-  );
-  const deliveryFee = deliveryFeeResponse?.body ?? initialDeliveryFee;
 
   useEffect(() => {
     if (!hasHydrated || hasPersistedInitialCart) {
@@ -328,7 +304,6 @@ export function CheckoutPaymentPageClient({
               }))
             }
             cartItems={displayedCartItems}
-            effectiveItemsSubtotal={effectiveItemsSubtotal}
             paymentOptions={paymentOptions}
             onAdjustmentRequired={setAdjustmentError}
             persistRecoveryDraft={(nextFormState, nextPromoCodeState) => {
@@ -343,10 +318,6 @@ export function CheckoutPaymentPageClient({
         </div>
         <CheckoutOrderSummary
           cartItems={displayedCartItems}
-          tipPercentage={formState.tipPercentage}
-          deliveryFee={deliveryFee}
-          deliveryFeeLoading={deliveryFeeLoading}
-          deliveryFeeError={deliveryFeeError != null}
           promoCodeState={promoCodeState}
           setPromoCodeState={setPromoCodeState}
           validatedPromoCode={promoCodeState.validatedPromoCode}

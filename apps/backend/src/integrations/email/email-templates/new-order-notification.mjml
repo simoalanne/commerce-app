@@ -216,17 +216,6 @@
                             <td style="padding:6px 0;color:#525252;">{{totals.subtotalLabel}}</td>
                             <td style="padding:6px 0;text-align:right;color:#525252;white-space:nowrap;">{{totals.subtotal}}</td>
                         </tr>
-                        <tr>
-                            <td style="padding:6px 0;color:#525252;">{{totals.deliveryFeeLabel}}</td>
-                            <td style="padding:6px 0;text-align:right;color:#525252;white-space:nowrap;">{{totals.deliveryFee}}</td>
-                        </tr>
-
-                        {{#if totals.tip}}
-                            <tr>
-                                <td style="padding:6px 0;color:#525252;">{{totals.tipLabel}}</td>
-                                <td style="padding:6px 0;text-align:right;color:#525252;white-space:nowrap;">{{totals.tip}}</td>
-                            </tr>
-                        {{/if}}
 
                         <tr>
                             <td style="padding:14px 0 0;font-size:17px;font-weight:800;color:#171717;border-top:1px solid #d4d4d4;">

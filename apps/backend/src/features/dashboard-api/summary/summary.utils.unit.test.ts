@@ -8,7 +8,6 @@ import {
   getDeltaPercent,
   getSummaryWindowBounds,
   normalizeRevenueByDay,
-  normalizeRevenueBySource,
   startOfDay,
   toCoverage,
 } from "./summary.utils.ts";
@@ -98,24 +97,6 @@ describe("summary.utils", () => {
     });
   });
 
-  describe("normalizeRevenueBySource", () => {
-    it("normalizes revenue and order counts into numbers", () => {
-      const result = normalizeRevenueBySource([
-        { source: "google", revenue: "12.5", orders: "3" },
-        { source: "direct", revenue: 0, orders: 0 },
-      ]);
-
-      assert.deepStrictEqual(result, [
-        { source: "google", revenue: 12.5, orders: 3 },
-        { source: "direct", revenue: 0, orders: 0 },
-      ]);
-    });
-
-    it("returns an empty array for an empty source list", () => {
-      assert.deepStrictEqual(normalizeRevenueBySource([]), []);
-    });
-  });
-
   describe("buildSummaryResponse", () => {
     it("builds the response shape from query rows", () => {
       const now = new Date("2026-04-13T18:42:11.123Z");
@@ -130,10 +111,6 @@ describe("summary.utils", () => {
           previous_paid_orders: 4,
           chart: [{ date: "2026-04-13", revenue: "125.5", orders: "5" }],
         },
-        revenueBySource: [
-          { source: "google", revenue: "100", orders: "4" },
-          { source: "direct", revenue: "25.5", orders: "1" },
-        ],
         activeProducts: 8,
         customers: 12,
         localizationRow: {
@@ -156,10 +133,6 @@ describe("summary.utils", () => {
         },
         chart: {
           revenueByDay: [{ date: "2026-04-13", revenue: 125.5, orders: 5 }],
-          revenueBySource: [
-            { source: "google", revenue: 100, orders: 4 },
-            { source: "direct", revenue: 25.5, orders: 1 },
-          ],
         },
         localizationCoverage: {
           overall: { percentage: 40, completed: 4, outOf: 10 },
@@ -181,7 +154,6 @@ describe("summary.utils", () => {
           previous_paid_orders: 0,
           chart: [],
         },
-        revenueBySource: [],
         activeProducts: 0,
         customers: 0,
         localizationRow: {
@@ -201,7 +173,6 @@ describe("summary.utils", () => {
       });
       assert.deepStrictEqual(result.chart, {
         revenueByDay: [],
-        revenueBySource: [],
       });
       assert.deepStrictEqual(result.localizationCoverage, {
         overall: { percentage: 0, completed: 0, outOf: 0 },

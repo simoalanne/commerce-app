@@ -51,9 +51,6 @@ const translations = {
     lineInclVat: "Line incl. VAT",
     itemsSubtotal: "Items subtotal",
     itemsDiscount: "Items discount",
-    deliveryFee: "Delivery fee",
-    deliveryDiscount: "Delivery discount",
-    tip: "Tip VAT 0%",
     total: "Total",
     includedVat: "Included VAT",
     taxableAmount: "Taxable amount excl. VAT",
@@ -75,9 +72,7 @@ const renderOrderInvoicePdf = async (config: EnvConfig, order: RelevantOrder, lo
 
   const t = getTranslation(locale);
   const vatRate = order.vat_rate;
-  const taxableAmount = roundToCents(
-    order.charged_total - order.tip_amount - order.included_vat_amount,
-  );
+  const taxableAmount = roundToCents(order.charged_total - order.included_vat_amount);
   const lineRows = order.orderItems.map((item) => {
     const unitPrice = item.unit_sales_price;
     const lineInclVat = roundToCents(unitPrice * item.quantity);
@@ -108,13 +103,6 @@ const renderOrderInvoicePdf = async (config: EnvConfig, order: RelevantOrder, lo
       amountExcludingVat(-order.items_discount_amount, vatRate),
       -order.items_discount_amount,
     ],
-    [t.deliveryFee, amountExcludingVat(order.delivery_fee, vatRate), order.delivery_fee],
-    [
-      t.deliveryDiscount,
-      amountExcludingVat(-order.delivery_discount_amount, vatRate),
-      -order.delivery_discount_amount,
-    ],
-    [t.tip, order.tip_amount, order.tip_amount],
   ] as const satisfies readonly InvoiceTotalRow[];
 
   const docDefinition: PdfDocumentDefinition = {

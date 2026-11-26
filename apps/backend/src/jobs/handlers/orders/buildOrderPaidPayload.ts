@@ -24,8 +24,6 @@ export type OrderPaidPayload = {
     lineTotal: number;
   }[];
   subtotal: number;
-  deliveryFee: number;
-  tipAmount: number;
   total: number;
   vatRate: number;
   includedVatAmount: number;
@@ -64,9 +62,6 @@ export const buildOrderPaidPayload = async (orderId: number): Promise<OrderPaidP
       status: true,
       items_subtotal: true,
       items_discount_amount: true,
-      delivery_fee: true,
-      delivery_discount_amount: true,
-      tip_amount: true,
       charged_total: true,
       vat_rate: true,
       included_vat_amount: true,
@@ -93,8 +88,6 @@ export const buildOrderPaidPayload = async (orderId: number): Promise<OrderPaidP
   const locale = order.preferred_locale ?? "en";
 
   const subtotal = order.items_subtotal.minus(order.items_discount_amount).toNumber();
-  const deliveryFee = order.delivery_fee.minus(order.delivery_discount_amount).toNumber();
-  const tipAmount = order.tip_amount.toNumber();
   const total = order.charged_total.toNumber();
   const vatRate = order.vat_rate.toNumber();
   const includedVatAmount = order.included_vat_amount.toNumber();
@@ -131,8 +124,6 @@ export const buildOrderPaidPayload = async (orderId: number): Promise<OrderPaidP
       };
     }),
     subtotal: roundToCents(subtotal),
-    deliveryFee: roundToCents(deliveryFee),
-    tipAmount: roundToCents(tipAmount),
     total,
     vatRate,
     includedVatAmount: roundToCents(includedVatAmount),

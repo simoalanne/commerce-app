@@ -36,8 +36,6 @@ const relevantOrderInclude = {
       id: true,
       status: true,
       total_amount: true,
-      delivery_fee: true,
-      tip_amount: true,
       created_at: true,
       refund_items: {
         select: {
@@ -71,14 +69,6 @@ const parseRelevantOrder = (order: RelevantOrderRow) => {
     }
   }
 
-  const refundedDeliveryFee = succeededRefunds.reduce(
-    (total, refund) => total + (refund.delivery_fee?.toNumber() ?? 0),
-    0,
-  );
-  const refundedTipAmount = succeededRefunds.reduce(
-    (total, refund) => total + (refund.tip_amount?.toNumber() ?? 0),
-    0,
-  );
   const refundedAmount = succeededRefunds.reduce(
     (total, refund) => total + refund.total_amount.toNumber(),
     0,
@@ -95,17 +85,11 @@ const parseRelevantOrder = (order: RelevantOrderRow) => {
     status: order.status as RelevantOrderStatus,
     items_subtotal: order.items_subtotal.toNumber(),
     items_discount_amount: order.items_discount_amount.toNumber(),
-    delivery_fee: order.delivery_fee.toNumber(),
-    delivery_discount_amount: order.delivery_discount_amount.toNumber(),
-    tip_percentage: order.tip_percentage.toNumber(),
-    tip_amount: order.tip_amount.toNumber(),
     charged_total: order.charged_total.toNumber(),
     vat_rate: order.vat_rate.toNumber(),
     included_vat_amount: order.included_vat_amount.toNumber(),
     refundSummary: {
       refundedAmount: refundedAmount > 0 ? refundedAmount : null,
-      refundedDeliveryFee: refundedDeliveryFee > 0 ? refundedDeliveryFee : null,
-      refundedTipAmount: refundedTipAmount > 0 ? refundedTipAmount : null,
       refundedQuantityByOrderItemId,
     },
     refundReceipts,
@@ -133,19 +117,10 @@ export const buildOrderPricing = (order: RelevantOrder) => ({
   itemsDiscountAmount: order.items_discount_amount > 0 ? order.items_discount_amount : null,
   discountedItemsSubtotal:
     order.items_discount_amount > 0 ? order.items_subtotal - order.items_discount_amount : null,
-  deliveryFee: order.delivery_fee,
-  deliveryDiscountAmount:
-    order.delivery_discount_amount > 0 ? order.delivery_discount_amount : null,
-  discountedDeliveryFee:
-    order.delivery_discount_amount > 0 ? order.delivery_fee - order.delivery_discount_amount : null,
-  tipPercentage: order.tip_percentage > 0 ? order.tip_percentage : null,
-  tipAmount: order.tip_amount > 0 ? order.tip_amount : null,
   chargedTotal: order.charged_total,
   vatRate: order.vat_rate,
   includedVatAmount: order.included_vat_amount,
   refundedAmount: order.refundSummary.refundedAmount,
-  refundedDeliveryFee: order.refundSummary.refundedDeliveryFee,
-  refundedTipAmount: order.refundSummary.refundedTipAmount,
 });
 
 export const findRelevantOrders = async (

@@ -64,7 +64,6 @@ declare global {
         slug: string;
         imageUrl: string;
         price: number;
-        pricePerKg: number | null;
         outOfStock: boolean;
       };
       vendor: {

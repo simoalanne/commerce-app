@@ -17,8 +17,6 @@ type OrderConfirmationEmailPayload = {
     lineTotal: number;
   }[];
   subtotal: number;
-  deliveryFee: number;
-  tipAmount: number;
   total: number;
   vatRate: number;
   includedVatAmount: number;
@@ -36,9 +34,7 @@ const translations = {
     deliveryAddress: "Delivery address",
     yourOrder: "Your order",
     subtotal: "Subtotal",
-    deliveryFee: "Delivery fee",
     lineItem: "Qty {quantity} • {unitPrice} each",
-    tip: "Tip",
     total: "Total",
     includedVat: "Includes VAT {rate}%",
     viewOrder: "View your order",
@@ -106,10 +102,6 @@ export async function renderOrderConfirmationEmail(
     totals: {
       subtotalLabel: t.subtotal,
       subtotal: formatCurrency(payload.subtotal, locale),
-      deliveryFeeLabel: t.deliveryFee,
-      deliveryFee: formatCurrency(payload.deliveryFee, locale),
-      tipLabel: t.tip,
-      tip: payload.tipAmount ? formatCurrency(payload.tipAmount, locale) : null,
       totalLabel: t.total,
       total: formatCurrency(payload.total, locale),
       includedVatLabel: formatLine(t.includedVat, {
@@ -160,8 +152,6 @@ export async function renderOrderConfirmationEmail(
     ...itemLines,
     "",
     `${t.subtotal}: ${formatCurrency(payload.subtotal, locale)}`,
-    `${t.deliveryFee}: ${formatCurrency(payload.deliveryFee, locale)}`,
-    ...(payload.tipAmount ? [`${t.tip}: ${formatCurrency(payload.tipAmount, locale)}`] : []),
     `${t.total}: ${formatCurrency(payload.total, locale)}`,
     `${formatLine(t.includedVat, { rate: payload.vatRate })}: ${formatCurrency(payload.includedVatAmount, locale)}`,
     "",

@@ -154,12 +154,3 @@ export const validateCartUnitPrices = (
 
 export const calculateOrderTotal = (orderItems: { unitPrice: number; quantity: number }[]) =>
   orderItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-
-export const calculateTipAmount = (total: number, tipPercentage?: number) => {
-  if (!tipPercentage) return 0;
-
-  return centsToEuros(Math.round((eurosToCents(total) * tipPercentage) / 100));
-};
-
-const eurosToCents = (amount: number) => Math.round(amount * 100);
-const centsToEuros = (amount: number) => amount / 100;

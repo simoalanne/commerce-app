@@ -219,10 +219,6 @@ export const createOrder = async (overrides: any = {}, status: OrderStatus = "PE
     data: {
       items_subtotal: 19.9,
       items_discount_amount: 0,
-      delivery_fee: 6.9,
-      delivery_discount_amount: 0,
-      tip_amount: 0,
-      tip_percentage: 0,
       charged_total: 26.8,
       vat_rate: 20,
       included_vat_amount: 3.19,

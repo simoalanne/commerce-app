@@ -87,8 +87,6 @@ export default function RefundOrderDialog({
   const [internalNotes, setInternalNotes] = useState("");
   const [refundConfirmText, setRefundConfirmText] = useState("");
   const [itemRefunds, setItemRefunds] = useState<Record<number, ItemRefundState>>({});
-  const [deliveryFeeRefundAmountCents, setDeliveryFeeRefundAmountCents] = useState(0);
-  const [tipRefundAmountCents, setTipRefundAmountCents] = useState(0);
 
   const refundMutation = useMutation(queryUtils.orders.refund.mutationOptions());
   const { data: detailedOrder, isLoading } = useQuery(
@@ -127,17 +125,8 @@ export default function RefundOrderDialog({
     });
   }, [detailedOrder, itemRefunds, refundableItemByOrderItemId]);
 
-  const deliveryFeeAmountCents = detailedOrder
-    ? Math.min(
-        deliveryFeeRefundAmountCents,
-        detailedOrder.refundability.deliveryFee.refundableAmountCents,
-      )
-    : 0;
-  const tipAmountCents = detailedOrder
-    ? Math.min(tipRefundAmountCents, detailedOrder.refundability.tip.refundableAmountCents)
-    : 0;
   const itemsAmountCents = selectedItems.reduce((total, item) => total + item.amountCents, 0);
-  const totalAmountCents = itemsAmountCents + deliveryFeeAmountCents + tipAmountCents;
+  const totalAmountCents = itemsAmountCents;
 
   const canCreateRefund = detailedOrder?.refundability.canCreateRefund ?? false;
   const hasAnySelection = totalAmountCents > 0;
@@ -153,11 +142,7 @@ export default function RefundOrderDialog({
         itemRefunds[item.orderItemId]?.quantity === item.refundableQuantity &&
         itemRefunds[item.orderItemId]?.amountCents === item.refundableAmountCents
       );
-    }) &&
-    (detailedOrder.refundability.deliveryFee.refundableAmountCents <= 0 ||
-      deliveryFeeAmountCents === detailedOrder.refundability.deliveryFee.refundableAmountCents) &&
-    (detailedOrder.refundability.tip.refundableAmountCents <= 0 ||
-      tipAmountCents === detailedOrder.refundability.tip.refundableAmountCents);
+    });
   const canSubmit =
     canCreateRefund &&
     hasAnySelection &&
@@ -171,8 +156,6 @@ export default function RefundOrderDialog({
     setInternalNotes("");
     setRefundConfirmText("");
     setItemRefunds({});
-    setDeliveryFeeRefundAmountCents(0);
-    setTipRefundAmountCents(0);
   }, [detailedOrder]);
 
   const setRefundQuantity = (
@@ -284,8 +267,6 @@ export default function RefundOrderDialog({
 
     if (allRemainingSelected) {
       setItemRefunds({});
-      setDeliveryFeeRefundAmountCents(0);
-      setTipRefundAmountCents(0);
       return;
     }
 
@@ -307,8 +288,6 @@ export default function RefundOrderDialog({
         ),
       ),
     );
-    setDeliveryFeeRefundAmountCents(detailedOrder.refundability.deliveryFee.refundableAmountCents);
-    setTipRefundAmountCents(detailedOrder.refundability.tip.refundableAmountCents);
   };
 
   const close = () => {
@@ -329,9 +308,6 @@ export default function RefundOrderDialog({
         body: {
           reason: refundReason.trim(),
           internalNotes: internalNotes.trim() || undefined,
-          deliveryFee:
-            deliveryFeeAmountCents > 0 ? { amountCents: deliveryFeeAmountCents } : undefined,
-          tip: tipAmountCents > 0 ? { amountCents: tipAmountCents } : undefined,
           items: selectedItems.map((item) => ({
             orderItemId: item.item.id,
             quantity: item.quantity,
@@ -397,9 +373,7 @@ export default function RefundOrderDialog({
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 p-3">
               <div className="text-sm">
                 <div className="font-medium">Refund remaining balance</div>
-                <div className="text-muted-foreground">
-                  Select all remaining refundable items, delivery fee, and tip.
-                </div>
+                <div className="text-muted-foreground">Select all remaining refundable items.</div>
               </div>
               <Button
                 type="button"
@@ -707,60 +681,6 @@ export default function RefundOrderDialog({
 
             <Card>
               <CardHeader>
-                <CardTitle>Fees</CardTitle>
-                <CardDescription>Refund remaining delivery fee or tip amounts</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-10" />
-                      <TableHead>Fee</TableHead>
-                      <TableHead className="w-28 text-right">Refunded</TableHead>
-                      <TableHead className="w-28 text-right">Refundable</TableHead>
-                      <TableHead className="w-28 text-right">Refund</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <FeeRow
-                      label={
-                        detailedOrder.pricing.tipPercentage !== null
-                          ? `Tip (${detailedOrder.pricing.tipPercentage}%)`
-                          : "Tip"
-                      }
-                      amountCents={tipAmountCents}
-                      disabled={
-                        refundMutation.isPending ||
-                        !canCreateRefund ||
-                        detailedOrder.refundability.tip.refundableAmountCents <= 0
-                      }
-                      refundedAmountCents={detailedOrder.refundability.tip.refundedAmountCents}
-                      refundableAmountCents={detailedOrder.refundability.tip.refundableAmountCents}
-                      onAmountCentsChange={setTipRefundAmountCents}
-                    />
-                    <FeeRow
-                      label="Delivery fee"
-                      amountCents={deliveryFeeAmountCents}
-                      disabled={
-                        refundMutation.isPending ||
-                        !canCreateRefund ||
-                        detailedOrder.refundability.deliveryFee.refundableAmountCents <= 0
-                      }
-                      refundedAmountCents={
-                        detailedOrder.refundability.deliveryFee.refundedAmountCents
-                      }
-                      refundableAmountCents={
-                        detailedOrder.refundability.deliveryFee.refundableAmountCents
-                      }
-                      onAmountCentsChange={setDeliveryFeeRefundAmountCents}
-                    />
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
                 <CardTitle>Refund amount</CardTitle>
                 <CardDescription>Total derived from selected refund targets</CardDescription>
               </CardHeader>
@@ -774,23 +694,11 @@ export default function RefundOrderDialog({
                       </TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell>Delivery fee</TableCell>
-                      <TableCell className="text-right font-medium">
-                        {formatCents(deliveryFeeAmountCents)}
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Tip</TableCell>
-                      <TableCell className="text-right font-medium">
-                        {formatCents(tipAmountCents)}
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
                       <TableCell className="font-semibold">
                         Total refund
                         {!hasAnySelection ? (
                           <p className="text-xs text-destructive">
-                            Select at least one item or fee to refund.
+                            Select at least one item to refund.
                           </p>
                         ) : null}
                       </TableCell>
@@ -861,59 +769,5 @@ export default function RefundOrderDialog({
         )}
       </AlertDialogContent>
     </AlertDialog>
-  );
-}
-
-function FeeRow({
-  label,
-  amountCents,
-  disabled,
-  refundedAmountCents,
-  refundableAmountCents,
-  onAmountCentsChange,
-}: {
-  label: string;
-  amountCents: number;
-  disabled: boolean;
-  refundedAmountCents: number;
-  refundableAmountCents: number;
-  onAmountCentsChange: (amountCents: number) => void;
-}) {
-  const checked = amountCents > 0;
-
-  return (
-    <TableRow className={refundableAmountCents === 0 ? "opacity-40" : undefined}>
-      <TableCell>
-        <Checkbox
-          checked={checked}
-          onCheckedChange={(nextChecked) =>
-            onAmountCentsChange(nextChecked === true ? refundableAmountCents : 0)
-          }
-          disabled={disabled}
-        />
-      </TableCell>
-      <TableCell>{label}</TableCell>
-      <TableCell className="text-right">{formatCents(refundedAmountCents)}</TableCell>
-      <TableCell className="text-right">{formatCents(refundableAmountCents)}</TableCell>
-      <TableCell>
-        <div className="flex justify-end">
-          <Input
-            className="w-28 text-right"
-            type="number"
-            min={0}
-            step="0.01"
-            max={refundableAmountCents / 100}
-            value={amountCents > 0 ? amountCents / 100 : ""}
-            onChange={(event) => {
-              const rawAmount = Number(event.target.value);
-              onAmountCentsChange(
-                Number.isNaN(rawAmount) ? 0 : clampCents(toCents(rawAmount), refundableAmountCents),
-              );
-            }}
-            disabled={disabled}
-          />
-        </div>
-      </TableCell>
-    </TableRow>
   );
 }

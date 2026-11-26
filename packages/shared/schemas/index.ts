@@ -25,17 +25,10 @@ export const OrderPricingSummarySchema = z.object({
   itemsSubtotal: z.number(),
   itemsDiscountAmount: z.number().nullable(),
   discountedItemsSubtotal: z.number().nullable(),
-  deliveryFee: z.number(),
-  deliveryDiscountAmount: z.number().nullable(),
-  discountedDeliveryFee: z.number().nullable(),
-  tipPercentage: z.number().nullable(),
-  tipAmount: z.number().nullable(),
   chargedTotal: z.number(),
   vatRate: z.number(),
   includedVatAmount: z.number(),
   refundedAmount: z.number().nullable().optional(),
-  refundedDeliveryFee: z.number().nullable().optional(),
-  refundedTipAmount: z.number().nullable().optional(),
 });
 
 export type OrderPricingSummary = z.infer<typeof OrderPricingSummarySchema>;

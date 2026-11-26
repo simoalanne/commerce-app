@@ -192,7 +192,6 @@
       "estimatedSubtotal": "Estimated subtotal",
       "note": "Includes taxes. Discounts and exact delivery fee will be calculated at checkout.",
       "payAtCheckout": "Pay at checkout",
-      "deliveryFeeStartsFrom": "Delivery from",
       "savedCart": {
         "signIn": "Sign in to save your cart",
         "save": "Save cart",
@@ -202,15 +201,6 @@
       "remaining": "Add {remaining} for free delivery",
       "qualified": "You've unlocked free delivery! 🎉"
     },
-    "tip": {
-      "customLabel": "Custom tip percentage",
-      "optional": "Optional",
-      "saveAction": "Add tip",
-      "updateAction": "Update tip",
-      "toggleLabel": "Add a tip.",
-      "presetOptionsLabel": "Preset tip percentages",
-      "thankYou": "Thank you for the tip."
-    },
     "orderSummary": {
       "title": "Order summary",
       "description": "Delivery fee and final payment total will be confirmed after the address step.",
@@ -219,14 +209,6 @@
       "itemsSubtotal": "Items subtotal",
       "itemDiscount": "Item discount",
       "discountedItemsSubtotal": "Discounted items subtotal",
-      "tip": "Tip",
-      "tipWithPercentage": "Tip ({percentage}%)",
-      "delivery": "Delivery",
-      "discountedDelivery": "Discounted delivery",
-      "calculating": "Calculating...",
-      "error": "Error occurred",
-      "selectAddress": "Select address",
-      "deliveryDiscount": "Delivery discount",
       "total": "Total",
       "includedVat": "Includes VAT {rate}%",
       "showDetails": "Show order details",
@@ -278,10 +260,6 @@
         "savedAddresses": "Saved addresses",
         "invalidPostalCode": "Enter a valid postal code."
       },
-      "tip": {
-        "title": "Tip",
-        "description": "Choose a tip percentage or enter a custom amount."
-      },
       "payment": {
         "title": "Payment method",
         "secureDescription": "All transactions are safe and encrypted.",
@@ -317,11 +295,6 @@
       "itemsSubtotal": "Items subtotal",
       "itemDiscount": "Item discount",
       "discountedItemsSubtotal": "Discounted items subtotal",
-      "shipping": "Shipping",
-      "deliveryDiscount": "Delivery discount",
-      "discountedDelivery": "Discounted delivery",
-      "tip": "Tip",
-      "tipWithPercentage": "Tip ({percentage}%)",
       "total": "Total",
       "includedVat": "Includes VAT {rate}%",
       "deliveryAddress": "Delivery Address"
@@ -433,7 +406,6 @@
     },
     "product": {
       "outOfStock": "Out of stock",
-      "pricePerKg": "{value}/kg",
       "addFavorite": "Save {productName}",
       "removeFavorite": "Remove {productName} from saved products",
       "favoriteCta": "Save",
@@ -899,8 +871,6 @@
     "statusAwaitingDelivery": "Awaiting delivery",
     "statusDelivered": "Delivered",
     "refundedTotal": "Total refunded",
-    "refundedDeliveryFee": "Refunded delivery fee",
-    "refundedTipAmount": "Refunded tip",
     "refundedQty": "{quantity} refunded",
     "defaultItemName": "Product",
     "backToOrders": "Back to orders",

@@ -25,21 +25,17 @@ export default async function CheckoutPaymentPage({
   const resolvedSearchParams = await searchParams;
   const isPaymentCanceled = resolvedSearchParams.paymentCanceled === "1";
 
-  const [
-    { cart, cartUpdatedAt, cartItems, products, initialDeliveryFee, paymentOptions },
-    orderAndDeliveryTerms,
-    t,
-  ] = await Promise.all([
-    getCheckoutServerState({
-      locale,
-      includeInitialDeliveryFee: true,
-      includePaymentMethods: true,
-      adjustCartToAvailability: false,
-      params,
-    }),
-    getLegalDocumentByKey("ORDER_AND_DELIVERY_TERMS", params),
-    getServerTranslations(params, "checkout.paymentPage"),
-  ]);
+  const [{ cart, cartUpdatedAt, cartItems, products, paymentOptions }, orderAndDeliveryTerms, t] =
+    await Promise.all([
+      getCheckoutServerState({
+        locale,
+        includePaymentMethods: true,
+        adjustCartToAvailability: false,
+        params,
+      }),
+      getLegalDocumentByKey("ORDER_AND_DELIVERY_TERMS", params),
+      getServerTranslations(params, "checkout.paymentPage"),
+    ]);
   const hasUnexpectedSearchParams = Object.entries(resolvedSearchParams).some(
     ([key, value]) => key !== "paymentCanceled" || (value != null && value !== "1"),
   );
@@ -71,7 +67,6 @@ export default async function CheckoutPaymentPage({
           initialIsPaymentCanceled={isPaymentCanceled}
           cartItems={cartItems}
           availableProducts={products}
-          initialDeliveryFee={initialDeliveryFee}
           paymentOptions={paymentOptions}
           termsDocument={{
             title: orderAndDeliveryTerms.title,

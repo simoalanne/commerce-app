@@ -9,10 +9,9 @@ import styles from "./CheckoutPage.module.css";
 
 export async function CheckoutPage({ params }: RouteParams) {
   const { locale } = await params;
-  const { cart, cartUpdatedAt, cartItems, cartAdjustmentNotice, initialDeliveryFee, products } =
+  const { cart, cartUpdatedAt, cartItems, cartAdjustmentNotice, products } =
     await getCheckoutServerState({
       locale,
-      includeInitialDeliveryFee: true,
       params,
     });
   const t = await getServerTranslations(params, "checkout");
@@ -30,7 +29,6 @@ export async function CheckoutPage({ params }: RouteParams) {
           initialCartItems={cartItems}
           availableProducts={products}
           cartAdjustmentNotice={cartAdjustmentNotice}
-          initialDeliveryFee={initialDeliveryFee}
           emptyTitle={t("emptyTitle")}
           emptyContinueLabel={t("emptyContinueShopping")}
         />

@@ -44,22 +44,9 @@ export type ChartItem = {
   orders: number | string;
 };
 
-export type RevenueBySourceItem = {
-  source: string;
-  revenue: number | string;
-  orders: number | string;
-};
-
 export const normalizeRevenueByDay = (chart: ChartItem[]) =>
   chart.map((item) => ({
     date: item.date,
-    revenue: Number(item.revenue),
-    orders: Number(item.orders),
-  }));
-
-export const normalizeRevenueBySource = (chart: RevenueBySourceItem[]) =>
-  chart.map((item) => ({
-    source: item.source,
     revenue: Number(item.revenue),
     orders: Number(item.orders),
   }));
@@ -72,8 +59,6 @@ export type OrderQueryRow = {
   chart: ChartItem[];
 };
 
-export type RevenueBySourceQueryRow = RevenueBySourceItem[];
-
 export type LocalizationCoverageRow = {
   out_of: number;
   completed_all_locales: number;
@@ -85,7 +70,6 @@ export const buildSummaryResponse = ({
   now,
   days,
   orderRow,
-  revenueBySource,
   activeProducts,
   customers,
   localizationRow,
@@ -93,7 +77,6 @@ export const buildSummaryResponse = ({
   now: Date;
   days: number;
   orderRow: OrderQueryRow;
-  revenueBySource: RevenueBySourceQueryRow;
   activeProducts: number;
   customers: number;
   localizationRow: LocalizationCoverageRow;
@@ -115,7 +98,6 @@ export const buildSummaryResponse = ({
     },
     chart: {
       revenueByDay: normalizeRevenueByDay(orderRow.chart),
-      revenueBySource: normalizeRevenueBySource(revenueBySource),
     },
     localizationCoverage: {
       overall: toCoverage(localizationRow.completed_all_locales, localizationRow.out_of),

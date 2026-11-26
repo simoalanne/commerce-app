@@ -298,31 +298,6 @@ function AccountOrderDetailsContent({ orderId }: AccountOrderDetailsContentProps
                 />
               </>
             ) : null}
-            <PricingRow label={tPricing("shipping")} value={formatPrice(pricing.deliveryFee)} />
-            {pricing.deliveryDiscountAmount !== null ? (
-              <>
-                <PricingRow
-                  label={tPricing("deliveryDiscount")}
-                  value={`-${formatPrice(pricing.deliveryDiscountAmount)}`}
-                />
-                <PricingRow
-                  label={tPricing("discountedDelivery")}
-                  value={formatPrice(pricing.discountedDeliveryFee ?? pricing.deliveryFee)}
-                />
-              </>
-            ) : null}
-            {pricing.tipAmount !== null ? (
-              <PricingRow
-                label={
-                  pricing.tipPercentage !== null
-                    ? tPricing("tipWithPercentage", {
-                        percentage: pricing.tipPercentage,
-                      })
-                    : tPricing("tip")
-                }
-                value={formatPrice(pricing.tipAmount)}
-              />
-            ) : null}
             <PricingRow
               label={tPricing("total")}
               value={formatPrice(pricing.chargedTotal)}
@@ -340,18 +315,6 @@ function AccountOrderDetailsContent({ orderId }: AccountOrderDetailsContentProps
                   value={`-${formatPrice(pricing.refundedAmount)}`}
                   strong
                 />
-                {pricing.refundedDeliveryFee ? (
-                  <PricingRow
-                    label={t("refundedDeliveryFee")}
-                    value={`-${formatPrice(pricing.refundedDeliveryFee)}`}
-                  />
-                ) : null}
-                {pricing.refundedTipAmount ? (
-                  <PricingRow
-                    label={t("refundedTipAmount")}
-                    value={`-${formatPrice(pricing.refundedTipAmount)}`}
-                  />
-                ) : null}
               </>
             ) : null}
           </section>

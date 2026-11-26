@@ -87,9 +87,6 @@ export const buildCustomerDataExport = async (
           id: true,
           items_subtotal: true,
           items_discount_amount: true,
-          delivery_fee: true,
-          delivery_discount_amount: true,
-          tip_amount: true,
           charged_total: true,
           status: true,
           created_at: true,
@@ -181,8 +178,6 @@ export const buildCustomerDataExport = async (
         city: details.delivery.city,
         deliveryInstructions: toNullableInstructions(details.delivery.instructions ?? undefined),
         subtotal: order.items_subtotal.minus(order.items_discount_amount),
-        deliveryFee: order.delivery_fee.minus(order.delivery_discount_amount),
-        tipAmount: order.tip_amount,
         total: order.charged_total,
         items: order.order_items.map((item) => ({
           productName: item.name,

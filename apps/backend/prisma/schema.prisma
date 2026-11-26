@@ -36,10 +36,8 @@ enum PaymentProvider {
 }
 
 enum PromotionCodeDiscountType {
-  ITEMS_PERCENT
-  ITEMS_FIXED
-  DELIVERY_PERCENT
-  DELIVERY_FIXED
+  PERCENT
+  FIXED
 }
 
 enum ImageKind {
@@ -170,10 +168,6 @@ model Order {
   id                                  Int             @id @default(autoincrement())
   items_subtotal                      Decimal         @db.Decimal(10, 2)
   items_discount_amount               Decimal         @default(0) @db.Decimal(10, 2)
-  delivery_fee                        Decimal         @db.Decimal(10, 2)
-  delivery_discount_amount            Decimal         @default(0) @db.Decimal(10, 2)
-  tip_percentage                      Decimal         @default(0) @db.Decimal(5, 2)
-  tip_amount                          Decimal         @default(0) @db.Decimal(10, 2)
   charged_total                       Decimal         @db.Decimal(10, 2)
   vat_rate                            Decimal         @db.Decimal(5, 2)
   included_vat_amount                 Decimal         @db.Decimal(10, 2)
@@ -185,9 +179,6 @@ model Order {
   has_been_linked_to_customer_account Boolean         @default(false)
   preferred_locale                    String          @default("en")
   applied_promo_code                  String?
-  utm_source                          String?
-  utm_medium                          String?
-  utm_campaign                        String?
   /// [OrderDetails]
   order_details                       Json
   paid_at                             DateTime?
@@ -236,8 +227,6 @@ model Refund {
   provider_refund_id String?
   status             RefundStatus @default(PENDING)
   total_amount       Decimal      @db.Decimal(10, 2)
-  tip_amount         Decimal?     @db.Decimal(10, 2)
-  delivery_fee       Decimal?     @db.Decimal(10, 2)
   reason             String
   internal_notes     String?
   failure_reason     String?

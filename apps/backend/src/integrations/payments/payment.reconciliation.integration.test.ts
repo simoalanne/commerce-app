@@ -91,8 +91,7 @@ const createReconciliationScenario = async ({
   const order = await createOrder({
     customer_id: customer.id,
     items_subtotal: 19.8,
-    delivery_fee: 4.2,
-    charged_total: 24,
+    charged_total: 19.8,
     status: orderStatus,
     payment_id: null,
     payment_provider: provider,

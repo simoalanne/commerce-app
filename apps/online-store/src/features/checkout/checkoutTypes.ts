@@ -7,10 +7,6 @@ export type PaymentOptions = InferClientResponse<Api["checkout"]["getPaymentMeth
 
 export type PaymentMethod = PaymentOptions["paytrailMethods"][number];
 
-export type DeliveryFeeEstimate = InferClientResponse<
-  Api["checkout"]["estimateDeliveryFee"]
->["body"];
-
 export type ValidatedPromoCode = InferClientResponse<Api["checkout"]["validatePromoCode"]>["body"];
 
 export type CreatePaymentError = InferClientError<Api["checkout"]["createPayment"]>;
@@ -27,7 +23,6 @@ export type CheckoutFormState = {
   firstName: string;
   lastName: string;
   deliveryAddress: AddressFormValue | null;
-  tipPercentage: number;
   paymentProvider: CheckoutPaymentProvider | null;
 };
 
@@ -45,7 +40,6 @@ export const initialCheckoutFormState: CheckoutFormState = {
   firstName: "",
   lastName: "",
   deliveryAddress: null,
-  tipPercentage: 0,
   paymentProvider: null,
 };
 
@@ -104,8 +98,6 @@ export function reviveCheckoutRecoveryDraft(rawDraft: string): RevivedCheckoutRe
         firstName: typeof parsedFormState?.firstName === "string" ? parsedFormState.firstName : "",
         lastName: typeof parsedFormState?.lastName === "string" ? parsedFormState.lastName : "",
         deliveryAddress: parsedFormState?.deliveryAddress ?? null,
-        tipPercentage:
-          typeof parsedFormState?.tipPercentage === "number" ? parsedFormState.tipPercentage : 0,
         paymentProvider:
           parsedFormState?.paymentProvider === "PAYTRAIL" ||
           parsedFormState?.paymentProvider === "STRIPE" ||

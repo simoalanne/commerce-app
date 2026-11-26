@@ -2,7 +2,7 @@ import { useTranslations } from "next-intl";
 import Image from "next/image";
 
 import { Link } from "@/i18n/navigation";
-import { formatPrice, formatPricePerKg } from "@/utils/formatPrice";
+import { formatPrice } from "@/utils/formatPrice";
 
 import styles from "./SearchModalProductsList.module.css";
 
@@ -17,7 +17,6 @@ export type SearchCardItem =
   | (BaseSearchCardItem & {
       type: "product";
       price: number;
-      pricePerKg?: number | null;
       outOfStock: boolean;
     })
   | (BaseSearchCardItem & {
@@ -67,9 +66,6 @@ function SearchCard({ item, onClose }: { item: SearchCardItem; onClose?: () => v
             <div className={styles.productMetaRow}>
               <div className={styles.priceBlock}>
                 <p className={styles.price}>{formatPrice(item.price)}</p>
-                {item.pricePerKg != null && (
-                  <p className={styles.pricePerKg}>{formatPricePerKg(item.pricePerKg)}</p>
-                )}
               </div>
             </div>
           )}

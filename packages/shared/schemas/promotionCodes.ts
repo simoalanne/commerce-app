@@ -1,11 +1,6 @@
 import z from "zod";
 
-export const PromotionCodeDiscountTypeSchema = z.enum([
-  "ITEMS_PERCENT",
-  "ITEMS_FIXED",
-  "DELIVERY_PERCENT",
-  "DELIVERY_FIXED",
-]);
+export const PromotionCodeDiscountTypeSchema = z.enum(["PERCENT", "FIXED"]);
 
 export const PromotionCodeFormSchema = z
   .object({
