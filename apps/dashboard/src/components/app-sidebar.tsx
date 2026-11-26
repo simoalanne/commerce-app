@@ -128,12 +128,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       onClick: () => handleNavigate("/webhooks"),
     },
     {
-      title: "Job Queue",
-      icon: IconListDetails,
-      isActive: pathname.startsWith("/job-queue"),
-      onClick: () => handleNavigate("/job-queue"),
-    },
-    {
       title: "Admin Action Logs",
       icon: IconListDetails,
       isActive: pathname.startsWith("/admin-action-logs"),

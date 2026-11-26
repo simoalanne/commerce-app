@@ -9,7 +9,7 @@ Background work that must not be lost (order expiry, emails, webhook deliveries,
 The code is `apps/backend/src/jobs/`:
 
 - `jobDefinitions.ts`: one entry per job type, with a Zod schema for the payload and the handler. A pg-boss queue is created for each type.
-- `queue.ts`: the `JobQueue` the app uses (`enqueue`, `listRecent`, `start`, `work`, `stop`), built on one `PgBoss` instance.
+- `queue.ts`: the `JobQueue` the app uses (`enqueue`, `start`, `work`, `stop`), built on one `PgBoss` instance.
 - `handlers/`: the handlers.
 
 ## Transactional Enqueue
@@ -44,10 +44,6 @@ Every queue uses the same policy (`queueOptions` in `queue.ts`): two retries wit
 A job that exhausts its retries is `failed` and stays in pg-boss's table. Pending-order expiry has no extra safety net: if `expirePendingOrder` fails three times, the order's stock stays reserved until the job is retried.
 
 Handlers should be idempotent where practical: a worker can crash after the work but before pg-boss records completion, and the job then runs again.
-
-## Dashboard
-
-The admin job queue page lists the latest jobs of every type from `pgboss.job` (`jobQueue.listRecent`), with pg-boss's states (`created`, `retry`, `active`, `completed`, `cancelled`, `failed`), retry counts, start time, payload and the last error, which pg-boss stores as the job's output.
 
 ## Tests
 

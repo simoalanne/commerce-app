@@ -1,13 +1,19 @@
+import { sql } from "drizzle-orm";
+
 import { db } from "#src/db/client.ts";
 
 import { jobQueue } from "./queue.ts";
 
-const findExpiryJobs = async (orderId: number) =>
-  (await jobQueue.listRecent(1000)).filter(
-    (job) =>
-      job.type === "expirePendingOrder" &&
-      (job.payload as { orderId?: number }).orderId === orderId,
-  );
+type JobRow = { state: string; retryLimit: number; startAfter: Date };
+
+const findJobs = async (name: string, payload: Record<string, number>) =>
+  (
+    await db.execute<JobRow>(sql`
+      SELECT state, retry_limit AS "retryLimit", start_after AS "startAfter"
+      FROM pgboss.job
+      WHERE name = ${name} AND data @> ${JSON.stringify(payload)}::jsonb
+    `)
+  ).rows;
 
 describe("jobQueue", () => {
   it("keeps a job enqueued in a transaction that commits", async () => {
@@ -19,7 +25,7 @@ describe("jobQueue", () => {
       });
     });
 
-    const [job] = await findExpiryJobs(9001);
+    const [job] = await findJobs("expirePendingOrder", { orderId: 9001 });
     expect(job).toMatchObject({ state: "created", retryLimit: 2 });
     expect(job.startAfter.getTime()).toBeGreaterThan(Date.now());
   });
@@ -32,7 +38,7 @@ describe("jobQueue", () => {
       }),
     ).rejects.toThrow("rollback");
 
-    expect(await findExpiryJobs(9002)).toEqual([]);
+    expect(await findJobs("expirePendingOrder", { orderId: 9002 })).toEqual([]);
   });
 
   it("passes send options through", async () => {
@@ -42,9 +48,7 @@ describe("jobQueue", () => {
       options: { retryLimit: 0 },
     });
 
-    const [job] = (await jobQueue.listRecent(1000)).filter(
-      (entry) => (entry.payload as { refundId?: number }).refundId === 9003,
-    );
-    expect(job).toMatchObject({ type: "processRefund", retryLimit: 0 });
+    const [job] = await findJobs("processRefund", { refundId: 9003 });
+    expect(job).toMatchObject({ retryLimit: 0 });
   });
 });

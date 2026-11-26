@@ -2,7 +2,6 @@ import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 
 import AdminActionLogsPage from "@/features/admin/admin-action-logs/AdminActionLogsPage";
 import GrantAdminPage from "@/features/admin/admins/GrantAdminPage.tsx";
-import JobQueuePage from "@/features/admin/job-queue/JobQueuePage";
 import PromotionCodesPage from "@/features/admin/promotion-codes/PromotionCodesPage";
 import WebhooksPage from "@/features/admin/webhooks/WebhooksPage";
 import Login from "@/features/auth/LoginPage";
@@ -48,7 +47,6 @@ function App() {
         <Route path="/promotion-codes" element={<PromotionCodesPage />} />
         <Route path="/webhooks" element={<WebhooksPage />} />
         <Route path="/admin-action-logs" element={<AdminActionLogsPage />} />
-        <Route path="/job-queue" element={<JobQueuePage />} />
         <Route path="/admins" element={<GrantAdminPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

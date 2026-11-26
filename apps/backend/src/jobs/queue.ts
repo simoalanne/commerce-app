@@ -21,27 +21,12 @@ export type JobHandlerContext = {
   jobQueue: JobQueue;
 };
 
-export type JobQueueEntry = {
-  id: string;
-  type: string;
-  state: "created" | "retry" | "active" | "completed" | "cancelled" | "failed";
-  retryCount: number;
-  retryLimit: number;
-  startAfter: Date;
-  createdOn: Date;
-  completedOn: Date | null;
-  payload: unknown;
-  output: unknown;
-};
-
 export type JobQueue = {
   /**
    * Writes the job through `db`. Given a transaction, the job exists only if
    * the transaction commits.
    */
   enqueue: <T extends JobType>(db: Db, params: EnqueueJobParams<T>) => Promise<void>;
-  /** The latest jobs of every type, newest first. */
-  listRecent: (limit: number) => Promise<JobQueueEntry[]>;
   /** Connects, installing or migrating pg-boss's schema and the queues. */
   start: () => Promise<void>;
   /** Runs the job handlers in this process. */
@@ -84,28 +69,6 @@ export const createJobQueue = (connectionString: string): JobQueue => {
   return {
     enqueue: async (db, { type, payload, options }) => {
       await boss.send(type, payload, { ...options, db: fromDrizzle(db, sql) });
-    },
-
-    listRecent: async (limit) => {
-      const { rows } = await boss.getDb().executeSql(
-        `SELECT id, name, state, retry_count, retry_limit, start_after, created_on, completed_on, data, output
-         FROM pgboss.job
-         ORDER BY created_on DESC
-         LIMIT $1`,
-        [limit],
-      );
-      return rows.map((row) => ({
-        id: row.id,
-        type: row.name,
-        state: row.state,
-        retryCount: row.retry_count,
-        retryLimit: row.retry_limit,
-        startAfter: row.start_after,
-        createdOn: row.created_on,
-        completedOn: row.completed_on,
-        payload: row.data,
-        output: row.output,
-      }));
     },
 
     start: async () => {

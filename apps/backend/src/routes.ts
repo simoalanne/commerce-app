@@ -17,7 +17,6 @@ import { categoriesRoutes as dashboardCategoriesRoutes } from "./features/dashbo
 import { contactSubmissionsRoutes as dashboardContactSubmissionsRoutes } from "./features/dashboard-api/contactSubmissions/contactSubmissions.routes.ts";
 import { customersRoutes } from "./features/dashboard-api/customers/customers.routes.ts";
 import { imagesRoutes } from "./features/dashboard-api/images/images.routes.ts";
-import { jobQueueRoutes } from "./features/dashboard-api/jobQueue/jobQueue.routes.ts";
 import { legalDocumentsRoutes as dashboardLegalDocumentsRoutes } from "./features/dashboard-api/legalDocuments/legalDocuments.routes.ts";
 import { ordersRoutes as dashboardOrdersRoutes } from "./features/dashboard-api/orders/orders.routes.ts";
 import { productsRoutes as dashboardProductsRoutes } from "./features/dashboard-api/products/products.routes.ts";
@@ -56,7 +55,6 @@ export const dashboardRouter = {
   contactSubmissions: dashboardContactSubmissionsRoutes,
   customers: customersRoutes,
   images: imagesRoutes,
-  jobQueue: jobQueueRoutes,
   legalDocuments: dashboardLegalDocumentsRoutes,
   orders: dashboardOrdersRoutes,
   vendors: dashboardVendorsRoutes,

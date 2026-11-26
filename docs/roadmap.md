@@ -76,7 +76,7 @@ Each of the repo's own abstractions has to earn its place in a general commerce 
 
 Keep the good parts: the transactional enqueue (jobs are rows written in the same transaction as the change that caused them) and the typed job definitions (a Zod schema per job type). pg-boss claims jobs with `SKIP LOCKED`, is safe with several instances, and enqueues inside the caller's transaction, so the post-commit scheduling step disappears.
 
-`docs/job-queue.md` gets rewritten with the swap. The admin job queue page stays if pg-boss exposes the job state it needs.
+`docs/job-queue.md` gets rewritten with the swap.
 
 ### `runAppTransaction`: replaced by transactional builders (done)
 
